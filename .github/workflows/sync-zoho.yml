@@ -1,0 +1,173 @@
+name: Sync Zoho Invoice
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Ogni giorno alle 6:00 UTC (8:00 ora italiana)
+  workflow_dispatch:       # Puoi lanciarlo anche manualmente da GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync Zoho Invoice data
+        env:
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          ZOHO_ORG_ID: ${{ secrets.ZOHO_ORG_ID }}
+        run: |
+          node -e "
+          const https = require('https');
+
+          // Funzione per fare richieste HTTPS
+          function request(options, postData) {
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  try { resolve(JSON.parse(data)); }
+                  catch(e) { resolve(data); }
+                });
+              });
+              req.on('error', reject);
+              if (postData) req.write(postData);
+              req.end();
+            });
+          }
+
+          async function main() {
+            const clientId = process.env.ZOHO_CLIENT_ID;
+            const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+            const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+            const orgId = process.env.ZOHO_ORG_ID;
+
+            console.log('1. Ottengo access token da Zoho...');
+
+            // Step 1: Ottieni access token dal refresh token
+            const tokenParams = new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: refreshToken,
+              grant_type: 'refresh_token'
+            }).toString();
+
+            const tokenRes = await request({
+              hostname: 'accounts.zoho.eu',
+              path: '/oauth/v2/token',
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': tokenParams.length
+              }
+            }, tokenParams);
+
+            if (!tokenRes.access_token) {
+              console.error('Errore token:', JSON.stringify(tokenRes));
+              process.exit(1);
+            }
+
+            const accessToken = tokenRes.access_token;
+            console.log('Access token ottenuto.');
+
+            // Step 2: Chiama le API Zoho
+            const headers = {
+              'Authorization': 'Zoho-oauthtoken ' + accessToken,
+              'X-com-zoho-invoice-organizationid': orgId
+            };
+
+            console.log('2. Scarico fatture...');
+            const invoicesRes = await request({
+              hostname: 'www.zohoapis.eu',
+              path: '/invoice/v3/invoices?per_page=50&sort_column=date&sort_order=D',
+              method: 'GET',
+              headers
+            });
+
+            console.log('3. Scarico pagamenti...');
+            const paymentsRes = await request({
+              hostname: 'www.zohoapis.eu',
+              path: '/invoice/v3/customerpayments?per_page=50&sort_column=date&sort_order=D',
+              method: 'GET',
+              headers
+            });
+
+            console.log('4. Scarico clienti...');
+            const contactsRes = await request({
+              hostname: 'www.zohoapis.eu',
+              path: '/invoice/v3/contacts?per_page=50',
+              method: 'GET',
+              headers
+            });
+
+            // Step 3: Calcola totali
+            const invoices = invoicesRes.invoices || [];
+            const payments = paymentsRes.customerpayments || [];
+            const contacts = contactsRes.contacts || [];
+
+            const totFatturato = invoices.reduce((a, i) => a + (i.total || 0), 0);
+            const totIncassato = payments.reduce((a, p) => a + (p.amount || 0), 0);
+            const totAttesa = totFatturato - totIncassato;
+
+            // Step 4: Costruisci il JSON da salvare
+            const data = {
+              lastSync: new Date().toISOString(),
+              summary: {
+                fatturato: Math.round(totFatturato),
+                incassato: Math.round(totIncassato),
+                inAttesa: Math.round(totAttesa > 0 ? totAttesa : 0),
+                numFatture: invoices.length,
+                numClienti: contacts.length
+              },
+              invoices: invoices.slice(0, 20).map(i => ({
+                id: i.invoice_id,
+                numero: i.invoice_number,
+                cliente: i.customer_name,
+                data: i.date,
+                totale: i.total,
+                stato: i.status,
+                valuta: i.currency_code
+              })),
+              payments: payments.slice(0, 20).map(p => ({
+                id: p.payment_id,
+                cliente: p.customer_name,
+                data: p.date,
+                importo: p.amount,
+                metodo: p.payment_mode
+              })),
+              contacts: contacts.slice(0, 30).map(c => ({
+                id: c.contact_id,
+                nome: c.contact_name,
+                email: c.email,
+                tipo: c.contact_type
+              }))
+            };
+
+            // Step 5: Scrivi il file
+            const fs = require('fs');
+            fs.writeFileSync('zoho-data.json', JSON.stringify(data, null, 2));
+            console.log('✓ zoho-data.json salvato con successo');
+            console.log('  Fatturato totale: EUR ' + data.summary.fatturato);
+            console.log('  Incassato: EUR ' + data.summary.incassato);
+            console.log('  Fatture: ' + data.summary.numFatture);
+          }
+
+          main().catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Commit zoho-data.json
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Zoho Sync Bot"
+          git add zoho-data.json
+          git diff --staged --quiet || git commit -m "🔄 Sync Zoho $(date '+%Y-%m-%d %H:%M')"
+          git push
