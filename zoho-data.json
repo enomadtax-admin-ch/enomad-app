@@ -1,0 +1,375 @@
+{
+  "lastSync": "2026-03-19T22:59:32.816Z",
+  "summary": {
+    "fatturato": 115110,
+    "incassato": 0,
+    "inAttesa": 115110,
+    "numFatture": 50,
+    "numClienti": 50
+  },
+  "invoices": [
+    {
+      "id": "403724000000844163",
+      "numero": "INV-2026069",
+      "cliente": "Superbia Management SA",
+      "data": "2026-03-19",
+      "totale": 1100,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000844067",
+      "numero": "INV-2026068",
+      "cliente": "PAYABL",
+      "data": "2026-03-18",
+      "totale": 480.5,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000841001",
+      "numero": "INV-2026067",
+      "cliente": "Superbia Management SA",
+      "data": "2026-03-17",
+      "totale": 1050,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000839046",
+      "numero": "INV-2026066",
+      "cliente": "ZENDI CONSULTING SRL",
+      "data": "2026-03-17",
+      "totale": 3200,
+      "stato": "draft",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000838051",
+      "numero": "INV-2026065",
+      "cliente": "UAB PAYSWIX",
+      "data": "2026-03-13",
+      "totale": 242.35,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000834089",
+      "numero": "INV-2026064",
+      "cliente": "Media Scale FZE LLC",
+      "data": "2026-03-12",
+      "totale": 1430,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000834001",
+      "numero": "INV-2026063",
+      "cliente": "P&P Market LLC",
+      "data": "2026-03-11",
+      "totale": 800,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000831035",
+      "numero": "INV-2026062",
+      "cliente": "HYBRID INTERNATIONAL GROUP LTD",
+      "data": "2026-03-06",
+      "totale": 1500,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000828173",
+      "numero": "INV-2026061",
+      "cliente": "Onorato Battello",
+      "data": "2026-03-05",
+      "totale": 5900,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000828135",
+      "numero": "INV-2026060",
+      "cliente": "GO LOGISTIC SRL",
+      "data": "2026-03-05",
+      "totale": 1170,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000826011",
+      "numero": "INV-2026059",
+      "cliente": "Netmart LLC",
+      "data": "2026-03-04",
+      "totale": 7200,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810455",
+      "numero": "INV-2026058",
+      "cliente": "VYRA STUDIOS LTD",
+      "data": "2026-03-01",
+      "totale": 5520,
+      "stato": "draft",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810421",
+      "numero": "INV-2026057",
+      "cliente": "VYRA STUDIOS LTD",
+      "data": "2026-03-01",
+      "totale": 4700,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810389",
+      "numero": "INV-2026056",
+      "cliente": "Lead Busters LLC",
+      "data": "2026-03-01",
+      "totale": 800,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810355",
+      "numero": "INV-2026055",
+      "cliente": "ZENDI CONSULTING SRL",
+      "data": "2026-03-01",
+      "totale": 540,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810323",
+      "numero": "INV-2026054",
+      "cliente": "AFFLUMINA LLC",
+      "data": "2026-03-01",
+      "totale": 500,
+      "stato": "paid",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810289",
+      "numero": "INV-2026053",
+      "cliente": "ISLAFFILIATES S.L.",
+      "data": "2026-03-01",
+      "totale": 1200,
+      "stato": "draft",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810257",
+      "numero": "INV-2026052",
+      "cliente": "EASTERN STAR SOLUTIONS - FZCO",
+      "data": "2026-03-01",
+      "totale": 400,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810225",
+      "numero": "INV-2026051",
+      "cliente": "IPGEN INNOVATION LTD",
+      "data": "2026-03-01",
+      "totale": 1220,
+      "stato": "overdue",
+      "valuta": "EUR"
+    },
+    {
+      "id": "403724000000810193",
+      "numero": "INV-2026050",
+      "cliente": "True Fame Creative FZ-LLC",
+      "data": "2026-03-01",
+      "totale": 250,
+      "stato": "overdue",
+      "valuta": "EUR"
+    }
+  ],
+  "payments": [],
+  "contacts": [
+    {
+      "id": "403724000000045395",
+      "nome": "ADSCALEUP OÜ",
+      "email": "Info@ad-scaleup.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000095001",
+      "nome": "Affiliate marketing di De Angelis Manuel",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000489355",
+      "nome": "AFFLUMINA LLC",
+      "email": "info@affluminallc.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000101225",
+      "nome": "AG STRATEGY CONSULTING LTD",
+      "email": "Andrea.bernardini2@icloud.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000806001",
+      "nome": "ALEA SERVIZI EDITORIALI SRL",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000073023",
+      "nome": "Alessandro Gandolfi",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000196041",
+      "nome": "ALL STAR PUZZLES LTD",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000359120",
+      "nome": "Amony OÜ",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000145001",
+      "nome": "ANDREA MINCHIO",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000278001",
+      "nome": "Angela Maria Alves",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000054076",
+      "nome": "AOZZIBIG INTERNATIONAL LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000324241",
+      "nome": "AQUIVARA LTD",
+      "email": "info.jamejewelry@gmail.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000309328",
+      "nome": "ASPIRE ELEVATION LIMITED",
+      "email": "Aspireelevation@protonmail.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000057001",
+      "nome": "Avv. Gilda Munno",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000431001",
+      "nome": "BEST DIRECT (INTERNATIONAL) LIMITED",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000512035",
+      "nome": "Best Marketing Solutions LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000057094",
+      "nome": "BHBLASTED SRL SB",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000657013",
+      "nome": "BIZZER LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000374001",
+      "nome": "BORA MEDIA LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000776031",
+      "nome": "Carmine Flagiello",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000506001",
+      "nome": "Clarity Global Inc",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000379001",
+      "nome": "ClickCore Solutions LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000704314",
+      "nome": "COD KINGDOM LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000267001",
+      "nome": "CONNEXA FZ LLC",
+      "email": "connexa2022@gmail.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000304030",
+      "nome": "Cristian Cipriano",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000058001",
+      "nome": "Delia Lorenzo",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000378013",
+      "nome": "DIGITAL CLIMBERS KFT",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000101326",
+      "nome": "Double D Millienium FZCO",
+      "email": "mattia77dossi@gmail.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000471069",
+      "nome": "EASTERN STAR SOLUTIONS - FZCO",
+      "email": "easternstarsolutionsfzco@gmail.com",
+      "tipo": "customer"
+    },
+    {
+      "id": "403724000000051097",
+      "nome": "ECOM POWER LLC",
+      "email": "",
+      "tipo": "customer"
+    }
+  ]
+}
