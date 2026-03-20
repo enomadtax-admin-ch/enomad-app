@@ -2,7 +2,7 @@ name: Sync Finance Data
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Ogni giorno alle 8:00 ora italiana
+    - cron: '*/30 * * * *'  # Ogni giorno alle 8:00 ora italiana
   workflow_dispatch:       # Puoi lanciarlo manualmente quando vuoi
 
 jobs:
