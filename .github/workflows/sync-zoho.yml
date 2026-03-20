@@ -203,7 +203,7 @@ jobs:
 
             console.log('Scarico fatture Invoice Ninja (storico completo)...');
             const ninjaInvoices = await fetchAllPages(
-              'app.invoicing.co',
+              'invoicing.co',
               '/api/v1/invoices?sort=date|desc&include=client',
               'data',
               ninjaHeaders,
@@ -212,7 +212,7 @@ jobs:
 
             console.log('Scarico pagamenti Invoice Ninja...');
             const ninjaPayments = await fetchAllPages(
-              'app.invoicing.co',
+              'invoicing.co',
               '/api/v1/payments?sort=date|desc',
               'data',
               ninjaHeaders,
@@ -221,7 +221,7 @@ jobs:
 
             console.log('Scarico clienti Invoice Ninja...');
             const ninjaClients = await fetchAllPages(
-              'app.invoicing.co',
+              'invoicing.co',
               '/api/v1/clients',
               'data',
               ninjaHeaders,
