@@ -6,6 +6,42 @@
 <title>Enomad — Compliance & Finance</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const FB={apiKey:"AIzaSyAKQ9aAPCRFXZ_9bbknilnsAIfOA1s-iig",authDomain:"enomad-app.firebaseapp.com",projectId:"enomad-app",storageBucket:"enomad-app.firebasestorage.app",messagingSenderId:"444471065529",appId:"1:444471065529:web:1c7ab6bd6efd85f9295468"};
+const auth=getAuth(initializeApp(FB));
+const provider=new GoogleAuthProvider();
+// ── Aggiungi qui le tue email autorizzate ──
+const ALLOWED=['METTI_QUI_LA_TUA_EMAIL@gmail.com'];
+window.googleLogin=async()=>{
+  try{
+    const r=await signInWithPopup(auth,provider);
+    if(!ALLOWED.includes(r.user.email)){
+      await signOut(auth);
+      const e=document.getElementById('login-error');
+      if(e)e.textContent='⚠ Email non autorizzata: '+r.user.email;
+      return;
+    }
+  }catch(e){
+    const el=document.getElementById('login-error');
+    if(el)el.textContent='⚠ Errore: '+e.message;
+  }
+};
+window.googleLogout=async()=>{await signOut(auth);};
+onAuthStateChanged(auth,user=>{
+  const ls=document.getElementById('login-screen');
+  const as=document.getElementById('app-screen');
+  if(!ls||!as)return;
+  if(user&&ALLOWED.includes(user.email)){
+    ls.style.display='none';as.style.display='flex';
+    const n=document.getElementById('user-name');if(n)n.textContent=user.displayName||user.email;
+    const av=document.getElementById('user-avatar');if(av&&user.photoURL){av.src=user.photoURL;av.style.display='block';}
+  }else{
+    ls.style.display='flex';as.style.display='none';
+  }
+});
+</script>
 <style>
 /* ── THEME ── */
 [data-theme="dark"]{--bg:#0d0f14;--surface:#13161e;--surface2:#1a1e28;--surface3:#222636;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8eaf0;--text2:#a0a6b8;--muted:#5a6075;--accent:#4fffb0;--adim:rgba(79,255,176,0.1);--warn:#ffb347;--wdim:rgba(255,179,71,0.12);--danger:#ff5f6d;--ddim:rgba(255,95,109,0.12);--info:#7c83fd;--idim:rgba(124,131,253,0.12);--purple:#c084fc;--teal:#2dd4bf;--cgrid:rgba(255,255,255,0.05);--shadow:0 4px 24px rgba(0,0,0,0.4);}
@@ -214,11 +250,43 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:48px 40px;width:360px;text-align:center;box-shadow:var(--shadow);}
+.login-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#0a0f0a;margin:0 auto 18px;}
+[data-theme="light"] .login-logo{color:#fff;}
+.login-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:5px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
+.login-btn{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;}
+.login-btn:hover{border-color:var(--accent);color:var(--accent);}
+.login-error{margin-top:12px;font-size:11px;color:var(--danger);font-family:'DM Mono',monospace;min-height:16px;}
+.login-footer{margin-top:16px;font-size:11px;color:var(--muted);}
+.user-badge{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;}
+.user-badge:hover{border-color:var(--danger);color:var(--danger);}
+.user-avatar{width:22px;height:22px;border-radius:50%;display:none;object-fit:cover;}
+.user-name-txt{font-size:12px;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
 
-<!-- ══ SIDEBAR ══ -->
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">E</div>
+    <div class="login-title">Enomad Admin</div>
+    <div class="login-sub">Area riservata — accedi con il tuo account Google autorizzato</div>
+    <button class="login-btn" onclick="googleLogin()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Accedi con Google
+    </button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">🔒 Solo account autorizzati possono accedere</div>
+  </div>
+</div>
+
+<!-- ══ APP SCREEN ══ -->
+<div id="app-screen" style="display:none;width:100%;min-height:100vh;">
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-mark">E</div>
@@ -268,6 +336,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <button class="btn btn-info" onclick="exportJSON()" title="Scarica backup JSON">⬇ Export JSON</button>
       <button class="btn" onclick="syncZoho()">↻ Sync Zoho</button>
       <button class="btn btn-primary" onclick="openModal('scadenza')">+ Scadenza</button>
+      <div class="user-badge" onclick="googleLogout()" title="Clicca per uscire">
+        <img class="user-avatar" id="user-avatar" src="" alt="">
+        <span class="user-name-txt" id="user-name"></span>
+        <span style="font-size:11px;color:var(--muted)">↩</span>
+      </div>
     </div>
   </div>
 
@@ -335,13 +408,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="zoho-strip">
         <div class="zoho-l">
           <div class="zoho-ico">💼</div>
-          <div><div class="zoho-name">Zoho Invoice</div><div class="zoho-sub">Marzo 2026 — sync automatico</div></div>
+          <div><div class="zoho-name">Zoho Invoice</div><div class="zoho-sub" id="zoho-sync-sub">Caricamento dati reali...</div></div>
         </div>
-        <div class="zoho-meta">
-          <div class="zm-item"><div class="zm-lbl">Fatturato</div><div class="zm-val">€ 34.8k</div></div>
-          <div class="zm-item"><div class="zm-lbl">Incassato</div><div class="zm-val" style="color:var(--accent)">€ 28.2k</div></div>
-          <div class="zm-item"><div class="zm-lbl">In attesa</div><div class="zm-val" style="color:var(--warn)">€ 6.6k</div></div>
-          <div class="zm-item"><div class="zm-lbl">Fatture</div><div class="zm-val">12</div></div>
+        <div class="zoho-meta" id="zoho-strip-data">
+          <div class="zm-item"><div class="zm-lbl">Stato</div><div class="zm-val" style="color:var(--muted)">— sync —</div></div>
         </div>
         <button class="btn" onclick="syncZoho()">↻ Sync</button>
       </div>
@@ -385,19 +455,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <!-- ══ FINANCE ══ -->
     <div class="view" id="view-finance">
       <div class="fin-hero">
-        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato YTD</div><div class="fin-kpi-val" style="color:var(--accent)">€ 87.400</div><div class="fin-kpi-trend"><span style="color:var(--accent)">↑ +18%</span> vs 2025</div></div>
-        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl">Uscite YTD</div><div class="fin-kpi-val" style="color:var(--danger)">€ 28.600</div><div class="fin-kpi-trend"><span style="color:var(--danger)">↑ +8%</span> vs 2025</div></div>
-        <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl">Margine netto</div><div class="fin-kpi-val" style="color:var(--info)">67%</div><div class="fin-kpi-trend"><span style="color:var(--accent)">↑ +5pp</span> vs 2025</div></div>
-        <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl">Proiezione Q2</div><div class="fin-kpi-val" style="color:var(--warn)">€ 52k</div><div class="fin-kpi-trend">basata su trend Q1</div></div>
+        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato storico</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">— carico —</div><div class="fin-kpi-trend" id="fin-yoy">da Zoho Invoice</div></div>
+        <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl">Incassato</div><div class="fin-kpi-val" style="color:var(--info)" id="fin-incassato">—</div><div class="fin-kpi-trend">fatture pagate</div></div>
+        <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl">In attesa</div><div class="fin-kpi-val" style="color:var(--warn)" id="fin-attesa">—</div><div class="fin-kpi-trend">da incassare</div></div>
+        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl">% Incassato</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-margine">—</div><div class="fin-kpi-trend">su totale fatturato</div></div>
       </div>
       <div class="grid-2eq">
-        <div class="panel"><div class="panel-header"><div class="panel-title">Entrate vs Uscite 2026</div></div><div class="chart-wrap"><canvas id="chart-bar"></canvas></div></div>
-        <div class="panel"><div class="panel-header"><div class="panel-title">Fatturato per entità</div></div><div class="chart-wrap"><canvas id="chart-donut"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><div class="panel-title">Fatturato per anno (storico)</div></div><div class="chart-wrap"><canvas id="chart-bar"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><div class="panel-title">Top clienti per fatturato</div></div><div class="chart-wrap"><canvas id="chart-donut"></canvas></div></div>
       </div>
       <div class="grid-2">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Movimenti recenti</div><span class="badge bo">Zoho</span></div>
-          <table class="fin-table"><thead><tr><th>Descrizione</th><th>Entità</th><th>Data</th><th>Importo</th></tr></thead>
+          <div class="panel-header"><div class="panel-title">Fatture recenti</div><span class="badge bo">Zoho live</span></div>
+          <table class="fin-table"><thead><tr><th>Fattura / Cliente</th><th>Data</th><th>Stato</th><th>Importo</th></tr></thead>
           <tbody id="fin-tbody"></tbody></table>
         </div>
         <div class="panel">
@@ -535,6 +605,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 </div>
 
 <div class="toast" id="toast"><span>✓</span><span id="toast-msg"></span></div>
+
+</div><!-- fine app-screen -->
 
 <script>
 /* ══ DATA ══ */
@@ -677,22 +749,79 @@ function addScadenza(){
   ['f-nome','f-costo','f-note'].forEach(id=>document.getElementById(id).value='');
 }
 
-/* ══ FINANCE ══ */
+/* ══ FINANCE — dati reali da finance-data.json ══ */
+let ZOHO = null; // cache dati Zoho
+
 function renderFinance(){
-  const tb=document.getElementById('fin-tbody');
-  if(tb){tb.innerHTML='';APP.transactions.forEach(t=>{
-    tb.innerHTML+=`<tr><td>${t.desc}</td><td><span class="etag">${t.entita}</span></td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${t.data}</td>
-      <td class="${t.tipo==='in'?'amt-in':'amt-out'}">${t.tipo==='in'?'+ ':'− '}€${t.importo.toLocaleString('it-IT')}</td></tr>`;
+  if(!ZOHO){ renderFinancePlaceholder(); return; }
+
+  // ── Finance KPI hero aggiornati ──
+  const s = ZOHO.summary;
+  const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  el('fin-fatturato', '€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
+  el('fin-incassato', '€ '+Math.round(s.incassato).toLocaleString('it-IT'));
+  el('fin-attesa', '€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
+  const margine = s.fatturato > 0 ? Math.round((s.incassato/s.fatturato)*100) : 0;
+  el('fin-margine', margine+'%');
+
+  // ── Trend YoY ──
+  const anni = Object.keys(ZOHO.perAnno||{}).sort();
+  const annoAtt = new Date().getFullYear().toString();
+  const annoPre = (parseInt(annoAtt)-1).toString();
+  const fattAtt = ZOHO.perAnno[annoAtt]?.fatturato || 0;
+  const fattPre = ZOHO.perAnno[annoPre]?.fatturato || 0;
+  const yoy = fattPre > 0 ? Math.round(((fattAtt-fattPre)/fattPre)*100) : 0;
+  el('fin-yoy', (yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
+
+  // ── Tabella movimenti recenti ──
+  const tb = document.getElementById('fin-tbody');
+  if(tb && ZOHO.invoices){
+    tb.innerHTML='';
+    ZOHO.invoices.slice(0,15).forEach(i=>{
+      const stato = i.stato==='paid'?'✓ Pagata':i.stato==='partial'?'◑ Parziale':i.stato==='overdue'?'⚠ Scaduta':'→ Inviata';
+      const statoColor = i.stato==='paid'?'var(--accent)':i.stato==='overdue'?'var(--danger)':i.stato==='partial'?'var(--warn)':'var(--text2)';
+      tb.innerHTML+=`<tr>
+        <td><div style="font-weight:500">${i.numero}</div><div style="font-size:11px;color:var(--muted)">${i.cliente}</div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${i.data||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:${statoColor}">${stato}</td>
+        <td class="amt-in">€ ${Math.round(i.totale).toLocaleString('it-IT')}</td>
+      </tr>`;
+    });
+  }
+
+  // ── Cashflow per mese anno corrente ──
+  const cf = document.getElementById('cf-bars');
+  if(cf && ZOHO.perMese){
+    cf.innerHTML='';
+    const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const mesiKeys = Object.keys(ZOHO.perMese).sort();
+    const mx = Math.max(...mesiKeys.map(m=>ZOHO.perMese[m].fatturato),1);
+    mesiKeys.forEach(m=>{
+      const d=ZOHO.perMese[m];
+      const pct=Math.round(d.fatturato/mx*100);
+      const meseNum=parseInt(m.split('-')[1])-1;
+      const label=mesiNomi[meseNum]+' '+m.split('-')[0];
+      cf.innerHTML+=`<div class="cf-month">
+        <div class="cf-top"><span class="cf-lbl">${label}</span><span class="cf-val" style="color:var(--accent)">€ ${Math.round(d.fatturato).toLocaleString('it-IT')}</span></div>
+        <div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+        <div class="cf-sub"><span style="color:var(--accent)">✓ €${Math.round(d.incassato).toLocaleString('it-IT')}</span><span style="color:var(--warn)">⏳ €${Math.round(d.inAttesa).toLocaleString('it-IT')}</span></div>
+      </div>`;
+    });
+  }
+
+  // ── Tabella costi compliance ──
+  const cc=document.getElementById('cc-tbody');
+  if(cc){cc.innerHTML='';APP.scadenze.filter(s=>s.stato!=='done'&&s.costo>0).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,7).forEach(s=>{
+    cc.innerHTML+=`<tr><td>${s.nome}</td><td><span class="etag">${s.entita}</span></td>
+      <td style="color:var(--text2);font-size:12px">${ticoMap[s.tipo]||'📌'} ${s.tipo}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data.split('-').reverse().join('/')}</td>
+      <td class="amt-out">− €${s.costo.toLocaleString('it-IT')}</td></tr>`;
   });}
-  const cf=document.getElementById('cf-bars');
-  const cfData=[{mese:'Apr 2026',e:38000,u:12000},{mese:'Mag 2026',e:42000,u:9500},{mese:'Giu 2026',e:45000,u:11000},{mese:'Lug 2026',e:51000,u:13000}];
-  if(cf){cf.innerHTML='';const mx=Math.max(...cfData.map(m=>m.e));cfData.forEach(m=>{
-    const net=m.e-m.u,pct=Math.round(m.e/mx*100);
-    cf.innerHTML+=`<div class="cf-month"><div class="cf-top"><span class="cf-lbl">${m.mese}</span><span class="cf-val" style="color:var(--accent)">+€${net.toLocaleString('it-IT')}</span></div>
-      <div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-      <div class="cf-sub"><span>↑ €${m.e.toLocaleString('it-IT')}</span><span>↓ €${m.u.toLocaleString('it-IT')}</span></div></div>`;
-  });}
+
+  buildCharts();
+}
+
+function renderFinancePlaceholder(){
   const cc=document.getElementById('cc-tbody');
   if(cc){cc.innerHTML='';APP.scadenze.filter(s=>s.stato!=='done'&&s.costo>0).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,7).forEach(s=>{
     cc.innerHTML+=`<tr><td>${s.nome}</td><td><span class="etag">${s.entita}</span></td>
@@ -709,24 +838,38 @@ function getChartColors(){
     inf:dark?'#7c83fd':'#4f46e5',wrn:dark?'#ffb347':'#d97706',
     pur:dark?'#c084fc':'#9333ea',tel:dark?'#2dd4bf':'#0d9488',sur:dark?'#13161e':'#ffffff'};
 }
+
 function buildCharts(){
   const c=getChartColors();
-  const months=['Gen','Feb','Mar','Apr','Mag','Giu'];
-  const ent=[22000,28000,34800,38000,42000,45000],usc=[8200,9100,9800,12000,9500,11000];
+  if(!ZOHO) return;
+
+  // ── Grafico a barre: fatturato per anno ──
+  const anni=Object.keys(ZOHO.perAnno||{}).sort();
+  const fattAnni=anni.map(a=>Math.round(ZOHO.perAnno[a].fatturato));
+  const incAnni=anni.map(a=>Math.round(ZOHO.perAnno[a].incassato));
+  const anniLabel=anni.map(a=>a);
+
   if(chartBar)chartBar.destroy();
   const c1=document.getElementById('chart-bar');
-  if(c1)chartBar=new Chart(c1,{type:'bar',data:{labels:months,datasets:[
-    {label:'Entrate',data:ent,backgroundColor:c.acc+'33',borderColor:c.acc,borderWidth:1.5,borderRadius:5},
-    {label:'Uscite',data:usc,backgroundColor:c.dan+'28',borderColor:c.dan,borderWidth:1.5,borderRadius:5}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.txt,font:{family:'DM Sans',size:11},boxWidth:12,boxHeight:12}}},
-    scales:{x:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10}}},y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+  if(c1)chartBar=new Chart(c1,{type:'bar',data:{labels:anniLabel,datasets:[
+    {label:'Fatturato',data:fattAnni,backgroundColor:c.acc+'33',borderColor:c.acc,borderWidth:1.5,borderRadius:5},
+    {label:'Incassato',data:incAnni,backgroundColor:c.inf+'33',borderColor:c.inf,borderWidth:1.5,borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:c.txt,font:{family:'DM Sans',size:11},boxWidth:12,boxHeight:12}}},
+    scales:{x:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10}}},
+      y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+
+  // ── Donut: top clienti ──
   if(chartDonut)chartDonut.destroy();
   const c2=document.getElementById('chart-donut');
-  if(c2)chartDonut=new Chart(c2,{type:'doughnut',data:{
-    labels:['Enomad UAE','TaxPilot','Numa Bali','Enomad Swiss','AFFLUMINA','Sana NUMA'],
-    datasets:[{data:[38000,22000,14000,8400,3200,1800],backgroundColor:[c.acc+'99',c.inf+'99',c.wrn+'99',c.pur+'99',c.tel+'99',c.dan+'88'],borderColor:c.sur,borderWidth:3,hoverOffset:6}]
+  const top5=( ZOHO.topClienti||[]).slice(0,6);
+  const colors=[c.acc,c.inf,c.wrn,c.pur,c.tel,c.dan];
+  if(c2&&top5.length>0)chartDonut=new Chart(c2,{type:'doughnut',data:{
+    labels:top5.map(x=>x.nome.length>20?x.nome.substring(0,20)+'...':x.nome),
+    datasets:[{data:top5.map(x=>Math.round(x.fatturato)),
+      backgroundColor:colors.map(col=>col+'99'),borderColor:c.sur,borderWidth:3,hoverOffset:6}]
   },options:{responsive:true,maintainAspectRatio:false,cutout:'64%',
-    plugins:{legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:11},boxWidth:10,boxHeight:10,padding:12}}}}});
+    plugins:{legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10,padding:10}}}}});
 }
 
 /* ══ JSON EXPORT ══ */
@@ -867,13 +1010,92 @@ function openModal(type){
 }
 function closeModal(type){document.getElementById('modal-'+type).classList.remove('open');}
 
+/* ══ ZOHO SYNC DA GITHUB ══ */
+const GITHUB_USER = 'enomadtax-admin-ch';
+const GITHUB_REPO = 'enomad-app';
+const FINANCE_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/finance-data.json`;
+
+async function syncZoho(){
+  showToast('↻ Carico dati Zoho da GitHub...');
+  try {
+    const res = await fetch(FINANCE_JSON_URL + '?t=' + Date.now());
+    if(!res.ok) throw new Error('File non trovato');
+    const data = await res.json();
+    ZOHO = data;
+    applyZohoData(data);
+    APP.meta.lastZohoSync = data.lastSync;
+    saveData();
+    showToast('✓ Zoho sincronizzato — dati reali caricati');
+    const lbl = document.getElementById('db-status-label');
+    if(lbl) lbl.textContent = 'Zoho ✓';
+  } catch(e) {
+    showToast('⚠ finance-data.json non trovato — lancia il workflow su GitHub Actions');
+  }
+}
+
+function applyZohoData(z){
+  if(!z || !z.summary) return;
+  const s = z.summary;
+  const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+
+  // ── HERO KPI dashboard ──
+  const fatK = '€ '+(s.fatturato/1000).toFixed(1)+'k';
+  el('h-fatturato', fatK);
+  el('h-critiche', APP.scadenze.filter(x=>x.stato!=='done'&&daysTo(x.data)<=7).length);
+
+  // ── ZOHO STRIP ──
+  const strip = document.getElementById('zoho-strip-data');
+  if(strip){
+    strip.innerHTML = `
+      <div class="zm-item"><div class="zm-lbl">Fatturato</div><div class="zm-val">€ ${Math.round(s.fatturato).toLocaleString('it-IT')}</div></div>
+      <div class="zm-item"><div class="zm-lbl">Incassato</div><div class="zm-val" style="color:var(--accent)">€ ${Math.round(s.incassato).toLocaleString('it-IT')}</div></div>
+      <div class="zm-item"><div class="zm-lbl">In attesa</div><div class="zm-val" style="color:var(--warn)">€ ${Math.round(s.inAttesa).toLocaleString('it-IT')}</div></div>
+      <div class="zm-item"><div class="zm-lbl">Fatture</div><div class="zm-val">${s.numFatture}</div></div>
+    `;
+  }
+
+  // ── KPI secondari ──
+  const annoAtt = new Date().getFullYear().toString();
+  const meseAtt = new Date().toISOString().substring(0,7);
+  const datiMese = z.perMese?.[meseAtt];
+  if(datiMese){
+    el('kpi-incassato-mese', '€ '+Math.round(datiMese.incassato).toLocaleString('it-IT'));
+    el('kpi-attesa-mese', '€ '+Math.round(datiMese.inAttesa).toLocaleString('it-IT'));
+  }
+
+  // ── Finance KPI hero ──
+  el('fin-fatturato', '€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
+  el('fin-incassato', '€ '+Math.round(s.incassato).toLocaleString('it-IT'));
+  el('fin-attesa', '€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
+  const margine = s.fatturato>0?Math.round((s.incassato/s.fatturato)*100):0;
+  el('fin-margine', margine+'%');
+
+  // ── Anno corrente breakdown ──
+  const datiAnno = z.perAnno?.[annoAtt];
+  if(datiAnno){
+    const annoPre=(parseInt(annoAtt)-1).toString();
+    const datiPre=z.perAnno?.[annoPre];
+    const yoy=datiPre&&datiPre.fatturato>0?Math.round(((datiAnno.fatturato-datiPre.fatturato)/datiPre.fatturato)*100):0;
+    el('fin-yoy', (yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
+  }
+
+  // ── Ultimo sync ──
+  const syncTime = z.lastSync ? new Date(z.lastSync).toLocaleString('it-IT') : '—';
+  const subEl = document.getElementById('zoho-sync-sub');
+  if(subEl) subEl.textContent = 'Ultimo sync: '+syncTime;
+
+  // ── Aggiorna Finance se aperta ──
+  renderFinance();
+}
+
 /* ══ MISC ══ */
-function syncZoho(){showToast('↻ Sync Zoho Invoice completato');}
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
 /* ══ INIT ══ */
 if(APP.supabase.connected)updateDBStatus(true);
 renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
+// Carica dati Zoho reali automaticamente all'apertura
+syncZoho();
 </script>
 </body>
 </html>
