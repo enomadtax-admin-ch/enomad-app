@@ -13,7 +13,7 @@ const FB={apiKey:"AIzaSyAKQ9aAPCRFXZ_9bbknilnsAIfOA1s-iig",authDomain:"enomad-ap
 const auth=getAuth(initializeApp(FB));
 const provider=new GoogleAuthProvider();
 // ── Aggiungi qui le tue email autorizzate ──
-const ALLOWED=['METTI_QUI_LA_TUA_EMAIL@gmail.com'];
+const ALLOWED=['enomadtax@gmail.com'];
 window.googleLogin=async()=>{
   try{
     const r=await signInWithPopup(auth,provider);
