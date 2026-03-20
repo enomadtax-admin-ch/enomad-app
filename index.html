@@ -11,34 +11,46 @@ import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 const FB={apiKey:"AIzaSyAKQ9aAPCRFXZ_9bbknilnsAIfOA1s-iig",authDomain:"enomad-app.firebaseapp.com",projectId:"enomad-app",storageBucket:"enomad-app.firebasestorage.app",messagingSenderId:"444471065529",appId:"1:444471065529:web:1c7ab6bd6efd85f9295468"};
 const auth=getAuth(initializeApp(FB));
-const provider=new GoogleAuthProvider(); provider.setCustomParameters({prompt:'select_account',login_hint:'enomadtax@gmail.com'});;
-// ── Aggiungi qui le tue email autorizzate ──
-const ALLOWED=['enomadtax@gmail.com'];
+const provider=new GoogleAuthProvider();
+// ── Email unica autorizzata ──
+const ALLOWED_EMAIL='enomadtax@gmail.com';
+provider.setCustomParameters({login_hint:ALLOWED_EMAIL,prompt:'select_account'});
+
+function isAllowed(user){ return user && user.email && user.email.toLowerCase()===ALLOWED_EMAIL.toLowerCase(); }
+
 window.googleLogin=async()=>{
+  const errEl=document.getElementById('login-error');
   try{
     const r=await signInWithPopup(auth,provider);
-    if(!ALLOWED.includes(r.user.email)){
+    if(!isAllowed(r.user)){
       await signOut(auth);
-      const e=document.getElementById('login-error');
-      if(e)e.textContent='⚠ Email non autorizzata: '+r.user.email;
+      if(errEl)errEl.textContent='⛔ Accesso negato: '+r.user.email+' non è autorizzata.';
       return;
     }
   }catch(e){
-    const el=document.getElementById('login-error');
-    if(el)el.textContent='⚠ Errore: '+e.message;
+    if(e.code!=='auth/cancelled-popup-request'&&e.code!=='auth/popup-closed-by-user'){
+      if(errEl)errEl.textContent='⚠ Errore: '+e.message;
+    }
   }
 };
-window.googleLogout=async()=>{await signOut(auth);};
+window.googleLogout=async()=>{
+  await signOut(auth);
+  showToast('✓ Logout effettuato');
+};
 onAuthStateChanged(auth,user=>{
   const ls=document.getElementById('login-screen');
   const as=document.getElementById('app-screen');
   if(!ls||!as)return;
-  if(user&&ALLOWED.includes(user.email)){
-    ls.style.display='none';as.style.display='flex';
+  if(isAllowed(user)){
+    ls.style.display='none';
+    as.style.display='flex';
     const n=document.getElementById('user-name');if(n)n.textContent=user.displayName||user.email;
     const av=document.getElementById('user-avatar');if(av&&user.photoURL){av.src=user.photoURL;av.style.display='block';}
   }else{
-    ls.style.display='flex';as.style.display='none';
+    // Forza logout se utente non autorizzato è ancora in sessione
+    if(user)signOut(auth);
+    ls.style.display='flex';
+    as.style.display='none';
   }
 });
 </script>
