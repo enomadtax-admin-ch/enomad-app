@@ -11,7 +11,7 @@ import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 const FB={apiKey:"AIzaSyAKQ9aAPCRFXZ_9bbknilnsAIfOA1s-iig",authDomain:"enomad-app.firebaseapp.com",projectId:"enomad-app",storageBucket:"enomad-app.firebasestorage.app",messagingSenderId:"444471065529",appId:"1:444471065529:web:1c7ab6bd6efd85f9295468"};
 const auth=getAuth(initializeApp(FB));
-const provider=new GoogleAuthProvider();
+const provider=new GoogleAuthProvider(); provider.setCustomParameters({prompt:'select_account',login_hint:'enomadtax@gmail.com'});;
 // ── Aggiungi qui le tue email autorizzate ──
 const ALLOWED=['enomadtax@gmail.com'];
 window.googleLogin=async()=>{
