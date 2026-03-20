@@ -18,19 +18,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Sync Zoho + Invoice Ninja
+      - name: Sync Zoho Invoice
         env:
           ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
           ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
           ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
           ZOHO_ORG_ID: ${{ secrets.ZOHO_ORG_ID }}
-          NINJA_API_TOKEN: ${{ secrets.NINJA_API_TOKEN }}
         run: |
           node -e "
           const https = require('https');
           const fs = require('fs');
 
-          // ── UTILITY: richiesta HTTPS ──
           function request(options, postData) {
             return new Promise((resolve, reject) => {
               const req = https.request(options, res => {
@@ -47,7 +45,6 @@ jobs:
             });
           }
 
-          // ── UTILITY: scarica tutte le pagine ──
           async function fetchAllPages(hostname, basePath, listKey, headers, pageSize = 200) {
             let all = [];
             let page = 1;
@@ -65,21 +62,9 @@ jobs:
           }
 
           async function main() {
-            const result = {
-              lastSync: new Date().toISOString(),
-              sources: {},
-              summary: {},
-              invoices: [],
-              payments: [],
-              contacts: []
-            };
 
-            // ════════════════════════════════
-            // PARTE 1 — ZOHO INVOICE (EU/IT)
-            // ════════════════════════════════
-            console.log('\\n═══ ZOHO INVOICE ═══');
-
-            // 1a. Ottieni access token
+            // ── Step 1: Ottieni access token ──
+            console.log('Ottengo access token Zoho...');
             const tokenParams = new URLSearchParams({
               client_id: process.env.ZOHO_CLIENT_ID,
               client_secret: process.env.ZOHO_CLIENT_SECRET,
@@ -98,251 +83,157 @@ jobs:
             }, tokenParams);
 
             if (!tokenRes.access_token) {
-              console.error('Errore token Zoho:', JSON.stringify(tokenRes));
+              console.error('Errore token:', JSON.stringify(tokenRes));
               process.exit(1);
             }
 
-            const zohoHeaders = {
+            const headers = {
               'Authorization': 'Zoho-oauthtoken ' + tokenRes.access_token,
               'X-com-zoho-invoice-organizationid': process.env.ZOHO_ORG_ID
             };
 
-            // 1b. Scarica tutto lo storico Zoho
-            console.log('Scarico fatture Zoho (storico completo)...');
-            const zohoInvoices = await fetchAllPages(
+            // ── Step 2: Scarica tutto lo storico ──
+            console.log('Scarico fatture (storico completo)...');
+            const allInvoices = await fetchAllPages(
               'www.zohoapis.eu',
               '/invoice/v3/invoices?sort_column=date&sort_order=D',
               'invoices',
-              zohoHeaders
+              headers
             );
 
-            console.log('Scarico pagamenti Zoho...');
-            const zohoPayments = await fetchAllPages(
-              'www.zohoapis.eu',
-              '/invoice/v3/customerpayments?sort_column=date&sort_order=D',
-              'customerpayments',
-              zohoHeaders
-            );
-
-            console.log('Scarico clienti Zoho...');
-            const zohoContacts = await fetchAllPages(
+            console.log('Scarico clienti...');
+            const allContacts = await fetchAllPages(
               'www.zohoapis.eu',
               '/invoice/v3/contacts',
               'contacts',
-              zohoHeaders
+              headers
             );
 
-            // 1c. Calcola totali Zoho
-            const zohoFatturato = zohoInvoices
-              .filter(i => i.status !== 'void')
+            // ── Step 3: Filtra — escludi draft e void ──
+            const STATI_VALIDI = ['sent', 'paid', 'partial', 'overdue', 'viewed'];
+            const fatture = allInvoices.filter(i => STATI_VALIDI.includes(i.status));
+            const escluse = allInvoices.length - fatture.length;
+            console.log('Fatture totali: ' + allInvoices.length);
+            console.log('Fatture valide (escluso draft/void): ' + fatture.length);
+            console.log('Escluse: ' + escluse);
+
+            // ── Step 4: Calcola totali ──
+            const fatturato = fatture.reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
+            const incassato = fatture
+              .filter(i => i.status === 'paid')
               .reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
-            const zohoIncassato = zohoPayments
-              .reduce((a, p) => a + (parseFloat(p.amount) || 0), 0);
+            const parziale = fatture
+              .filter(i => i.status === 'partial')
+              .reduce((a, i) => a + ((parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0)), 0);
+            const inAttesa = fatture
+              .filter(i => ['sent','overdue','viewed','partial'].includes(i.status))
+              .reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
 
-            result.sources.zoho = {
-              fatturato: Math.round(zohoFatturato * 100) / 100,
-              incassato: Math.round(zohoIncassato * 100) / 100,
-              inAttesa: Math.round(Math.max(0, zohoFatturato - zohoIncassato) * 100) / 100,
-              numFatture: zohoInvoices.length,
-              numClienti: zohoContacts.length,
-              valuta: 'EUR'
-            };
+            // ── Step 5: Statistiche per anno ──
+            const perAnno = {};
+            fatture.forEach(i => {
+              const anno = i.date ? i.date.substring(0, 4) : 'sconosciuto';
+              if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+              perAnno[anno].fatturato += parseFloat(i.total) || 0;
+              perAnno[anno].count++;
+              if (i.status === 'paid') perAnno[anno].incassato += parseFloat(i.total) || 0;
+              if (['sent','overdue','viewed','partial'].includes(i.status)) {
+                perAnno[anno].inAttesa += parseFloat(i.balance) || 0;
+              }
+            });
 
-            console.log('Zoho: ' + zohoInvoices.length + ' fatture, EUR ' + Math.round(zohoFatturato));
+            // Arrotonda i totali per anno
+            Object.keys(perAnno).forEach(a => {
+              perAnno[a].fatturato = Math.round(perAnno[a].fatturato * 100) / 100;
+              perAnno[a].incassato = Math.round(perAnno[a].incassato * 100) / 100;
+              perAnno[a].inAttesa = Math.round(perAnno[a].inAttesa * 100) / 100;
+            });
 
-            // 1d. Aggiungi al result
-            zohoInvoices.forEach(i => {
-              result.invoices.push({
-                id: 'zoho_' + i.invoice_id,
-                fonte: 'Zoho Invoice',
-                entita: 'EU/IT',
+            // ── Step 6: Statistiche per mese (anno corrente) ──
+            const annoCorrente = new Date().getFullYear().toString();
+            const perMese = {};
+            fatture
+              .filter(i => i.date && i.date.startsWith(annoCorrente))
+              .forEach(i => {
+                const mese = i.date.substring(0, 7); // es. "2026-03"
+                if (!perMese[mese]) perMese[mese] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+                perMese[mese].fatturato += parseFloat(i.total) || 0;
+                perMese[mese].count++;
+                if (i.status === 'paid') perMese[mese].incassato += parseFloat(i.total) || 0;
+                if (['sent','overdue','viewed','partial'].includes(i.status)) {
+                  perMese[mese].inAttesa += parseFloat(i.balance) || 0;
+                }
+              });
+
+            Object.keys(perMese).forEach(m => {
+              perMese[m].fatturato = Math.round(perMese[m].fatturato * 100) / 100;
+              perMese[m].incassato = Math.round(perMese[m].incassato * 100) / 100;
+              perMese[m].inAttesa = Math.round(perMese[m].inAttesa * 100) / 100;
+            });
+
+            // ── Step 7: Top clienti ──
+            const clientiMap = {};
+            fatture.forEach(i => {
+              const nome = i.customer_name || 'Sconosciuto';
+              if (!clientiMap[nome]) clientiMap[nome] = { fatturato: 0, count: 0 };
+              clientiMap[nome].fatturato += parseFloat(i.total) || 0;
+              clientiMap[nome].count++;
+            });
+            const topClienti = Object.entries(clientiMap)
+              .map(([nome, d]) => ({ nome, fatturato: Math.round(d.fatturato * 100) / 100, count: d.count }))
+              .sort((a, b) => b.fatturato - a.fatturato)
+              .slice(0, 20);
+
+            // ── Step 8: Costruisci risultato finale ──
+            const result = {
+              lastSync: new Date().toISOString(),
+              summary: {
+                fatturato: Math.round(fatturato * 100) / 100,
+                incassato: Math.round((incassato + parziale) * 100) / 100,
+                inAttesa: Math.round(inAttesa * 100) / 100,
+                numFatture: fatture.length,
+                numClienti: allContacts.length,
+                valuta: 'EUR',
+                annoCorrente
+              },
+              perAnno,
+              perMese,
+              topClienti,
+              invoices: fatture.slice(0, 50).map(i => ({
+                id: i.invoice_id,
                 numero: i.invoice_number,
                 cliente: i.customer_name,
                 data: i.date,
                 totale: parseFloat(i.total) || 0,
-                incassato: parseFloat(i.balance) === 0 ? parseFloat(i.total) : (parseFloat(i.total) - parseFloat(i.balance || 0)),
+                balance: parseFloat(i.balance) || 0,
                 stato: i.status,
                 valuta: i.currency_code || 'EUR',
                 scadenza: i.due_date || ''
-              });
-            });
-
-            zohoPayments.forEach(p => {
-              result.payments.push({
-                id: 'zoho_' + p.payment_id,
-                fonte: 'Zoho Invoice',
-                entita: 'EU/IT',
-                cliente: p.customer_name,
-                data: p.date,
-                importo: parseFloat(p.amount) || 0,
-                metodo: p.payment_mode || '',
-                valuta: p.currency_code || 'EUR'
-              });
-            });
-
-            zohoContacts.forEach(c => {
-              result.contacts.push({
-                id: 'zoho_' + c.contact_id,
-                fonte: 'Zoho',
+              })),
+              contacts: allContacts.slice(0, 50).map(c => ({
+                id: c.contact_id,
                 nome: c.contact_name,
                 email: c.email || '',
                 tipo: c.contact_type || ''
-              });
-            });
-
-            // ════════════════════════════════
-            // PARTE 2 — INVOICE NINJA (UAE)
-            // ════════════════════════════════
-            console.log('\\n═══ INVOICE NINJA ═══');
-
-            const ninjaHeaders = {
-              'X-Api-Token': process.env.NINJA_API_TOKEN,
-              'X-Requested-With': 'XMLHttpRequest',
-              'Content-Type': 'application/json'
+              }))
             };
 
-            console.log('Scarico fatture Invoice Ninja (storico completo)...');
-            const ninjaInvoices = await fetchAllPages(
-              'invoicing.co',
-              '/api/v1/invoices?sort=date|desc&include=client',
-              'data',
-              ninjaHeaders,
-              100
-            );
-
-            console.log('Scarico pagamenti Invoice Ninja...');
-            const ninjaPayments = await fetchAllPages(
-              'invoicing.co',
-              '/api/v1/payments?sort=date|desc',
-              'data',
-              ninjaHeaders,
-              100
-            );
-
-            console.log('Scarico clienti Invoice Ninja...');
-            const ninjaClients = await fetchAllPages(
-              'invoicing.co',
-              '/api/v1/clients',
-              'data',
-              ninjaHeaders,
-              100
-            );
-
-            // 2b. Calcola totali Invoice Ninja
-            const ninjaFatturato = ninjaInvoices
-              .filter(i => i.status_id !== '5') // escludi void
-              .reduce((a, i) => a + (parseFloat(i.amount) || 0), 0);
-            const ninjaIncassato = ninjaPayments
-              .filter(p => !p.is_deleted)
-              .reduce((a, p) => a + (parseFloat(p.amount) || 0), 0);
-
-            result.sources.ninja = {
-              fatturato: Math.round(ninjaFatturato * 100) / 100,
-              incassato: Math.round(ninjaIncassato * 100) / 100,
-              inAttesa: Math.round(Math.max(0, ninjaFatturato - ninjaIncassato) * 100) / 100,
-              numFatture: ninjaInvoices.length,
-              numClienti: ninjaClients.length,
-              valuta: 'AED'
-            };
-
-            console.log('Invoice Ninja: ' + ninjaInvoices.length + ' fatture, AED ' + Math.round(ninjaFatturato));
-
-            // 2c. Aggiungi al result
-            ninjaInvoices.forEach(i => {
-              result.invoices.push({
-                id: 'ninja_' + i.id,
-                fonte: 'Invoice Ninja',
-                entita: 'UAE',
-                numero: i.number || '',
-                cliente: i.client ? (i.client.name || '') : '',
-                data: i.date || '',
-                totale: parseFloat(i.amount) || 0,
-                incassato: parseFloat(i.paid_to_date) || 0,
-                stato: i.status_id === '2' ? 'sent' : i.status_id === '3' ? 'partial' : i.status_id === '4' ? 'paid' : 'draft',
-                valuta: 'AED',
-                scadenza: i.due_date || ''
-              });
-            });
-
-            ninjaPayments.forEach(p => {
-              result.payments.push({
-                id: 'ninja_' + p.id,
-                fonte: 'Invoice Ninja',
-                entita: 'UAE',
-                cliente: '',
-                data: p.date || '',
-                importo: parseFloat(p.amount) || 0,
-                metodo: p.type_id || '',
-                valuta: 'AED'
-              });
-            });
-
-            ninjaClients.forEach(c => {
-              result.contacts.push({
-                id: 'ninja_' + c.id,
-                fonte: 'Invoice Ninja',
-                nome: c.name || '',
-                email: c.contacts?.[0]?.email || '',
-                tipo: 'client'
-              });
-            });
-
-            // ════════════════════════════════
-            // PARTE 3 — SUMMARY CONSOLIDATO
-            // ════════════════════════════════
-            result.summary = {
-              // Zoho in EUR
-              zoho_fatturato_eur: result.sources.zoho.fatturato,
-              zoho_incassato_eur: result.sources.zoho.incassato,
-              zoho_inAttesa_eur: result.sources.zoho.inAttesa,
-              zoho_fatture: result.sources.zoho.numFatture,
-              // Invoice Ninja in AED
-              ninja_fatturato_aed: result.sources.ninja.fatturato,
-              ninja_incassato_aed: result.sources.ninja.incassato,
-              ninja_inAttesa_aed: result.sources.ninja.inAttesa,
-              ninja_fatture: result.sources.ninja.numFatture,
-              // Totali
-              totale_fatture: zohoInvoices.length + ninjaInvoices.length,
-              totale_clienti: result.contacts.length,
-              // Anno corrente
-              anno_corrente: new Date().getFullYear()
-            };
-
-            // ── Statistiche per anno (Zoho EUR) ──
-            const perAnno = {};
-            result.invoices
-              .filter(i => i.fonte === 'Zoho Invoice' && i.stato !== 'void')
-              .forEach(i => {
-                const anno = i.data ? i.data.substring(0, 4) : 'sconosciuto';
-                if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, count: 0 };
-                perAnno[anno].fatturato += i.totale;
-                perAnno[anno].incassato += i.incassato;
-                perAnno[anno].count++;
-              });
-            result.perAnno_zoho = perAnno;
-
-            const perAnnoNinja = {};
-            result.invoices
-              .filter(i => i.fonte === 'Invoice Ninja')
-              .forEach(i => {
-                const anno = i.data ? i.data.substring(0, 4) : 'sconosciuto';
-                if (!perAnnoNinja[anno]) perAnnoNinja[anno] = { fatturato: 0, incassato: 0, count: 0 };
-                perAnnoNinja[anno].fatturato += i.totale;
-                perAnnoNinja[anno].incassato += i.incassato;
-                perAnnoNinja[anno].count++;
-              });
-            result.perAnno_ninja = perAnnoNinja;
-
-            // ── Salva file ──
+            // ── Step 9: Salva ──
             fs.writeFileSync('finance-data.json', JSON.stringify(result, null, 2));
 
-            console.log('\\n══════════════════════════');
+            console.log('');
+            console.log('══════════════════════════════════════');
             console.log('✓ finance-data.json salvato');
-            console.log('  Zoho:  ' + result.sources.zoho.numFatture + ' fatture  EUR ' + result.sources.zoho.fatturato.toLocaleString());
-            console.log('  Ninja: ' + result.sources.ninja.numFatture + ' fatture  AED ' + result.sources.ninja.fatturato.toLocaleString());
-            console.log('  Totale clienti: ' + result.contacts.length);
-            console.log('  Anni Zoho: ' + Object.keys(perAnno).sort().join(', '));
-            console.log('  Anni Ninja: ' + Object.keys(perAnnoNinja).sort().join(', '));
+            console.log('  Fatturato reale: EUR ' + result.summary.fatturato.toLocaleString());
+            console.log('  Incassato:       EUR ' + result.summary.incassato.toLocaleString());
+            console.log('  In attesa:       EUR ' + result.summary.inAttesa.toLocaleString());
+            console.log('  Fatture valide:  ' + result.summary.numFatture);
+            console.log('  Clienti:         ' + result.summary.numClienti);
+            console.log('');
+            console.log('  Breakdown per anno:');
+            Object.keys(perAnno).sort().forEach(a => {
+              console.log('  ' + a + ': EUR ' + perAnno[a].fatturato.toLocaleString() + ' (' + perAnno[a].count + ' fatture)');
+            });
           }
 
           main().catch(e => { console.error('ERRORE:', e); process.exit(1); });
@@ -353,5 +244,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "Finance Sync Bot"
           git add finance-data.json
-          git diff --staged --quiet || git commit -m "💰 Sync finance $(date '+%Y-%m-%d %H:%M') — Zoho+Ninja"
+          git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — dati puliti"
           git push
