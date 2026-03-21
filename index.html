@@ -685,6 +685,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
       <div class="frow">
         <div class="fg"><label class="fl" data-t="data">Data scadenza</label><input type="date" class="fi" id="f-data"></div>
+        <div class="fg"><label class="fl">Ricorrenza</label>
+          <select class="fsel" id="f-ricorrenza">
+            <option value="once">Una tantum</option>
+            <option value="annual">Annuale — si rinnova automaticamente</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
         <div class="fg"><label class="fl" data-t="reminderTelegram">Reminder Telegram</label>
           <select class="fsel" id="f-reminder">
             <option value="7">7 giorni prima</option>
@@ -693,13 +701,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <option value="7,15,30">7 + 15 + 30 giorni</option>
           </select>
         </div>
+        <div class="fg"><label class="fl" data-t="prezzo">Prezzo cliente (€)</label><input type="number" class="fi" id="f-prezzo" placeholder="0"></div>
       </div>
       <div class="frow">
-        <div class="fg"><label class="fl" data-t="prezzo">Prezzo cliente (€)</label><input type="number" class="fi" id="f-prezzo" placeholder="0"></div>
         <div class="fg"><label class="fl" data-t="costoMio">Costo mio (€)</label><input type="number" class="fi" id="f-costo" placeholder="0"></div>
+        <div class="fg"><label class="fl" data-t="note">Note (facoltativo)</label><input type="text" class="fi" id="f-note" placeholder="Dettagli aggiuntivi..."></div>
       </div>
-      <div class="fg"><label class="fl" data-t="note">Note aggiuntive (facoltativo)</label><input type="text" class="fi" id="f-note" placeholder="Dettagli aggiuntivi..."></div>
-      <div class="tg-hint">✈ Alert Telegram programmato nei giorni selezionati.</div>
+      <div class="tg-hint" id="ricorrenza-hint">✈ Alert Telegram programmato. Scadenza una tantum.</div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal('scadenza')" data-t="annulla">Annulla</button><button class="btn btn-primary" onclick="addScadenza()" data-t="salva">Salva</button></div>
   </div>
@@ -912,7 +920,8 @@ async function loadScadenzeFromDB(){
         id:r.id,nome:r.nome,entita:r.entita,tipo:r.tipo,data:r.data,
         stato:r.stato,costo:parseFloat(r.costo)||0,
         prezzo:parseFloat(r.prezzo)||0,
-        note:r.note||'',reminder:r.reminder||'15'
+        note:r.note||'',reminder:r.reminder||'15',
+        ricorrenza:r.ricorrenza||'once'
       }));
       saveLocalData();
     }
@@ -947,7 +956,8 @@ async function saveScadenzaToDB(s){
   if(!currentUser)return null;
   const isUUID=s.id&&typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
   const row={user_id:currentUser.id,nome:s.nome,entita:s.entita,tipo:s.tipo,data:s.data,
-    stato:s.stato,costo:s.costo||0,prezzo:s.prezzo||0,note:s.note||'',reminder:s.reminder||'15'};
+    stato:s.stato,costo:s.costo||0,prezzo:s.prezzo||0,note:s.note||'',
+    reminder:s.reminder||'15',ricorrenza:s.ricorrenza||'once'};
   if(isUUID){
     await supa.from('scadenze').upsert({id:s.id,...row});
     return s;
@@ -974,10 +984,19 @@ function renderEntita(){
     return;
   }
   APP.entita.forEach((e,i)=>{
-    el.innerHTML+=`<div class="tag-item">
-      <span>${e.nome}</span>
-      <span style="font-size:10px;color:var(--muted);margin-left:4px">${e.paese||''} ${e.valuta||''}</span>
-      <button class="tag-del" onclick="deleteEntita(${i})" title="Elimina">✕</button>
+    const nScad=APP.scadenze.filter(s=>s.entita===e.nome&&s.stato!=='done').length;
+    el.innerHTML+=`<div class="tag-item" style="flex-direction:column;align-items:flex-start;gap:8px;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div>
+          <span style="font-weight:500">${e.nome}</span>
+          <span style="font-size:10px;color:var(--muted);margin-left:6px">${e.paese||''} ${e.valuta||''}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${nScad>0?`<span style="font-size:10px;color:var(--warn);background:var(--wdim);padding:2px 7px;border-radius:5px">${nScad} scadenze</span>`:''}
+          <button class="tag-del" onclick="deleteEntita(${i})" title="Elimina entità">✕</button>
+        </div>
+      </div>
+      ${nScad>0?`<button onclick="deleteScadenzeByEntita('${e.nome}')" style="background:var(--ddim);border:1px solid var(--danger);border-radius:6px;padding:4px 10px;color:var(--danger);cursor:pointer;font-size:11px;width:100%">🗑 Elimina tutte le scadenze di ${e.nome}</button>`:''}
     </div>`;
   });
   // Aggiorna select nel modal scadenza
@@ -1109,7 +1128,7 @@ function renderTable(filter,tbid){
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.nome}</div><div class="etag">${s.entita}</div></td>
+    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.nome}${s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:5px">♻ annuale</span>':''}</div><div class="etag">${s.entita}</div></td>
       <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
@@ -1159,13 +1178,32 @@ function filterScad(f,el,tbid){
 async function markDone(id){
   if(!confirm('Segnare come completata questa scadenza?'))return;
   const s=APP.scadenze.find(x=>x.id===id);
-  if(s){
-    s.stato='done';
+  if(!s)return;
+  s.stato='done';
+  saveLocalData();
+  await updateScadenzaStatoDB(id,'done');
+  // Se ricorrente annuale — crea automaticamente la prossima
+  if(s.ricorrenza==='annual'){
+    const dataAttuale=new Date(s.data);
+    dataAttuale.setFullYear(dataAttuale.getFullYear()+1);
+    const nuovaData=dataAttuale.toISOString().split('T')[0];
+    const nuova={
+      id:Date.now(),nome:s.nome,entita:s.entita,tipo:s.tipo,
+      data:nuovaData,stato:'pending',
+      costo:s.costo||0,prezzo:s.prezzo||0,
+      note:s.note||'',reminder:s.reminder||'15',
+      ricorrenza:'annual'
+    };
+    const saved=await saveScadenzaToDB(nuova);
+    if(saved)nuova.id=saved.id;
+    APP.scadenze.push(nuova);
+    APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
     saveLocalData();
-    await updateScadenzaStatoDB(id,'done');
-    renderAll();
+    showToast('✓ Completata + prossima scadenza annuale creata per '+nuovaData.split('-').reverse().join('/'));
+  }else{
     showToast('✓ Completata: '+s.nome);
   }
+  renderAll();
 }
 
 async function markUndone(id){
@@ -1191,20 +1229,35 @@ async function deleteScadenza(id){
   showToast('🗑 Scadenza eliminata');
 }
 
+async function deleteScadenzeByEntita(nomeEntita){
+  if(!confirm('Eliminare TUTTE le scadenze di "'+nomeEntita+'"?\nQuesta azione non è reversibile.'))return;
+  const ids=APP.scadenze.filter(s=>s.entita===nomeEntita).map(s=>s.id);
+  // Elimina da Supabase
+  if(currentUser){
+    for(const id of ids){
+      const isUUID=typeof id==='string'&&id.length===36&&id.includes('-');
+      if(isUUID)await supa.from('scadenze').delete().eq('id',id).eq('user_id',currentUser.id);
+    }
+  }
+  APP.scadenze=APP.scadenze.filter(s=>s.entita!==nomeEntita);
+  saveLocalData();
+  renderAll();
+  showToast('🗑 Eliminate '+ids.length+' scadenze di '+nomeEntita);
+}
+
 async function addScadenza(){
   const entita=document.getElementById('f-entita').value;
   const tipo=document.getElementById('f-tipo').value;
   const data=document.getElementById('f-data').value;
   if(!entita||!tipo||!data){showToast('⚠ Compila entità, tipo e data');return;}
   const note=document.getElementById('f-note').value||'';
-  // Il nome è composto da tipo + note se presente
+  const ricorrenza=document.getElementById('f-ricorrenza').value||'once';
   const nome=note?tipo+' — '+note:tipo;
   const nuova={
-    id:Date.now(),nome,
-    entita,tipo,data,stato:'pending',
+    id:Date.now(),nome,entita,tipo,data,stato:'pending',
     costo:parseFloat(document.getElementById('f-costo').value)||0,
     prezzo:parseFloat(document.getElementById('f-prezzo').value)||0,
-    note,
+    note,ricorrenza,
     reminder:document.getElementById('f-reminder').value||'15'
   };
   const saved=await saveScadenzaToDB(nuova);
@@ -1214,7 +1267,8 @@ async function addScadenza(){
   saveLocalData();
   closeModal('scadenza');
   renderAll();
-  showToast('✓ Scadenza salvata su Supabase');
+  const msg=ricorrenza==='annual'?'✓ Scadenza annuale salvata — si rinnova automaticamente':'✓ Scadenza salvata su Supabase';
+  showToast(msg);
   ['f-costo','f-prezzo','f-note'].forEach(id=>document.getElementById(id).value='');
 }
 
