@@ -657,7 +657,53 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <!-- ══ OTHER ══ -->
     <div class="view" id="view-entita"><div class="panel" style="padding:48px;text-align:center;color:var(--muted)"><div style="font-size:28px;margin-bottom:10px">◻</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px">Entità</div><div style="font-size:13px">Modulo in sviluppo — v2</div></div></div>
     <div class="view" id="view-zohoview"><div class="panel" style="padding:48px;text-align:center;color:var(--muted)"><div style="font-size:28px;margin-bottom:10px">⊡</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px">Zoho Invoice</div><div style="font-size:13px">Integrazione diretta — v2</div></div></div>
-    <div class="view" id="view-settings"><div class="panel" style="padding:48px;text-align:center;color:var(--muted)"><div style="font-size:28px;margin-bottom:10px">⊙</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px">Impostazioni</div><div style="font-size:13px">Configurazione sistema — v2</div></div></div>
+    <div class="view" id="view-settings">
+      <div class="grid-2eq">
+        <!-- 2FA SETUP -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">🔐 Sicurezza — 2FA</div></div>
+          <div style="padding:18px 20px;">
+            <div class="cfg-hint" style="margin-bottom:16px;">
+              Configura Google Authenticator per aggiungere un secondo livello di sicurezza. Dopo la configurazione ogni login richiederà email + password + codice OTP.
+            </div>
+            <div id="mfa-status-block" style="margin-bottom:16px;"></div>
+            <div id="mfa-qr-block" style="display:none;text-align:center;margin-bottom:16px;">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Scansiona con Google Authenticator</div>
+              <canvas id="mfa-qr-canvas" style="border-radius:8px;"></canvas>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;word-break:break-all;" id="mfa-secret-txt"></div>
+              <div style="margin-top:14px;">
+                <div class="fg"><label class="fl">Inserisci codice OTP per confermare</label>
+                <input type="text" class="fi" id="mfa-verify-code" placeholder="000000" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;font-family:'DM Mono',monospace"></div>
+                <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="verifyMFAEnroll()">✓ Conferma e attiva 2FA</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="setupMFA()">⚙ Configura Google Authenticator</button>
+              <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="removeMFA()">Rimuovi 2FA</button>
+            </div>
+            <div id="mfa-msg" style="margin-top:10px;font-size:12px;font-family:'DM Mono',monospace;"></div>
+          </div>
+        </div>
+
+        <!-- SESSIONE -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">👤 Account</div></div>
+          <div style="padding:18px 20px;">
+            <div class="cfg-hint" style="margin-bottom:16px;">
+              Sei loggato come <strong id="settings-email" style="color:var(--accent)">—</strong>
+            </div>
+            <div class="cfg-hint">
+              <strong>Sicurezza attiva:</strong><br>
+              ✅ Login email + password Supabase<br>
+              ✅ Solo utenti registrati possono accedere<br>
+              ✅ Sessione cifrata con JWT<br>
+              ✅ 2FA con Google Authenticator (se configurato)
+            </div>
+            <button class="btn" style="margin-top:16px;color:var(--danger);border-color:var(--danger)" onclick="googleLogout()">↩ Esci dall'app</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </main>
@@ -1079,6 +1125,11 @@ function showView(v,navEl){
   document.getElementById('topbar-sub').textContent='19 marzo 2026 — '+t[1];
   if(v==='finance'){renderFinance();setTimeout(buildCharts,60);}
   if(v==='dati'){updateDataStats();loadSupabaseFields();}
+  if(v==='settings'){
+    checkMFAStatus();
+    const emailEl=document.getElementById('settings-email');
+    if(emailEl&&currentUser)emailEl.textContent=currentUser.email;
+  }
   renderTable('all','sb1');renderTable('all','sb2');renderTimeline();
 }
 
@@ -1182,6 +1233,94 @@ function applyZohoData(z){
 
   // ── Aggiorna Finance se aperta ──
   renderFinance();
+}
+
+/* ══ MFA SETUP ══ */
+async function setupMFA(){
+  const msgEl=document.getElementById('mfa-msg');
+  const qrBlock=document.getElementById('mfa-qr-block');
+  if(msgEl)msgEl.textContent='Generazione QR code...';
+  try{
+    const{data,error}=await supa.auth.mfa.enroll({factorType:'totp',friendlyName:'EnomadApp'});
+    if(error)throw error;
+    const uri=data.totp.uri;
+    const secret=data.totp.secret;
+    window._mfaFactorId=data.id;
+    // Mostra secret testuale
+    const secretEl=document.getElementById('mfa-secret-txt');
+    if(secretEl)secretEl.textContent='Codice manuale: '+secret;
+    // Genera QR con canvas
+    await generateQR(uri, document.getElementById('mfa-qr-canvas'));
+    if(qrBlock)qrBlock.style.display='block';
+    if(msgEl)msgEl.textContent='';
+  }catch(e){
+    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}
+  }
+}
+
+async function generateQR(text, canvas){
+  // Implementazione QR semplice con API esterna
+  const img = new Image();
+  img.crossOrigin='anonymous';
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(text);
+  img.onload=()=>{
+    canvas.width=200;canvas.height=200;
+    canvas.getContext('2d').drawImage(img,0,0);
+  };
+  // Fallback: mostra solo il link
+  canvas.style.display='none';
+  const link=document.createElement('a');
+  link.href=text;link.textContent='Apri in Google Authenticator';
+  link.style.cssText='color:var(--accent);font-size:12px;display:block;margin:8px 0;';
+  canvas.parentNode.insertBefore(link,canvas.nextSibling);
+}
+
+async function verifyMFAEnroll(){
+  const code=document.getElementById('mfa-verify-code')?.value.trim();
+  const msgEl=document.getElementById('mfa-msg');
+  if(!code||code.length!==6){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='⚠ Inserisci il codice a 6 cifre';}return;}
+  try{
+    const factorId=window._mfaFactorId;
+    const{data:challenge}=await supa.auth.mfa.challenge({factorId});
+    const{error}=await supa.auth.mfa.verify({factorId,challengeId:challenge.id,code});
+    if(error)throw error;
+    document.getElementById('mfa-qr-block').style.display='none';
+    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA attivato con successo! Da ora ogni login richiederà il codice OTP.';}
+    checkMFAStatus();
+    showToast('✓ Google Authenticator configurato');
+  }catch(e){
+    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⛔ Codice errato — riprova';}
+  }
+}
+
+async function removeMFA(){
+  const msgEl=document.getElementById('mfa-msg');
+  if(!confirm('Sei sicuro di voler rimuovere il 2FA?'))return;
+  try{
+    const{data}=await supa.auth.mfa.listFactors();
+    const totp=data?.totp?.[0];
+    if(!totp){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='Nessun 2FA configurato';}return;}
+    const{error}=await supa.auth.mfa.unenroll({factorId:totp.id});
+    if(error)throw error;
+    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA rimosso';}
+    checkMFAStatus();
+  }catch(e){
+    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}
+  }
+}
+
+async function checkMFAStatus(){
+  const statusEl=document.getElementById('mfa-status-block');
+  if(!statusEl)return;
+  try{
+    const{data}=await supa.auth.mfa.listFactors();
+    const totp=data?.totp?.[0];
+    if(totp&&totp.status==='verified'){
+      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--accent);padding-left:13px;"><strong style="color:var(--accent)">✓ 2FA attivo</strong><br>Google Authenticator configurato il '+new Date(totp.created_at).toLocaleDateString('it-IT')+'</div>';
+    }else{
+      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--warn);padding-left:13px;"><strong style="color:var(--warn)">⚠ 2FA non configurato</strong><br>Configura Google Authenticator per maggiore sicurezza</div>';
+    }
+  }catch(e){}
 }
 
 /* ══ MISC ══ */
