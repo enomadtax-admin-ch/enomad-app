@@ -126,31 +126,32 @@ jobs:
             console.log('Pagamenti reali: ' + allPayments.length);
             console.log('Escluse: ' + escluse);
 
-            // ── Step 4: Calcola totali — usa pagamenti REALI per incassato ──
+            // ── Step 4: Calcola totali — incassato da stato fatture (payments API non disponibile) ──
             const fatturato = fatture.reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
-            // Incassato = somma pagamenti reali ricevuti (non dedotto dallo stato fattura)
-            const incassato = allPayments.reduce((a, p) => a + (parseFloat(p.amount) || 0), 0);
+            // Incassato = fatture paid + quota pagata delle partial
+            const incassatoPaid = fatture
+              .filter(i => i.status === 'paid')
+              .reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
+            const incassatoParziale = fatture
+              .filter(i => i.status === 'partial')
+              .reduce((a, i) => a + ((parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0)), 0);
+            const incassato = incassatoPaid + incassatoParziale;
             const inAttesa = fatture
               .filter(i => ['sent','overdue','viewed','partial'].includes(i.status))
               .reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
 
-            // ── Step 5: Statistiche per anno — fatturato da fatture, incassato da pagamenti reali ──
+            // ── Step 5: Statistiche per anno — fatturato da fatture, incassato da stato fatture ──
             const perAnno = {};
             fatture.forEach(i => {
               const anno = i.date ? i.date.substring(0, 4) : 'sconosciuto';
               if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
               perAnno[anno].fatturato += parseFloat(i.total) || 0;
               perAnno[anno].count++;
+              if (i.status === 'paid') perAnno[anno].incassato += parseFloat(i.total) || 0;
+              if (i.status === 'partial') perAnno[anno].incassato += (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
               if (['sent','overdue','viewed','partial'].includes(i.status)) {
                 perAnno[anno].inAttesa += parseFloat(i.balance) || 0;
               }
-            });
-
-            // Aggiungi incassato reale per anno dai pagamenti
-            allPayments.forEach(p => {
-              const anno = p.date ? p.date.substring(0, 4) : 'sconosciuto';
-              if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-              perAnno[anno].incassato += parseFloat(p.amount) || 0;
             });
 
             // Arrotonda
@@ -170,18 +171,11 @@ jobs:
                 if (!perMese[mese]) perMese[mese] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
                 perMese[mese].fatturato += parseFloat(i.total) || 0;
                 perMese[mese].count++;
+                if (i.status === 'paid') perMese[mese].incassato += parseFloat(i.total) || 0;
+                if (i.status === 'partial') perMese[mese].incassato += (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
                 if (['sent','overdue','viewed','partial'].includes(i.status)) {
                   perMese[mese].inAttesa += parseFloat(i.balance) || 0;
                 }
-              });
-
-            // Incassato reale per mese dai pagamenti
-            allPayments
-              .filter(p => p.date && p.date.startsWith(annoCorrente))
-              .forEach(p => {
-                const mese = p.date.substring(0, 7);
-                if (!perMese[mese]) perMese[mese] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-                perMese[mese].incassato += parseFloat(p.amount) || 0;
               });
 
             Object.keys(perMese).forEach(m => {
@@ -244,7 +238,7 @@ jobs:
             console.log('══════════════════════════════════════');
             console.log('✓ finance-data.json salvato');
             console.log('  Fatturato reale: EUR ' + result.summary.fatturato.toLocaleString());
-            console.log('  Incassato reale: EUR ' + result.summary.incassato.toLocaleString() + ' (da ' + allPayments.length + ' pagamenti reali)');
+            console.log('  Incassato:       EUR ' + result.summary.incassato.toLocaleString() + ' (paid + partial)');
             console.log('  In attesa:       EUR ' + result.summary.inAttesa.toLocaleString());
             console.log('  Fatture valide:  ' + result.summary.numFatture);
             console.log('  Clienti:         ' + result.summary.numClienti);
