@@ -8,177 +8,137 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-const SUPA_URL = 'https://nkushczwfrdwgbezfjux.supabase.co';
-const SUPA_KEY = 'sb_publishable_AdUp4598EwOLTjAgnKLA6A_dPfsQfWZ';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+/* ══ SUPABASE ══ */
+const SUPA_URL='https://nkushczwfrdwgbezfjux.supabase.co';
+const SUPA_KEY='sb_publishable_AdUp4598EwOLTjAgnKLA6A_dPfsQfWZ';
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+let currentUser=null;
 
-// ── Auth state ──
-let currentUser = null;
-let mfaStep = false; // true quando siamo nel passo OTP
-
-async function initAuth() {
-  // Forza sempre logout all'apertura — ogni sessione deve fare login + OTP
-  await supa.auth.signOut();
-  showLogin();
-  supa.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      currentUser = session.user;
-      // Non mostrare app subito — aspetta verifica MFA
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null;
-      showLogin();
-    }
+/* ══ I18N ══ */
+const T={
+  it:{
+    dashboard:'Dashboard',scadenze:'Scadenze',entita:'Entità',finance:'Finance',
+    zoho:'Zoho Invoice',dati:'Dati & Backup',impostazioni:'Impostazioni',
+    nuovaScadenza:'+ Scadenza',syncZoho:'↻ Sync Zoho',exportJson:'⬇ Export JSON',
+    temaScuro:'Tema scuro',temaChiaro:'Tema chiaro',
+    fatturato:'Fatturato',incassato:'Incassato',inAttesa:'In attesa',fatture:'Fatture',
+    scadenzeAttive:'Scadenze attive',timeline:'Timeline 60gg',
+    tutte:'Tutte',critiche:'Critiche',prossime:'Prossime',completate:'Completate',
+    urgente:'Urgente',prossima:'Prossima',ok:'OK',completata:'Completata',
+    scadenzeCritiche:'Scadenze critiche',cashInAttesa:'Cash in attesa',entitaAttive:'Entità attive',
+    incassatoMese:'Incassato mese',speseMese:'Spese mese',scadenzeTotali:'Scadenze totali',
+    costiCompliance:'Costi compliance 30gg',
+    tipo:'Tipo',data:'Data',giorni:'Giorni',stato:'Stato',costo:'Costo',
+    nomeScadenza:'Nome scadenza',reminderTelegram:'Reminder Telegram',note:'Note',
+    salva:'Salva',annulla:'Annulla',
+    fatturatoPrevisto:'Fatturato previsto',margine:'Margine %',proiezioneQ:'Proiezione Q',
+    storFatturato:'Fatturato storico',topClienti:'Top clienti',
+    fattureMese:'Fatture per mese',costiCompliance90:'Costi compliance 90gg',
+    movimentiRecenti:'Fatture recenti',cashflow:'Cashflow mensile',
+    gestioneEntita:'Gestione entità',gestioneTipi:'Gestione tipi',
+    aggiungiEntita:'+ Entità',aggiungiTipo:'+ Tipo',
+    prezzo:'Prezzo cliente',costoMio:'Costo mio',
+    sicurezza:'Sicurezza — 2FA',account:'Account',
+    configAuth:'⚙ Configura Google Authenticator',rimuovi2fa:'Rimuovi 2FA',
+    esci:'↩ Esci',backupJson:'Backup JSON',scaricaBackup:'⬇ Scarica backup',
+    importJson:'⬆ Import JSON',statistiche:'Statistiche',
+    dbConnesso:'Database Supabase connesso',
+    accedi:'Accedi',codiceOtp:'Codice OTP',verifica:'Verifica',
+    areaRiservata:'Area riservata — accesso controllato',
+    emailPassword:'Email',password:'Password',
+    filtroAnno:'Filtra per anno',tuttiGliAnni:'Tutti gli anni',
+    generale:'Generale',finanziario:'Finanziario',sistema:'Sistema',
+    connessioni:'Connessioni',
+  },
+  en:{
+    dashboard:'Dashboard',scadenze:'Deadlines',entita:'Entities',finance:'Finance',
+    zoho:'Zoho Invoice',dati:'Data & Backup',impostazioni:'Settings',
+    nuovaScadenza:'+ Deadline',syncZoho:'↻ Sync Zoho',exportJson:'⬇ Export JSON',
+    temaScuro:'Dark mode',temaChiaro:'Light mode',
+    fatturato:'Revenue',incassato:'Collected',inAttesa:'Pending',fatture:'Invoices',
+    scadenzeAttive:'Active deadlines',timeline:'Timeline 60d',
+    tutte:'All',critiche:'Critical',prossime:'Upcoming',completate:'Completed',
+    urgente:'Urgent',prossima:'Upcoming',ok:'OK',completata:'Done',
+    scadenzeCritiche:'Critical deadlines',cashInAttesa:'Cash pending',entitaAttive:'Active entities',
+    incassatoMese:'Collected this month',speseMese:'Expenses',scadenzeTotali:'Total deadlines',
+    costiCompliance:'Compliance costs 30d',
+    tipo:'Type',data:'Date',giorni:'Days',stato:'Status',costo:'Cost',
+    nomeScadenza:'Deadline name',reminderTelegram:'Telegram reminder',note:'Notes',
+    salva:'Save',annulla:'Cancel',
+    fatturatoPrevisto:'Projected revenue',margine:'Margin %',proiezioneQ:'Q projection',
+    storFatturato:'Historical revenue',topClienti:'Top clients',
+    fattureMese:'Monthly invoices',costiCompliance90:'Compliance costs 90d',
+    movimentiRecenti:'Recent invoices',cashflow:'Monthly cashflow',
+    gestioneEntita:'Manage entities',gestioneTipi:'Manage types',
+    aggiungiEntita:'+ Entity',aggiungiTipo:'+ Type',
+    prezzo:'Client price',costoMio:'My cost',
+    sicurezza:'Security — 2FA',account:'Account',
+    configAuth:'⚙ Setup Google Authenticator',rimuovi2fa:'Remove 2FA',
+    esci:'↩ Sign out',backupJson:'JSON Backup',scaricaBackup:'⬇ Download backup',
+    importJson:'⬆ Import JSON',statistiche:'Statistics',
+    dbConnesso:'Supabase database connected',
+    accedi:'Sign in',codiceOtp:'OTP Code',verifica:'Verify',
+    areaRiservata:'Restricted area — authorized access only',
+    emailPassword:'Email',password:'Password',
+    filtroAnno:'Filter by year',tuttiGliAnni:'All years',
+    generale:'General',finanziario:'Financial',sistema:'System',
+    connessioni:'Connections',
+  }
+};
+let LANG='it';
+function t(k){return T[LANG][k]||T.it[k]||k;}
+function setLang(l){
+  LANG=l;
+  localStorage.setItem('enomad_lang',l);
+  document.getElementById('lang-it').classList.toggle('active',l==='it');
+  document.getElementById('lang-en').classList.toggle('active',l==='en');
+  refreshAllText();
+}
+function refreshAllText(){
+  // Aggiorna tutti gli elementi con data-t
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const k=el.getAttribute('data-t');
+    el.textContent=t(k);
+  });
+  // Aggiorna placeholder
+  document.querySelectorAll('[data-tp]').forEach(el=>{
+    el.placeholder=t(el.getAttribute('data-tp'));
   });
 }
-
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  const btnEl = document.getElementById('login-btn');
-  errEl.textContent = '';
-  btnEl.textContent = 'Accesso in corso...';
-  btnEl.disabled = true;
-  try {
-    const { data, error } = await supa.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    // Controlla sempre se MFA è configurato e richiede verifica
-    const { data: mfaData } = await supa.auth.mfa.listFactors();
-    const hasVerifiedTOTP = mfaData?.totp?.some(f => f.status === 'verified');
-    if (hasVerifiedTOTP) {
-      // Ha 2FA configurato — richiedi sempre il codice
-      showMFAStep();
-    }
-    // Se non ha 2FA configurato entra direttamente
-  } catch(e) {
-    errEl.textContent = '⛔ ' + (e.message === 'Invalid login credentials' ? 'Email o password errati' : e.message);
-    btnEl.textContent = 'Accedi';
-    btnEl.disabled = false;
-  }
-}
-
-async function doMFA() {
-  const code = document.getElementById('mfa-code').value.trim();
-  const errEl = document.getElementById('login-error');
-  const btnEl = document.getElementById('mfa-btn');
-  errEl.textContent = '';
-  btnEl.textContent = 'Verifica...';
-  btnEl.disabled = true;
-  try {
-    // Ottieni la lista dei fattori
-    const { data: factors, error: factorsErr } = await supa.auth.mfa.listFactors();
-    if (factorsErr) throw factorsErr;
-    const totp = factors?.totp?.find(f => f.status === 'verified');
-    if (!totp) throw new Error('Nessun fattore TOTP verificato trovato');
-    // Crea challenge
-    const { data: challengeData, error: challengeErr } = await supa.auth.mfa.challenge({ factorId: totp.id });
-    if (challengeErr) throw challengeErr;
-    // Verifica codice
-    const { data: verifyData, error: verifyErr } = await supa.auth.mfa.verify({
-      factorId: totp.id,
-      challengeId: challengeData.id,
-      code: code
-    });
-    if (verifyErr) throw verifyErr;
-    // Successo — ottieni sessione aggiornata
-    const { data: { session } } = await supa.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      showApp(session.user);
-    }
-  } catch(e) {
-    errEl.textContent = '⛔ ' + (e.message.includes('Invalid') ? 'Codice OTP errato — riprova' : e.message);
-    btnEl.textContent = 'Verifica';
-    btnEl.disabled = false;
-  }
-}
-
-function showMFAStep() {
-  document.getElementById('login-form-step').style.display = 'none';
-  document.getElementById('mfa-form-step').style.display = 'block';
-  document.getElementById('login-error').textContent = '';
-}
-
-function showLogin() {
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display = 'none';
-  // Reset steps
-  document.getElementById('login-form-step').style.display = 'block';
-  document.getElementById('mfa-form-step').style.display = 'none';
-  // Reset errori
-  document.getElementById('login-error').textContent = '';
-  // Reset campi
-  const emailEl = document.getElementById('login-email');
-  const passEl = document.getElementById('login-password');
-  const mfaEl = document.getElementById('mfa-code');
-  if(emailEl) emailEl.value = '';
-  if(passEl) passEl.value = '';
-  if(mfaEl) mfaEl.value = '';
-  // Reset bottoni
-  const btn = document.getElementById('login-btn');
-  const mfaBtn = document.getElementById('mfa-btn');
-  if(btn){ btn.textContent='Accedi'; btn.disabled=false; }
-  if(mfaBtn){ mfaBtn.textContent='Verifica'; mfaBtn.disabled=false; }
-}
-
-function showApp(user) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'flex';
-  const n = document.getElementById('user-name');
-  if(n) n.textContent = user.email;
-  // Carica dati da Supabase
-  loadScadenzeFromDB();
-  syncZoho();
-}
-
-window.doLogin = doLogin;
-window.doMFA = doMFA;
-window.googleLogout = async () => {
-  await supa.auth.signOut();
-  showToast('✓ Logout effettuato');
-};
-
-// Invio con Enter
-document.addEventListener('DOMContentLoaded', () => {
-  initAuth();
-  document.getElementById('login-password')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-  document.getElementById('mfa-code')?.addEventListener('keydown', e => { if(e.key==='Enter') doMFA(); });
-});
 </script>
 <style>
-/* ── THEME ── */
 [data-theme="dark"]{--bg:#0d0f14;--surface:#13161e;--surface2:#1a1e28;--surface3:#222636;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8eaf0;--text2:#a0a6b8;--muted:#5a6075;--accent:#4fffb0;--adim:rgba(79,255,176,0.1);--warn:#ffb347;--wdim:rgba(255,179,71,0.12);--danger:#ff5f6d;--ddim:rgba(255,95,109,0.12);--info:#7c83fd;--idim:rgba(124,131,253,0.12);--purple:#c084fc;--teal:#2dd4bf;--cgrid:rgba(255,255,255,0.05);--shadow:0 4px 24px rgba(0,0,0,0.4);}
 [data-theme="light"]{--bg:#f4f4ef;--surface:#fff;--surface2:#f0f0eb;--surface3:#e6e6e0;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#111318;--text2:#4a5068;--muted:#9098b0;--accent:#00a96e;--adim:rgba(0,169,110,0.08);--warn:#d97706;--wdim:rgba(217,119,6,0.1);--danger:#dc2626;--ddim:rgba(220,38,38,0.08);--info:#4f46e5;--idim:rgba(79,70,229,0.08);--purple:#9333ea;--teal:#0d9488;--cgrid:rgba(0,0,0,0.06);--shadow:0 4px 24px rgba(0,0,0,0.08);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;display:flex;transition:background .25s,color .25s;}
-
-/* SIDEBAR */
-.sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:background .25s;}
-.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.5px;padding:22px 20px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar{width:224px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:background .25s;}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.5px;padding:20px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
 .logo-mark{width:28px;height:28px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0a0f0a;flex-shrink:0;}
 [data-theme="light"] .logo-mark{color:#fff;}
-.nav{flex:1;padding:10px 8px;}
+.nav{flex:1;padding:10px 8px;overflow-y:auto;}
 .nav-sec{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:12px 12px 5px;}
 .nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;color:var(--text2);cursor:pointer;font-size:13px;border-radius:8px;margin-bottom:2px;transition:all .15s;}
 .nav-item:hover{color:var(--text);background:var(--surface2);}
 .nav-item.active{color:var(--accent);background:var(--adim);font-weight:500;}
 .nav-icon{font-size:13px;width:18px;text-align:center;}
+.lang-row{margin:0 8px 8px;display:flex;gap:4px;padding:6px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+.lang-btn{flex:1;padding:5px;border-radius:7px;border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;}
+.lang-btn.active{background:var(--accent);color:#0a0f0a;font-weight:600;}
+[data-theme="light"] .lang-btn.active{color:#fff;}
 .theme-row{margin:0 8px 10px;display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);cursor:pointer;}
 .theme-label{font-size:12px;color:var(--text2);}
 .tog-track{width:38px;height:21px;background:var(--surface3);border-radius:11px;border:1px solid var(--border2);position:relative;transition:background .2s;}
 [data-theme="light"] .tog-track{background:var(--accent);}
 .tog-thumb{width:15px;height:15px;background:var(--text2);border-radius:50%;position:absolute;top:2px;left:2px;transition:transform .2s;}
 [data-theme="light"] .tog-thumb{transform:translateX(17px);background:#fff;}
-.sb-footer{padding:14px 20px;border-top:1px solid var(--border);}
-.sb-footer-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.sb-footer{padding:12px 20px;border-top:1px solid var(--border);}
+.sb-footer-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;}
+.srow{display:flex;align-items:center;justify-content:space-between;margin-top:5px;}
 .spill{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;}
 .sdot{width:5px;height:5px;border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* MAIN */
-.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
-.topbar{padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:40;transition:background .25s;}
+.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{padding:13px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:40;transition:background .25s;}
 .topbar-left{display:flex;flex-direction:column;gap:2px;}
 .topbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
 .topbar-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
@@ -188,86 +148,54 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-primary{background:var(--accent);color:#0a0f0a;border-color:var(--accent);font-weight:600;}
 [data-theme="light"] .btn-primary{color:#fff;}
 .btn-primary:hover{opacity:.88;}
-.btn-warn{border-color:var(--warn);color:var(--warn);background:var(--wdim);}
-.btn-warn:hover{background:var(--wdim);border-color:var(--warn);color:var(--warn);}
+.btn-danger{border-color:var(--danger);color:var(--danger);}
 .btn-info{border-color:var(--info);color:var(--info);background:var(--idim);}
-.btn-info:hover{background:var(--idim);border-color:var(--info);color:var(--info);}
-
-/* CONTENT */
-.content{padding:24px 28px;flex:1;}
+.user-badge{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-badge:hover{border-color:var(--danger);color:var(--danger);}
+.content{padding:22px 28px;flex:1;}
 .view{display:none;}.view.active{display:block;}
 
-/* SUPABASE BANNER */
-.db-banner{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.db-banner.connected{border-color:rgba(79,255,176,0.3);background:var(--adim);}
-[data-theme="light"] .db-banner.connected{border-color:rgba(0,169,110,0.25);}
-.db-banner.disconnected{border-color:rgba(255,179,71,0.3);background:var(--wdim);}
-.db-banner-left{display:flex;align-items:center;gap:12px;}
-.db-banner-icon{font-size:18px;}
-.db-banner-text{}
-.db-banner-title{font-size:13px;font-weight:600;}
-.db-banner-sub{font-size:11px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace;}
-.db-banner-actions{display:flex;align-items:center;gap:8px;}
-
-/* CONFIG MODAL */
-.cfg-section{margin-bottom:18px;}
-.cfg-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.cfg-hint{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6;}
-.cfg-hint code{font-family:'DM Mono',monospace;background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--accent);}
-.json-actions{display:flex;gap:8px;flex-wrap:wrap;}
-
 /* HERO */
-.hero-strip{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:13px;margin-bottom:18px;}
-.hero-main{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 24px 20px;position:relative;overflow:hidden;}
+.hero-strip{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:13px;margin-bottom:16px;}
+.hero-main{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 22px 18px;position:relative;overflow:hidden;}
 .hero-main::after{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,var(--adim) 0%,transparent 70%);pointer-events:none;}
 .hero-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
-.hero-value{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:var(--accent);line-height:1;letter-spacing:-2px;}
-.hero-sub{font-size:11px;color:var(--text2);margin-top:8px;}
-.hero-trend{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:11px;padding:3px 8px;border-radius:6px;margin-top:8px;}
-.trend-up{background:var(--adim);color:var(--accent);}
-.kpi-mini{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:116px;}
+.hero-value{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--accent);line-height:1;letter-spacing:-2px;}
+.hero-sub{font-size:11px;color:var(--text2);margin-top:7px;}
+.hero-trend{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:11px;padding:3px 8px;border-radius:6px;margin-top:7px;background:var(--adim);color:var(--accent);}
+.kpi-mini{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:110px;}
 .kpi-mini-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
-.kpi-mini-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;line-height:1;margin-top:8px;}
-.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;margin-top:8px;}
+.kpi-mini-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;line-height:1;margin-top:7px;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;margin-top:7px;}
 .bd{background:var(--ddim);color:var(--danger);}
 .bw{background:var(--wdim);color:var(--warn);}
 .bo{background:var(--adim);color:var(--accent);}
 .bi{background:var(--idim);color:var(--info);}
-.bp{background:rgba(192,132,252,.12);color:var(--purple);}
-
-/* KPI ROW */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px;}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 15px 13px;}
-.kpi-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 14px 12px;}
+.kpi-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .kpi-card-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
 .kpi-card-ico{font-size:14px;opacity:.6;}
-.kpi-card-val{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;line-height:1;}
-.kpi-card-sub{font-size:11px;color:var(--text2);margin-top:4px;}
-
-/* PANEL */
+.kpi-card-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1;}
+.kpi-card-sub{font-size:11px;color:var(--text2);margin-top:3px;}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background .25s;}
-.panel-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.panel-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
-
-/* GRIDS */
+.panel-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.panel-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;}
 .grid-2{display:grid;grid-template-columns:1fr 310px;gap:15px;margin-bottom:16px;}
 .grid-2eq{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:16px;}
-
-/* ZOHO STRIP */
-.zoho-strip{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:16px;}
+.zoho-strip{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;}
 .zoho-l{display:flex;align-items:center;gap:11px;}
 .zoho-ico{width:34px;height:34px;background:var(--idim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid var(--border);}
 .zoho-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
 .zoho-sub{font-size:11px;color:var(--muted);}
-.zoho-meta{display:flex;gap:24px;}
+.zoho-meta{display:flex;gap:22px;flex-wrap:wrap;}
 .zm-item{text-align:center;}
 .zm-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .zm-val{font-family:'DM Mono',monospace;font-size:13px;margin-top:3px;font-weight:500;}
-
-/* TABLE */
 .scad-table{width:100%;border-collapse:collapse;}
-.scad-table th{text-align:left;padding:9px 16px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);font-weight:400;}
-.scad-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.scad-table th{text-align:left;padding:8px 16px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);font-weight:400;}
+.scad-table td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
 .scad-table tr:last-child td{border-bottom:none;}
 .scad-table tbody tr{transition:background .1s;cursor:pointer;}
 .scad-table tbody tr:hover td{background:var(--surface2);}
@@ -277,17 +205,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .dw2{background:var(--wdim);color:var(--warn);}
 .dok{background:var(--adim);color:var(--accent);}
 .sdot2{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;}
-
-/* TIMELINE */
 .tl-item{display:flex;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);transition:background .1s;}
 .tl-item:last-child{border-bottom:none;}
 .tl-item:hover{background:var(--surface2);}
 .tl-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);min-width:42px;padding-top:2px;}
 .tl-name{font-size:12px;font-weight:500;}
 .tl-meta{font-size:11px;color:var(--text2);margin-top:1px;}
-
-/* FILTER TABS */
-.ftabs{display:flex;gap:4px;}
+.ftabs{display:flex;gap:4px;flex-wrap:wrap;}
 .ftab{padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Mono',monospace;transition:all .15s;}
 .ftab:hover{color:var(--text);border-color:var(--border2);}
 .ftab.active{background:var(--adim);border-color:var(--accent);color:var(--accent);}
@@ -296,7 +220,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .fin-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px;}
 .fin-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 16px;}
 .fin-kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
-.fin-kpi-val{font-family:'Syne',sans-serif;font-size:23px;font-weight:800;line-height:1;letter-spacing:-.5px;}
+.fin-kpi-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;letter-spacing:-.5px;}
 .fin-kpi-trend{font-size:11px;color:var(--text2);margin-top:6px;}
 .fin-kpi-a{border-left:3px solid var(--accent);padding-left:13px;}
 .fin-kpi-d{border-left:3px solid var(--danger);padding-left:13px;}
@@ -319,11 +243,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .cf-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.16,1,.3,1);}
 .cf-sub{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--muted);}
 
+/* ENTITA & TIPI */
+.tag-list{display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px;}
+.tag-item{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;}
+.tag-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;transition:color .15s;}
+.tag-del:hover{color:var(--danger);}
+.tag-edit{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;transition:color .15s;}
+.tag-edit:hover{color:var(--accent);}
+.add-tag-row{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border);}
+
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:500px;max-height:90vh;overflow-y:auto;}
-.modal-lg{width:580px;}
 .modal-header{padding:17px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
 .modal-close{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
@@ -331,21 +263,30 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .modal-body{padding:20px 22px;}
 .fg{margin-bottom:12px;}
 .fl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block;}
-.fi,.fsel,.fta{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;}
-.fi:focus,.fsel:focus,.fta:focus{border-color:var(--accent);}
-.fsel option,.fta{color:var(--text);}
-.fta{resize:vertical;min-height:80px;font-family:'DM Mono',monospace;font-size:11px;}
+.fi,.fsel{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;}
+.fi:focus,.fsel:focus{border-color:var(--accent);}
+.fsel option{background:var(--surface2);color:var(--text);}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
 .tg-hint{background:var(--adim);border:1px solid rgba(79,255,176,.2);border-radius:8px;padding:9px 13px;font-size:11px;color:var(--accent);}
 [data-theme="light"] .tg-hint{border-color:rgba(0,169,110,.25);}
 .modal-footer{padding:13px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:9px;}
-.modal-footer-left{display:flex;justify-content:space-between;align-items:center;}
+.cfg-hint{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;}
+.cfg-hint code{font-family:'DM Mono',monospace;background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--accent);}
+.cfg-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
 
-/* STATUS CHIP */
-.status-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;}
-.chip-ok{background:var(--adim);color:var(--accent);border:1px solid rgba(79,255,176,.25);}
-.chip-warn{background:var(--wdim);color:var(--warn);border:1px solid rgba(255,179,71,.25);}
-.chip-dot{width:5px;height:5px;border-radius:50%;animation:pulse 2s infinite;}
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:44px 38px;width:360px;text-align:center;box-shadow:var(--shadow);}
+.login-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#0a0f0a;margin:0 auto 16px;}
+[data-theme="light"] .login-logo{color:#fff;}
+.login-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:5px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+.login-btn{width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:#0a0f0a;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+[data-theme="light"] .login-btn{color:#fff;}
+.login-btn:hover{opacity:.88;}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;}
+.login-error{margin-top:12px;font-size:11px;color:var(--danger);font-family:'DM Mono',monospace;min-height:16px;}
+.login-footer{margin-top:14px;font-size:11px;color:var(--muted);}
 
 /* TOAST */
 .toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:9px 15px;font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;z-index:999;font-family:'DM Mono',monospace;transform:translateY(80px);opacity:0;transition:all .3s ease;box-shadow:var(--shadow);}
@@ -353,34 +294,16 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-
-/* LOGIN */
-#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:48px 40px;width:360px;text-align:center;box-shadow:var(--shadow);}
-.login-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#0a0f0a;margin:0 auto 18px;}
-[data-theme="light"] .login-logo{color:#fff;}
-.login-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:5px;}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
-.login-btn{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;}
-.login-btn:hover{border-color:var(--accent);color:var(--accent);}
-.login-error{margin-top:12px;font-size:11px;color:var(--danger);font-family:'DM Mono',monospace;min-height:16px;}
-.login-footer{margin-top:16px;font-size:11px;color:var(--muted);}
-.user-badge{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;}
-.user-badge:hover{border-color:var(--danger);color:var(--danger);}
-.user-avatar{width:22px;height:22px;border-radius:50%;display:none;object-fit:cover;}
-.user-name-txt{font-size:12px;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
 
-<!-- ══ LOGIN SCREEN ══ -->
-<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;">
+<!-- LOGIN -->
+<div id="login-screen">
   <div class="login-card">
     <div class="login-logo">E</div>
     <div class="login-title">Enomad Admin</div>
-    <div class="login-sub">Area riservata — accesso controllato</div>
-
-    <!-- STEP 1: Email + Password -->
+    <div class="login-sub" id="login-sub-txt">Area riservata — accesso controllato</div>
     <div id="login-form-step">
       <div class="fg" style="margin-bottom:10px;text-align:left">
         <label class="fl">Email</label>
@@ -392,343 +315,303 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
       <button class="login-btn" id="login-btn" onclick="doLogin()">Accedi</button>
     </div>
-
-    <!-- STEP 2: OTP -->
     <div id="mfa-form-step" style="display:none">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5;">
-        Inserisci il codice a 6 cifre da <strong style="color:var(--text)">Google Authenticator</strong>
-      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5;">Inserisci il codice a 6 cifre da <strong style="color:var(--text)">Google Authenticator</strong></div>
       <div class="fg" style="margin-bottom:16px;text-align:left">
         <label class="fl">Codice OTP</label>
         <input type="text" class="fi" id="mfa-code" placeholder="000000" maxlength="6" style="letter-spacing:4px;font-size:20px;text-align:center;font-family:'DM Mono',monospace" autocomplete="one-time-code">
       </div>
       <button class="login-btn" id="mfa-btn" onclick="doMFA()">Verifica</button>
     </div>
-
     <div class="login-error" id="login-error"></div>
-    <div class="login-footer">🔒 Protetto da Supabase Auth + MFA</div>
+    <div class="login-footer">🔒 Supabase Auth + MFA</div>
   </div>
 </div>
 
-<!-- ══ APP SCREEN ══ -->
+<!-- APP -->
 <div id="app-screen" style="display:none;width:100%;min-height:100vh;">
+
 <aside class="sidebar">
-  <div class="logo">
-    <div class="logo-mark">E</div>
-    Enomad
-  </div>
+  <div class="logo"><div class="logo-mark">E</div>Enomad</div>
   <nav class="nav">
-    <div class="nav-sec">Generale</div>
-    <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
-    <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span>Scadenze</div>
-    <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span>Entità</div>
-    <div class="nav-sec">Finanziario</div>
-    <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span>Finance</div>
-    <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span>Zoho Invoice</div>
-    <div class="nav-sec">Sistema</div>
-    <div class="nav-item" onclick="showView('dati',this)"><span class="nav-icon">◎</span>Dati & Backup</div>
-    <div class="nav-item" onclick="showView('settings',this)"><span class="nav-icon">⊙</span>Impostazioni</div>
+    <div class="nav-sec" data-t="generale">Generale</div>
+    <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span><span data-t="dashboard">Dashboard</span></div>
+    <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span data-t="scadenze">Scadenze</span></div>
+    <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span data-t="entita">Entità</span></div>
+    <div class="nav-sec" data-t="finanziario">Finanziario</div>
+    <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
+    <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span><span data-t="zoho">Zoho Invoice</span></div>
+    <div class="nav-sec" data-t="sistema">Sistema</div>
+    <div class="nav-item" onclick="showView('dati',this)"><span class="nav-icon">◎</span><span data-t="dati">Dati & Backup</span></div>
+    <div class="nav-item" onclick="showView('settings',this)"><span class="nav-icon">⊙</span><span data-t="impostazioni">Impostazioni</span></div>
   </nav>
+  <div class="lang-row">
+    <button class="lang-btn active" id="lang-it" onclick="setLang('it')">🇮🇹 IT</button>
+    <button class="lang-btn" id="lang-en" onclick="setLang('en')">🇬🇧 EN</button>
+  </div>
   <div class="theme-row" onclick="toggleTheme()">
-    <span class="theme-label" id="theme-label">Tema scuro</span>
+    <span class="theme-label" id="theme-label" data-t="temaScuro">Tema scuro</span>
     <div class="tog-track"><div class="tog-thumb"></div></div>
   </div>
   <div class="sb-footer">
-    <div class="sb-footer-title">Connessioni</div>
-    <div class="srow">
-      <span style="font-size:11px;color:var(--text2)">Database</span>
-      <div class="spill" id="db-status-pill" style="color:var(--warn)"><div class="sdot" style="background:var(--warn)"></div><span id="db-status-label">locale</span></div>
-    </div>
-    <div class="srow">
-      <span style="font-size:11px;color:var(--text2)">Telegram</span>
-      <div class="spill" style="color:var(--accent)"><div class="sdot" style="background:var(--accent)"></div>attivo</div>
-    </div>
-    <div class="srow">
-      <span style="font-size:11px;color:var(--text2)">Zoho</span>
-      <div class="spill" style="color:var(--info)"><div class="sdot" style="background:var(--info)"></div>sync 5m fa</div>
-    </div>
+    <div class="sb-footer-title" data-t="connessioni">Connessioni</div>
+    <div class="srow"><span style="font-size:11px;color:var(--text2)">Database</span><div class="spill" id="db-status-pill" style="color:var(--accent)"><div class="sdot" style="background:var(--accent)"></div><span id="db-status-label">Supabase</span></div></div>
+    <div class="srow"><span style="font-size:11px;color:var(--text2)">Telegram</span><div class="spill" style="color:var(--accent)"><div class="sdot" style="background:var(--accent)"></div>attivo</div></div>
+    <div class="srow"><span style="font-size:11px;color:var(--text2)">Zoho</span><div class="spill" style="color:var(--info)"><div class="sdot" style="background:var(--info)"></div><span id="zoho-last-sync">sync...</span></div></div>
   </div>
 </aside>
 
-<!-- ══ MAIN ══ -->
 <main class="main">
   <div class="topbar">
     <div class="topbar-left">
       <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">19 marzo 2026 — panoramica generale</div>
+      <div class="topbar-sub" id="topbar-sub"></div>
     </div>
     <div class="topbar-right">
-      <button class="btn btn-info" onclick="exportJSON()" title="Scarica backup JSON">⬇ Export JSON</button>
+      <button class="btn btn-info" onclick="exportJSON()">⬇ <span data-t="exportJson">Export JSON</span></button>
       <button class="btn" onclick="syncZoho()">↻ Sync Zoho</button>
-      <button class="btn btn-primary" onclick="openModal('scadenza')">+ Scadenza</button>
-      <div class="user-badge" onclick="googleLogout()" title="Clicca per uscire">
-        <img class="user-avatar" id="user-avatar" src="" alt="">
-        <span class="user-name-txt" id="user-name"></span>
-        <span style="font-size:11px;color:var(--muted)">↩</span>
+      <button class="btn btn-primary" onclick="openModal('scadenza')">+ <span data-t="scadenze">Scadenza</span></button>
+      <div class="user-badge" onclick="doLogout()" title="Sign out">
+        <span id="user-name">—</span><span style="font-size:10px;opacity:.6">↩</span>
       </div>
     </div>
   </div>
 
   <div class="content">
 
-    <!-- DB BANNER -->
-    <div class="db-banner disconnected" id="db-banner">
-      <div class="db-banner-left">
-        <div class="db-banner-icon">🗄</div>
-        <div class="db-banner-text">
-          <div class="db-banner-title" id="db-banner-title">Database non configurato — dati in modalità locale</div>
-          <div class="db-banner-sub" id="db-banner-sub">I dati sono salvati nel browser. Configura Supabase per renderli permanenti e sicuri.</div>
-        </div>
-      </div>
-      <div class="db-banner-actions">
-        <button class="btn btn-warn" onclick="openModal('dbconfig')">⚙ Configura Supabase</button>
-        <label class="btn btn-info" style="cursor:pointer">⬆ Import JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
-      </div>
-    </div>
-
-    <!-- ══ DASHBOARD ══ -->
+    <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="hero-strip">
         <div class="hero-main">
-          <div class="hero-label">Fatturato YTD 2026</div>
-          <div class="hero-value" id="h-fatturato">€ 87.4k</div>
-          <div class="hero-sub">Zoho Invoice — sync automatico</div>
-          <div class="hero-trend trend-up">↑ +18% vs 2025</div>
+          <div class="hero-label" data-t="fatturato">Fatturato</div>
+          <div class="hero-value" id="h-fatturato">—</div>
+          <div class="hero-sub" id="h-zoho-sub">Zoho Invoice</div>
+          <div class="hero-trend" id="h-yoy">↑ carico...</div>
         </div>
         <div class="kpi-mini">
-          <div><div class="kpi-mini-lbl">Scadenze critiche</div><div class="kpi-mini-val" style="color:var(--danger)" id="h-critiche">3</div></div>
-          <span class="badge bd">≤ 7 giorni</span>
+          <div><div class="kpi-mini-lbl" data-t="scadenzeCritiche">Critiche</div><div class="kpi-mini-val" style="color:var(--danger)" id="h-critiche">—</div></div>
+          <span class="badge bd">≤ 7 gg</span>
         </div>
         <div class="kpi-mini">
-          <div><div class="kpi-mini-lbl">Cash in attesa</div><div class="kpi-mini-val" style="color:var(--warn)">€ 6.6k</div></div>
-          <span class="badge bw">da incassare</span>
+          <div><div class="kpi-mini-lbl" data-t="cashInAttesa">Cash in attesa</div><div class="kpi-mini-val" style="color:var(--warn)" id="h-inattesa">—</div></div>
+          <span class="badge bw" data-t="inAttesa">in attesa</span>
         </div>
         <div class="kpi-mini">
-          <div><div class="kpi-mini-lbl">Entità attive</div><div class="kpi-mini-val" style="color:var(--info)" id="h-entita">7</div></div>
-          <span class="badge bi">4 paesi</span>
+          <div><div class="kpi-mini-lbl" data-t="entitaAttive">Entità</div><div class="kpi-mini-val" style="color:var(--info)" id="h-nentita">—</div></div>
+          <span class="badge bi" id="h-paesi">—</span>
         </div>
       </div>
       <div class="kpi-row">
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Incassato marzo</span><span class="kpi-card-ico">💰</span></div>
-          <div class="kpi-card-val" style="color:var(--accent)">€ 28.2k</div>
-          <div class="kpi-card-sub" style="color:var(--accent)">↑ +12% vs feb</div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" data-t="incassatoMese">Incassato mese</span><span class="kpi-card-ico">💰</span></div>
+          <div class="kpi-card-val" style="color:var(--accent)" id="kpi-inc-mese">—</div>
+          <div class="kpi-card-sub" id="kpi-inc-sub">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Spese marzo</span><span class="kpi-card-ico">📤</span></div>
-          <div class="kpi-card-val" style="color:var(--danger)">€ 9.8k</div>
-          <div class="kpi-card-sub">Margin: 65%</div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" data-t="fatturatoPrevisto">Fatturato YTD</span><span class="kpi-card-ico">📈</span></div>
+          <div class="kpi-card-val" style="color:var(--info)" id="kpi-ytd">—</div>
+          <div class="kpi-card-sub" id="kpi-ytd-sub">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Scadenze totali</span><span class="kpi-card-ico">📅</span></div>
-          <div class="kpi-card-val" id="h-tot">19</div>
-          <div class="kpi-card-sub" id="h-done">11 completate</div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" data-t="scadenzeTotali">Scadenze</span><span class="kpi-card-ico">📅</span></div>
+          <div class="kpi-card-val" id="kpi-scad-tot">—</div>
+          <div class="kpi-card-sub" id="kpi-scad-sub">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Costi compliance 30gg</span><span class="kpi-card-ico">⚠</span></div>
-          <div class="kpi-card-val" style="color:var(--warn)" id="h-costi">€ 4.3k</div>
-          <div class="kpi-card-sub">5 scadenze prossime</div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" data-t="costiCompliance">Costi 30gg</span><span class="kpi-card-ico">⚠</span></div>
+          <div class="kpi-card-val" style="color:var(--warn)" id="kpi-costi30">—</div>
+          <div class="kpi-card-sub" id="kpi-costi30-sub">—</div>
         </div>
       </div>
       <div class="zoho-strip">
         <div class="zoho-l">
           <div class="zoho-ico">💼</div>
-          <div><div class="zoho-name">Zoho Invoice</div><div class="zoho-sub" id="zoho-sync-sub">Caricamento dati reali...</div></div>
+          <div><div class="zoho-name">Zoho Invoice</div><div class="zoho-sub" id="zoho-strip-sub">—</div></div>
         </div>
         <div class="zoho-meta" id="zoho-strip-data">
-          <div class="zm-item"><div class="zm-lbl">Stato</div><div class="zm-val" style="color:var(--muted)">— sync —</div></div>
+          <div class="zm-item"><div class="zm-lbl" data-t="fatturato">Fatturato</div><div class="zm-val" id="zs-fatt">—</div></div>
+          <div class="zm-item"><div class="zm-lbl" data-t="incassato">Incassato</div><div class="zm-val" style="color:var(--accent)" id="zs-inc">—</div></div>
+          <div class="zm-item"><div class="zm-lbl" data-t="inAttesa">In attesa</div><div class="zm-val" style="color:var(--warn)" id="zs-att">—</div></div>
+          <div class="zm-item"><div class="zm-lbl" data-t="fatture">Fatture</div><div class="zm-val" id="zs-num">—</div></div>
         </div>
         <button class="btn" onclick="syncZoho()">↻ Sync</button>
       </div>
       <div class="grid-2">
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title">Scadenze attive</div>
+            <div class="panel-title" data-t="scadenzeAttive">Scadenze attive</div>
             <div class="ftabs">
-              <button class="ftab active" onclick="filterScad('all',this,'sb1')">Tutte</button>
-              <button class="ftab" onclick="filterScad('critical',this,'sb1')">Critiche</button>
-              <button class="ftab" onclick="filterScad('soon',this,'sb1')">Prossime</button>
+              <button class="ftab active" onclick="filterScad('all',this,'sb1')" data-t="tutte">Tutte</button>
+              <button class="ftab" onclick="filterScad('critical',this,'sb1')" data-t="critiche">Critiche</button>
+              <button class="ftab" onclick="filterScad('soon',this,'sb1')" data-t="prossime">Prossime</button>
             </div>
           </div>
-          <table class="scad-table"><thead><tr><th>Scadenza</th><th>Tipo</th><th>Data</th><th>Giorni</th><th>Stato</th></tr></thead>
-          <tbody id="sb1"></tbody></table>
+          <table class="scad-table"><thead><tr>
+            <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th>
+          </tr></thead><tbody id="sb1"></tbody></table>
         </div>
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Timeline 60gg</div></div>
+          <div class="panel-header"><div class="panel-title" data-t="timeline">Timeline 60gg</div></div>
           <div id="tl-body"></div>
         </div>
       </div>
     </div>
 
-    <!-- ══ SCADENZE ══ -->
+    <!-- SCADENZE -->
     <div class="view" id="view-scadenze">
       <div class="panel">
         <div class="panel-header">
-          <div class="panel-title">Tutte le scadenze</div>
+          <div class="panel-title" data-t="scadenze">Scadenze</div>
           <div class="ftabs">
-            <button class="ftab active" onclick="filterScad('all',this,'sb2')">Tutte</button>
-            <button class="ftab" onclick="filterScad('critical',this,'sb2')">Critiche</button>
-            <button class="ftab" onclick="filterScad('soon',this,'sb2')">Prossime</button>
-            <button class="ftab" onclick="filterScad('done',this,'sb2')">Completate</button>
+            <button class="ftab active" onclick="filterScad('all',this,'sb2')" data-t="tutte">Tutte</button>
+            <button class="ftab" onclick="filterScad('critical',this,'sb2')" data-t="critiche">Critiche</button>
+            <button class="ftab" onclick="filterScad('soon',this,'sb2')" data-t="prossime">Prossime</button>
+            <button class="ftab" onclick="filterScad('done',this,'sb2')" data-t="completate">Completate</button>
           </div>
         </div>
-        <table class="scad-table"><thead><tr><th>Scadenza</th><th>Tipo</th><th>Data</th><th>Giorni</th><th>Costo</th><th>Stato</th></tr></thead>
-        <tbody id="sb2"></tbody></table>
+        <table class="scad-table"><thead><tr>
+          <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th>
+        </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
 
-    <!-- ══ FINANCE ══ -->
+    <!-- ENTITÀ -->
+    <div class="view" id="view-entita">
+      <div class="grid-2eq">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title" data-t="gestioneEntita">Gestione entità</div>
+            <button class="btn btn-primary" onclick="openModal('add-entita')" data-t="aggiungiEntita">+ Entità</button>
+          </div>
+          <div class="tag-list" id="entita-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title" data-t="gestioneTipi">Gestione tipi scadenza</div>
+            <button class="btn btn-primary" onclick="openModal('add-tipo')" data-t="aggiungiTipo">+ Tipo</button>
+          </div>
+          <div class="tag-list" id="tipi-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINANCE -->
     <div class="view" id="view-finance">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700" data-t="finance">Finance</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--muted)" data-t="filtroAnno">Anno:</label>
+          <select class="fi" id="anno-filter" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderFinance()">
+            <option value="all" data-t="tuttiGliAnni">Tutti gli anni</option>
+          </select>
+        </div>
+      </div>
       <div class="fin-hero">
-        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato storico</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">— carico —</div><div class="fin-kpi-trend" id="fin-yoy">da Zoho Invoice</div></div>
-        <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl">Incassato</div><div class="fin-kpi-val" style="color:var(--info)" id="fin-incassato">—</div><div class="fin-kpi-trend">fatture pagate</div></div>
-        <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl">In attesa</div><div class="fin-kpi-val" style="color:var(--warn)" id="fin-attesa">—</div><div class="fin-kpi-trend">da incassare</div></div>
-        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl">% Incassato</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-margine">—</div><div class="fin-kpi-trend">su totale fatturato</div></div>
+        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl" data-t="fatturato">Fatturato</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">—</div><div class="fin-kpi-trend" id="fin-yoy">—</div></div>
+        <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl" data-t="incassato">Incassato</div><div class="fin-kpi-val" style="color:var(--info)" id="fin-incassato">—</div><div class="fin-kpi-trend">—</div></div>
+        <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl" data-t="inAttesa">In attesa</div><div class="fin-kpi-val" style="color:var(--warn)" id="fin-attesa">—</div><div class="fin-kpi-trend">—</div></div>
+        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl" data-t="margine">Margine %</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-margine">—</div><div class="fin-kpi-trend" id="fin-nfatt">—</div></div>
       </div>
       <div class="grid-2eq">
-        <div class="panel"><div class="panel-header"><div class="panel-title">Fatturato per anno (storico)</div></div><div class="chart-wrap"><canvas id="chart-bar"></canvas></div></div>
-        <div class="panel"><div class="panel-header"><div class="panel-title">Top clienti per fatturato</div></div><div class="chart-wrap"><canvas id="chart-donut"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><div class="panel-title" data-t="storFatturato">Fatturato per anno</div></div><div class="chart-wrap"><canvas id="chart-bar"></canvas></div></div>
+        <div class="panel"><div class="panel-header"><div class="panel-title" data-t="topClienti">Top clienti</div></div><div class="chart-wrap"><canvas id="chart-donut"></canvas></div></div>
       </div>
       <div class="grid-2">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Fatture recenti</div><span class="badge bo">Zoho live</span></div>
-          <table class="fin-table"><thead><tr><th>Fattura / Cliente</th><th>Data</th><th>Stato</th><th>Importo</th></tr></thead>
+          <div class="panel-header"><div class="panel-title" data-t="movimentiRecenti">Fatture recenti</div><span class="badge bo">Zoho live</span></div>
+          <table class="fin-table"><thead><tr><th>N° / Cliente</th><th data-t="data">Data</th><th data-t="stato">Stato</th><th data-t="fatturato">Importo</th></tr></thead>
           <tbody id="fin-tbody"></tbody></table>
         </div>
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Cashflow proiettato</div></div>
+          <div class="panel-header"><div class="panel-title" data-t="cashflow">Cashflow mensile</div></div>
           <div class="cf-wrap" id="cf-bars"></div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-header"><div class="panel-title">Costi compliance prossimi 90gg</div><span class="badge bw">stima</span></div>
-        <table class="fin-table"><thead><tr><th>Scadenza</th><th>Entità</th><th>Tipo</th><th>Data</th><th>Costo stimato</th></tr></thead>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header"><div class="panel-title" data-t="costiCompliance90">Costi compliance 90gg</div><span class="badge bw">stima</span></div>
+        <table class="fin-table"><thead><tr><th data-t="scadenze">Scadenza</th><th data-t="entita">Entità</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="prezzo">Prezzo cliente</th><th data-t="costoMio">Costo mio</th><th data-t="margine">Margine</th></tr></thead>
         <tbody id="cc-tbody"></tbody></table>
       </div>
     </div>
 
-    <!-- ══ DATI & BACKUP ══ -->
-    <div class="view" id="view-dati">
-      <div class="grid-2eq">
-
-        <!-- SUPABASE CONFIG -->
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">🗄 Supabase — Database permanente</div></div>
-          <div style="padding:18px 20px;">
-            <div class="cfg-section">
-              <div class="cfg-section-title">Come configurare</div>
-              <div class="cfg-hint">
-                1. Vai su <code>supabase.com</code> e crea un progetto gratuito<br>
-                2. Copia la <code>Project URL</code> e la <code>anon key</code> dalle impostazioni API<br>
-                3. Incollale qui sotto e salva — i dati si sincronizzeranno automaticamente
-              </div>
-              <div class="fg"><label class="fl">Supabase URL</label><input type="text" class="fi" id="sb-url" placeholder="https://xxx.supabase.co"></div>
-              <div class="fg"><label class="fl">Anon Key</label><input type="text" class="fi" id="sb-key" placeholder="eyJ..."></div>
-              <div style="display:flex;gap:8px;margin-top:4px;">
-                <button class="btn btn-primary" onclick="saveSupabaseConfig()">Salva e connetti</button>
-                <button class="btn" onclick="testSupabase()">Test connessione</button>
-                <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="clearSupabase()">Disconnetti</button>
-              </div>
-            </div>
-            <div id="sb-status-block" style="margin-top:16px;"></div>
-            <div class="cfg-hint" style="margin-top:16px;">
-              <strong>Aggiornamenti app futuri:</strong><br>
-              Con Supabase attivo puoi sostituire l'HTML su GitHub in qualsiasi momento. L'app leggerà i tuoi dati dal DB senza toccarli. Zero rischi.
-            </div>
-          </div>
-        </div>
-
-        <!-- JSON BACKUP -->
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">📦 Backup JSON</div></div>
-          <div style="padding:18px 20px;">
-            <div class="cfg-section">
-              <div class="cfg-section-title">Export — scarica i tuoi dati</div>
-              <div class="cfg-hint">
-                Esporta tutti i dati in un file <code>.json</code> — leggibile, importabile, editabile. Usalo come backup manuale prima di ogni aggiornamento dell'app.
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="exportJSON()">⬇ Scarica backup completo</button>
-                <button class="btn" onclick="exportJSON('scadenze')">Solo scadenze</button>
-                <button class="btn" onclick="exportJSON('transactions')">Solo movimenti</button>
-              </div>
-            </div>
-            <div class="cfg-section" style="margin-top:20px;">
-              <div class="cfg-section-title">Import — carica dati da file</div>
-              <div class="cfg-hint">
-                Importa un backup precedente. I dati esistenti verranno <strong>sostituiti</strong>. Fai sempre un export prima.
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <label class="btn btn-info" style="cursor:pointer">⬆ Carica file JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
-                <button class="btn" onclick="previewJSON()">Anteprima JSON attuale</button>
-              </div>
-            </div>
-            <div class="cfg-section" style="margin-top:20px;">
-              <div class="cfg-section-title">Statistiche dati attuali</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="data-stats"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- JSON PREVIEW -->
-      <div class="panel" id="json-preview-panel" style="display:none;margin-top:4px;">
-        <div class="panel-header">
-          <div class="panel-title">Anteprima JSON</div>
-          <button class="btn" onclick="document.getElementById('json-preview-panel').style.display='none'">✕ Chiudi</button>
-        </div>
-        <div style="padding:16px 20px;">
-          <textarea class="fta" id="json-preview-area" style="height:260px;font-size:10px;" readonly></textarea>
-        </div>
+    <!-- ZOHO -->
+    <div class="view" id="view-zohoview">
+      <div class="panel" style="padding:48px;text-align:center;color:var(--muted)">
+        <div style="font-size:28px;margin-bottom:10px">⊡</div>
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px" data-t="zoho">Zoho Invoice</div>
+        <div style="font-size:13px">Integrazione diretta — v2</div>
       </div>
     </div>
 
-    <!-- ══ OTHER ══ -->
-    <div class="view" id="view-entita"><div class="panel" style="padding:48px;text-align:center;color:var(--muted)"><div style="font-size:28px;margin-bottom:10px">◻</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px">Entità</div><div style="font-size:13px">Modulo in sviluppo — v2</div></div></div>
-    <div class="view" id="view-zohoview"><div class="panel" style="padding:48px;text-align:center;color:var(--muted)"><div style="font-size:28px;margin-bottom:10px">⊡</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px">Zoho Invoice</div><div style="font-size:13px">Integrazione diretta — v2</div></div></div>
+    <!-- DATI & BACKUP -->
+    <div class="view" id="view-dati">
+      <div class="grid-2eq">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title" data-t="backupJson">Backup JSON</div></div>
+          <div style="padding:18px 20px;">
+            <div class="cfg-section-title" data-t="exportJson">Export</div>
+            <div class="cfg-hint">Scarica tutti i dati in un file <code>.json</code> — usalo come backup prima di ogni aggiornamento.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+              <button class="btn btn-primary" onclick="exportJSON()">⬇ <span data-t="scaricaBackup">Scarica backup</span></button>
+              <button class="btn" onclick="exportJSON('scadenze')">Solo scadenze</button>
+            </div>
+            <div class="cfg-section-title" data-t="importJson">Import JSON</div>
+            <div class="cfg-hint">Importa un backup precedente. I dati esistenti verranno sostituiti.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label class="btn btn-info" style="cursor:pointer">⬆ <span data-t="importJson">Import JSON</span><input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+              <button class="btn" onclick="previewJSON()">Anteprima JSON</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title" data-t="statistiche">Statistiche dati</div></div>
+          <div style="padding:18px 20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="data-stats"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="json-preview-panel" style="display:none;">
+        <div class="panel-header"><div class="panel-title">JSON Preview</div><button class="btn" onclick="document.getElementById('json-preview-panel').style.display='none'">✕</button></div>
+        <div style="padding:16px 20px;"><textarea class="fi" id="json-preview-area" style="height:260px;font-size:10px;font-family:'DM Mono',monospace;" readonly></textarea></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
     <div class="view" id="view-settings">
       <div class="grid-2eq">
-        <!-- 2FA SETUP -->
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">🔐 Sicurezza — 2FA</div></div>
+          <div class="panel-header"><div class="panel-title" data-t="sicurezza">Sicurezza — 2FA</div></div>
           <div style="padding:18px 20px;">
-            <div class="cfg-hint" style="margin-bottom:16px;">
-              Configura Google Authenticator per aggiungere un secondo livello di sicurezza. Dopo la configurazione ogni login richiederà email + password + codice OTP.
-            </div>
-            <div id="mfa-status-block" style="margin-bottom:16px;"></div>
+            <div class="cfg-hint" style="margin-bottom:14px;">Configura Google Authenticator per proteggere ogni accesso con email + password + OTP.</div>
+            <div id="mfa-status-block" style="margin-bottom:14px;"></div>
             <div id="mfa-qr-block" style="display:none;text-align:center;margin-bottom:16px;">
-              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Scansiona con Google Authenticator</div>
-              <canvas id="mfa-qr-canvas" style="border-radius:8px;"></canvas>
-              <div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;word-break:break-all;" id="mfa-secret-txt"></div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Scansiona con Google Authenticator</div>
+              <canvas id="mfa-qr-canvas"></canvas>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:'DM Mono',monospace;word-break:break-all;" id="mfa-secret-txt"></div>
               <div style="margin-top:14px;">
-                <div class="fg"><label class="fl">Inserisci codice OTP per confermare</label>
-                <input type="text" class="fi" id="mfa-verify-code" placeholder="000000" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;font-family:'DM Mono',monospace"></div>
-                <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="verifyMFAEnroll()">✓ Conferma e attiva 2FA</button>
+                <div class="fg"><label class="fl" data-t="codiceOtp">Codice OTP</label>
+                <input type="text" class="fi" id="mfa-verify-code" placeholder="000000" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;font-family:'DM Mono',monospace" autocomplete="one-time-code"></div>
+                <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="verifyMFAEnroll()">✓ Conferma 2FA</button>
               </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="setupMFA()">⚙ Configura Google Authenticator</button>
-              <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="removeMFA()">Rimuovi 2FA</button>
+              <button class="btn btn-primary" onclick="setupMFA()" data-t="configAuth">⚙ Configura Auth</button>
+              <button class="btn btn-danger" onclick="removeMFA()" data-t="rimuovi2fa">Rimuovi 2FA</button>
             </div>
             <div id="mfa-msg" style="margin-top:10px;font-size:12px;font-family:'DM Mono',monospace;"></div>
           </div>
         </div>
-
-        <!-- SESSIONE -->
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">👤 Account</div></div>
+          <div class="panel-header"><div class="panel-title" data-t="account">Account</div></div>
           <div style="padding:18px 20px;">
-            <div class="cfg-hint" style="margin-bottom:16px;">
-              Sei loggato come <strong id="settings-email" style="color:var(--accent)">—</strong>
-            </div>
+            <div class="cfg-hint" style="margin-bottom:14px;">Loggato come <strong id="settings-email" style="color:var(--accent)">—</strong></div>
             <div class="cfg-hint">
-              <strong>Sicurezza attiva:</strong><br>
               ✅ Login email + password Supabase<br>
-              ✅ Solo utenti registrati possono accedere<br>
-              ✅ Sessione cifrata con JWT<br>
-              ✅ 2FA con Google Authenticator (se configurato)
+              ✅ Solo utenti registrati<br>
+              ✅ Sessione JWT cifrata<br>
+              ✅ 2FA Google Authenticator
             </div>
-            <button class="btn" style="margin-top:16px;color:var(--danger);border-color:var(--danger)" onclick="googleLogout()">↩ Esci dall'app</button>
+            <button class="btn btn-danger" style="margin-top:16px" onclick="doLogout()" data-t="esci">↩ Esci</button>
           </div>
         </div>
       </div>
@@ -740,139 +623,382 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <!-- MODAL SCADENZA -->
 <div class="modal-overlay" id="modal-scadenza">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">Nuova scadenza</div><button class="modal-close" onclick="closeModal('scadenza')">✕</button></div>
+    <div class="modal-header"><div class="modal-title" data-t="nomeScadenza">Nuova scadenza</div><button class="modal-close" onclick="closeModal('scadenza')">✕</button></div>
     <div class="modal-body">
-      <div class="fg"><label class="fl">Nome scadenza</label><input type="text" class="fi" id="f-nome" placeholder="es. Rinnovo licenza attività"></div>
+      <div class="fg"><label class="fl" data-t="nomeScadenza">Nome scadenza</label><input type="text" class="fi" id="f-nome" placeholder="es. Rinnovo licenza"></div>
       <div class="frow">
-        <div class="fg"><label class="fl">Entità</label><select class="fsel" id="f-entita"><option>Numa Bali LLC</option><option>Sana by NUMA</option><option>Kaja by NUMA</option><option>TaxPilot Srl</option><option>Enomad UAE</option><option>Enomad Swiss</option><option>AFFLUMINA LLC</option></select></div>
-        <div class="fg"><label class="fl">Tipo</label><select class="fsel" id="f-tipo"><option>Licenza</option><option>Nominee</option><option>Sede legale</option><option>Dichiarazione fiscale</option><option>Bilancio</option><option>Rinnovo societario</option><option>Permesso</option><option>Altro</option></select></div>
+        <div class="fg"><label class="fl" data-t="entita">Entità</label><select class="fsel" id="f-entita"></select></div>
+        <div class="fg"><label class="fl" data-t="tipo">Tipo</label><select class="fsel" id="f-tipo"></select></div>
       </div>
       <div class="frow">
-        <div class="fg"><label class="fl">Data scadenza</label><input type="date" class="fi" id="f-data"></div>
-        <div class="fg"><label class="fl">Costo stimato (€)</label><input type="number" class="fi" id="f-costo" placeholder="0"></div>
+        <div class="fg"><label class="fl" data-t="data">Data scadenza</label><input type="date" class="fi" id="f-data"></div>
+        <div class="fg"><label class="fl" data-t="reminderTelegram">Reminder Telegram</label>
+          <select class="fsel" id="f-reminder">
+            <option value="7">7 giorni prima</option>
+            <option value="15" selected>15 giorni prima</option>
+            <option value="30">30 giorni prima</option>
+            <option value="7,15,30">7 + 15 + 30 giorni</option>
+          </select>
+        </div>
       </div>
       <div class="frow">
-        <div class="fg"><label class="fl">Reminder Telegram</label><select class="fsel" id="f-reminder"><option value="7">7 giorni prima</option><option value="15" selected>15 giorni prima</option><option value="30">30 giorni prima</option><option value="7,15,30">7 + 15 + 30 giorni</option></select></div>
-        <div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="f-note" placeholder="Facoltativo"></div>
+        <div class="fg"><label class="fl" data-t="prezzo">Prezzo cliente (€)</label><input type="number" class="fi" id="f-prezzo" placeholder="0"></div>
+        <div class="fg"><label class="fl" data-t="costoMio">Costo mio (€)</label><input type="number" class="fi" id="f-costo" placeholder="0"></div>
       </div>
-      <div class="tg-hint">✈ Alert Telegram programmato su @EnomadAlerts nei giorni selezionati.</div>
+      <div class="fg"><label class="fl" data-t="note">Note</label><input type="text" class="fi" id="f-note" placeholder="Facoltativo"></div>
+      <div class="tg-hint">✈ Alert Telegram programmato nei giorni selezionati.</div>
     </div>
-    <div class="modal-footer"><button class="btn" onclick="closeModal('scadenza')">Annulla</button><button class="btn btn-primary" onclick="addScadenza()">Salva</button></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('scadenza')" data-t="annulla">Annulla</button><button class="btn btn-primary" onclick="addScadenza()" data-t="salva">Salva</button></div>
   </div>
 </div>
 
-<!-- MODAL DB CONFIG (quick access) -->
-<div class="modal-overlay" id="modal-dbconfig">
+<!-- MODAL ENTITÀ -->
+<div class="modal-overlay" id="modal-add-entita">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">⚙ Configura Supabase</div><button class="modal-close" onclick="closeModal('dbconfig')">✕</button></div>
+    <div class="modal-header"><div class="modal-title" data-t="gestioneEntita">Nuova entità</div><button class="modal-close" onclick="closeModal('add-entita')">✕</button></div>
     <div class="modal-body">
-      <div class="cfg-hint">Vai su <code>supabase.com</code> → Settings → API per trovare questi valori.</div>
-      <div class="fg" style="margin-top:12px;"><label class="fl">Supabase URL</label><input type="text" class="fi" id="sb-url2" placeholder="https://xxx.supabase.co"></div>
-      <div class="fg"><label class="fl">Anon Key</label><input type="text" class="fi" id="sb-key2" placeholder="eyJ..."></div>
-      <div class="cfg-hint" style="margin-top:4px;">Una volta configurato, i tuoi dati vivranno su Supabase — potrai aggiornare l'HTML liberamente senza mai perderli.</div>
+      <div class="fg"><label class="fl">Nome entità</label><input type="text" class="fi" id="new-entita-nome" placeholder="es. Enomad UAE"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Paese</label><input type="text" class="fi" id="new-entita-paese" placeholder="UAE, IT, CH..."></div>
+        <div class="fg"><label class="fl">Valuta</label><select class="fsel" id="new-entita-valuta"><option>EUR</option><option>AED</option><option>USD</option><option>CHF</option><option>IDR</option></select></div>
+      </div>
     </div>
-    <div class="modal-footer"><button class="btn" onclick="closeModal('dbconfig')">Annulla</button><button class="btn btn-primary" onclick="saveSupabaseConfig(true)">Salva e connetti</button></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('add-entita')" data-t="annulla">Annulla</button><button class="btn btn-primary" onclick="addEntita()" data-t="salva">Salva</button></div>
   </div>
 </div>
 
+<!-- MODAL TIPO -->
+<div class="modal-overlay" id="modal-add-tipo">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" data-t="gestioneTipi">Nuovo tipo scadenza</div><button class="modal-close" onclick="closeModal('add-tipo')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome tipo</label><input type="text" class="fi" id="new-tipo-nome" placeholder="es. Licenza, Nominee..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('add-tipo')" data-t="annulla">Annulla</button><button class="btn btn-primary" onclick="addTipo()" data-t="salva">Salva</button></div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div class="toast" id="toast"><span>✓</span><span id="toast-msg"></span></div>
 
 </div><!-- fine app-screen -->
 
 <script>
-/* ══ DATA ══ */
-const TODAY = new Date('2026-03-19');
-const STORAGE_KEY = 'enomad_data_v1';
-
-// Default demo data
-const DEFAULT_DATA = {
-  scadenze:[
-    {id:1,nome:'Rinnovo nominee director',entita:'Enomad UAE',tipo:'Nominee',data:'2026-03-22',stato:'pending',costo:1800,note:''},
-    {id:2,nome:'Dichiarazione IVA Q1',entita:'TaxPilot Srl',tipo:'Dichiarazione fiscale',data:'2026-03-25',stato:'pending',costo:300,note:''},
-    {id:3,nome:'Rinnovo sede legale',entita:'Enomad Swiss',tipo:'Sede legale',data:'2026-03-26',stato:'pending',costo:2200,note:''},
-    {id:4,nome:'Licenza ristorazione',entita:'Kaja by NUMA',tipo:'Licenza',data:'2026-04-05',stato:'pending',costo:800,note:''},
-    {id:5,nome:'Bilancio annuale',entita:'Enomad UAE',tipo:'Bilancio',data:'2026-04-15',stato:'pending',costo:1200,note:''},
-    {id:6,nome:'Rinnovo business license',entita:'Numa Bali LLC',tipo:'Licenza',data:'2026-04-20',stato:'pending',costo:650,note:''},
-    {id:7,nome:'Nominee shareholder',entita:'AFFLUMINA LLC',tipo:'Nominee',data:'2026-05-01',stato:'pending',costo:900,note:''},
-    {id:8,nome:'Permesso operativo',entita:'Sana by NUMA',tipo:'Permesso',data:'2026-05-10',stato:'pending',costo:400,note:''},
-    {id:9,nome:'Tax return US',entita:'AFFLUMINA LLC',tipo:'Dichiarazione fiscale',data:'2026-05-30',stato:'done',costo:500,note:''},
-  ],
-  transactions:[
-    {id:1,desc:'Consulenza struttura societaria',entita:'Enomad UAE',data:'18/03',importo:8400,tipo:'in'},
-    {id:2,desc:'Formazione società UAE',entita:'Enomad UAE',data:'15/03',importo:3200,tipo:'in'},
-    {id:3,desc:'TaxPilot — abbonamento mar',entita:'TaxPilot Srl',data:'12/03',importo:1800,tipo:'in'},
-    {id:4,desc:'Rinnovo nominee Enomad UAE',entita:'Enomad UAE',data:'10/03',importo:1800,tipo:'out'},
-    {id:5,desc:'Consulenza banking Indonesia',entita:'Numa Bali LLC',data:'08/03',importo:5500,tipo:'in'},
-    {id:6,desc:'Hosting & infrastruttura',entita:'TaxPilot Srl',data:'01/03',importo:320,tipo:'out'},
-    {id:7,desc:'Commercialista Swiss',entita:'Enomad Swiss',data:'28/02',importo:2200,tipo:'out'},
-    {id:8,desc:'Licenza software',entita:'Enomad UAE',data:'25/02',importo:480,tipo:'out'},
-  ],
-  supabase:{url:'',key:'',connected:false},
-  meta:{version:'1.0',lastSaved:null,lastExport:null}
-};
-
-const ticoMap={'Licenza':'🪪','Nominee':'👤','Sede legale':'🏢','Dichiarazione fiscale':'📋','Bilancio':'📊','Rinnovo societario':'🔄','Permesso':'✅','Altro':'📌'};
-
-/* ══ STORAGE — localStorage as fallback ══ */
-function loadData(){
+/* ══ AUTH ══ */
+async function initAuth(){
+  await supa.auth.signOut();
+  showLogin();
+  supa.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'){currentUser=null;showLogin();}
+  });
+}
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  const btnEl=document.getElementById('login-btn');
+  errEl.textContent='';btnEl.textContent=t('accedi')+'...';btnEl.disabled=true;
   try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw){const d=JSON.parse(raw);return {...DEFAULT_DATA,...d,meta:{...DEFAULT_DATA.meta,...d.meta}};}
-  }catch(e){}
-  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    const{data,error}=await supa.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    const{data:mfaData}=await supa.auth.mfa.listFactors();
+    const hasTotp=mfaData?.totp?.some(f=>f.status==='verified');
+    if(hasTotp){showMFAStep();}
+    else{const{data:{session}}=await supa.auth.getSession();if(session){currentUser=session.user;showApp(session.user);}}
+  }catch(e){
+    errEl.textContent='⛔ '+(e.message==='Invalid login credentials'?'Email o password errati':e.message);
+    btnEl.textContent=t('accedi');btnEl.disabled=false;
+  }
 }
-function saveData(){
-  APP.meta.lastSaved=new Date().toISOString();
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(APP));}catch(e){showToast('⚠ Errore salvataggio locale');}
+async function doMFA(){
+  const code=document.getElementById('mfa-code').value.trim();
+  const errEl=document.getElementById('login-error');
+  const btnEl=document.getElementById('mfa-btn');
+  errEl.textContent='';btnEl.textContent=t('verifica')+'...';btnEl.disabled=true;
+  try{
+    const{data:factors,error:fe}=await supa.auth.mfa.listFactors();if(fe)throw fe;
+    const totp=factors?.totp?.find(f=>f.status==='verified');
+    if(!totp)throw new Error('No TOTP factor');
+    const{data:cd,error:ce}=await supa.auth.mfa.challenge({factorId:totp.id});if(ce)throw ce;
+    const{error:ve}=await supa.auth.mfa.verify({factorId:totp.id,challengeId:cd.id,code});if(ve)throw ve;
+    const{data:{session}}=await supa.auth.getSession();
+    if(session){currentUser=session.user;showApp(session.user);}
+  }catch(e){
+    errEl.textContent='⛔ '+(e.message.includes('Invalid')||e.message.includes('mfa')?'Codice OTP errato':e.message);
+    btnEl.textContent=t('verifica');btnEl.disabled=false;
+  }
 }
+function showMFAStep(){
+  document.getElementById('login-form-step').style.display='none';
+  document.getElementById('mfa-form-step').style.display='block';
+  document.getElementById('login-error').textContent='';
+}
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-form-step').style.display='block';
+  document.getElementById('mfa-form-step').style.display='none';
+  document.getElementById('login-error').textContent='';
+  ['login-email','login-password','mfa-code'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const b1=document.getElementById('login-btn');const b2=document.getElementById('mfa-btn');
+  if(b1){b1.textContent=t('accedi');b1.disabled=false;}
+  if(b2){b2.textContent=t('verifica');b2.disabled=false;}
+}
+function showApp(user){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+  const n=document.getElementById('user-name');if(n)n.textContent=user.email;
+  loadAllData();
+}
+async function doLogout(){await supa.auth.signOut();showToast('✓ Logout');showLogin();}
 
-let APP=loadData();
+/* ══ DATA STORE ══ */
+const STORAGE_KEY='enomad_v3';
+let APP={
+  scadenze:[],
+  entita:[],
+  tipi:[],
+  meta:{lastSaved:null,lastExport:null,lastZohoSync:null}
+};
+let ZOHO=null;
 let chartBar,chartDonut;
 
-/* ══ UTILS ══ */
+function loadLocalData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){const d=JSON.parse(raw);APP={...APP,...d};}
+  }catch(e){}
+}
+function saveLocalData(){
+  APP.meta.lastSaved=new Date().toISOString();
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(APP));}catch(e){}
+}
+
+async function loadAllData(){
+  loadLocalData();
+  await Promise.all([loadScadenzeFromDB(), loadEntitaFromDB(), loadTipiFromDB()]);
+  syncZoho();
+  renderAll();
+  updateDataStats();
+}
+
+/* ══ SUPABASE DB ══ */
+async function loadScadenzeFromDB(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('scadenze').select('*').order('data',{ascending:true});
+    if(error)throw error;
+    if(data){
+      APP.scadenze=data.map(r=>({
+        id:r.id,nome:r.nome,entita:r.entita,tipo:r.tipo,data:r.data,
+        stato:r.stato,costo:parseFloat(r.costo)||0,
+        prezzo:parseFloat(r.prezzo)||0,
+        note:r.note||'',reminder:r.reminder||'15'
+      }));
+      saveLocalData();
+    }
+  }catch(e){console.error('loadScadenze:',e);}
+}
+
+async function loadEntitaFromDB(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('entita').select('*').order('nome');
+    if(error)throw error;
+    if(data&&data.length>0){
+      APP.entita=data.map(r=>({id:r.id,nome:r.nome,paese:r.paese||'',valuta:r.valuta||'EUR'}));
+      saveLocalData();
+    }
+    // Se non ci sono entità usa quelle locali
+  }catch(e){console.error('loadEntita:',e);}
+}
+
+async function loadTipiFromDB(){
+  if(!currentUser)return;
+  try{
+    // Tipi salvati in localStorage per semplicità
+    if(!APP.tipi||APP.tipi.length===0){
+      APP.tipi=['Licenza','Nominee','Sede legale','Dichiarazione fiscale','Bilancio','Rinnovo societario','Permesso','Altro'];
+      saveLocalData();
+    }
+  }catch(e){}
+}
+
+async function saveScadenzaToDB(s){
+  if(!currentUser)return null;
+  const isUUID=s.id&&typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
+  const row={user_id:currentUser.id,nome:s.nome,entita:s.entita,tipo:s.tipo,data:s.data,
+    stato:s.stato,costo:s.costo||0,prezzo:s.prezzo||0,note:s.note||'',reminder:s.reminder||'15'};
+  if(isUUID){
+    await supa.from('scadenze').upsert({id:s.id,...row});
+    return s;
+  }else{
+    const{data,error}=await supa.from('scadenze').insert(row).select().single();
+    if(error){console.error(error);return null;}
+    return data;
+  }
+}
+
+async function updateScadenzaStatoDB(id,stato){
+  if(!currentUser||!id)return;
+  const isUUID=typeof id==='string'&&id.length===36&&id.includes('-');
+  if(isUUID)await supa.from('scadenze').update({stato}).eq('id',id).eq('user_id',currentUser.id);
+}
+
+/* ══ ENTITÀ & TIPI ══ */
+function renderEntita(){
+  const el=document.getElementById('entita-list');
+  if(!el)return;
+  el.innerHTML='';
+  if(APP.entita.length===0){
+    el.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px;">Nessuna entità — aggiungine una</div>';
+    return;
+  }
+  APP.entita.forEach((e,i)=>{
+    el.innerHTML+=`<div class="tag-item">
+      <span>${e.nome}</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:4px">${e.paese||''} ${e.valuta||''}</span>
+      <button class="tag-del" onclick="deleteEntita(${i})" title="Elimina">✕</button>
+    </div>`;
+  });
+  // Aggiorna select nel modal scadenza
+  const sel=document.getElementById('f-entita');
+  if(sel){sel.innerHTML=APP.entita.map(e=>`<option>${e.nome}</option>`).join('');}
+}
+
+function renderTipi(){
+  const el=document.getElementById('tipi-list');
+  if(!el)return;
+  el.innerHTML='';
+  APP.tipi.forEach((tipo,i)=>{
+    el.innerHTML+=`<div class="tag-item">
+      <span>${tipo}</span>
+      <button class="tag-edit" onclick="editTipo(${i})" title="Modifica">✎</button>
+      <button class="tag-del" onclick="deleteTipo(${i})" title="Elimina">✕</button>
+    </div>`;
+  });
+  // Aggiorna select nel modal scadenza
+  const sel=document.getElementById('f-tipo');
+  if(sel){sel.innerHTML=APP.tipi.map(t=>`<option>${t}</option>`).join('');}
+}
+
+async function addEntita(){
+  const nome=document.getElementById('new-entita-nome').value.trim();
+  if(!nome){showToast('⚠ Inserisci il nome');return;}
+  const paese=document.getElementById('new-entita-paese').value.trim();
+  const valuta=document.getElementById('new-entita-valuta').value;
+  let newEnt={nome,paese,valuta};
+  if(currentUser){
+    const{data,error}=await supa.from('entita').insert({user_id:currentUser.id,nome,paese,valuta}).select().single();
+    if(error){console.error(error);}else{newEnt={...newEnt,id:data.id};}
+  }
+  APP.entita.push(newEnt);
+  saveLocalData();
+  closeModal('add-entita');
+  renderEntita();
+  document.getElementById('new-entita-nome').value='';
+  document.getElementById('new-entita-paese').value='';
+  showToast('✓ Entità aggiunta');
+}
+
+async function deleteEntita(i){
+  const e=APP.entita[i];
+  if(!confirm('Eliminare "'+e.nome+'"?'))return;
+  if(e.id&&currentUser)await supa.from('entita').delete().eq('id',e.id).eq('user_id',currentUser.id);
+  APP.entita.splice(i,1);
+  saveLocalData();
+  renderEntita();
+  showToast('✓ Entità eliminata');
+}
+
+function addTipo(){
+  const nome=document.getElementById('new-tipo-nome').value.trim();
+  if(!nome){showToast('⚠ Inserisci il nome');return;}
+  if(APP.tipi.includes(nome)){showToast('⚠ Tipo già esistente');return;}
+  APP.tipi.push(nome);
+  saveLocalData();
+  closeModal('add-tipo');
+  renderTipi();
+  document.getElementById('new-tipo-nome').value='';
+  showToast('✓ Tipo aggiunto');
+}
+
+function editTipo(i){
+  const nuovoNome=prompt('Nuovo nome per "'+APP.tipi[i]+'":', APP.tipi[i]);
+  if(!nuovoNome||nuovoNome===APP.tipi[i])return;
+  APP.tipi[i]=nuovoNome.trim();
+  saveLocalData();
+  renderTipi();
+  showToast('✓ Tipo aggiornato');
+}
+
+function deleteTipo(i){
+  if(!confirm('Eliminare "'+APP.tipi[i]+'"?'))return;
+  APP.tipi.splice(i,1);
+  saveLocalData();
+  renderTipi();
+  showToast('✓ Tipo eliminato');
+}
+
+/* ══ SCADENZE ══ */
+const TODAY=new Date();
 function daysTo(d){return Math.ceil((new Date(d)-TODAY)/86400000);}
 function dcc(d){return d<=7?'dc2':d<=30?'dw2':'dok';}
 function dcColor(d){return d<=7?'var(--danger)':d<=30?'var(--warn)':'var(--accent)';}
+function ticoIcon(tipo){
+  const map={'Licenza':'🪪','Nominee':'👤','Sede legale':'🏢','Dichiarazione fiscale':'📋',
+    'Bilancio':'📊','Rinnovo societario':'🔄','Permesso':'✅','Altro':'📌'};
+  return map[tipo]||'📌';
+}
 
-/* ══ RENDER SCADENZE ══ */
 function renderTable(filter,tbid){
   const tb=document.getElementById(tbid);if(!tb)return;
   tb.innerHTML='';
   let list=[...APP.scadenze];
   if(filter==='done')list=list.filter(s=>s.stato==='done');
-  else{list=list.filter(s=>s.stato!=='done');
+  else{
+    list=list.filter(s=>s.stato!=='done');
     if(filter==='critical')list=list.filter(s=>daysTo(s.data)<=7);
     if(filter==='soon')list=list.filter(s=>daysTo(s.data)<=30&&daysTo(s.data)>7);
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
   const showCosto=tbid==='sb2';
+  if(list.length===0){
+    const cols=showCosto?6:5;
+    tb.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Nessuna scadenza</td></tr>`;
+    return;
+  }
   list.forEach(s=>{
     const done=s.stato==='done';
     const d=done?0:daysTo(s.data);
     const cls=done?'dok':dcc(d);
     const col=done?'var(--accent)':dcColor(d);
     const dLabel=done?'✓':d+'gg';
-    const statusTxt=done?'Completata':d<=7?'Urgente':d<=30?'Prossima':'OK';
-    const costoCol=showCosto?`<td class="amt-out" style="font-size:12px">${s.costo>0?'− €'+s.costo.toLocaleString('it-IT'):'—'}</td>`:'';
+    const statusTxt=done?t('completata'):d<=7?t('urgente'):d<=30?t('prossima'):t('ok');
+    const costoCol=showCosto?`<td>
+      ${s.prezzo>0?`<div class="amt-in" style="font-size:11px">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
+      ${s.costo>0?`<div class="amt-out" style="font-size:10px;color:var(--muted)">cost: €${s.costo.toLocaleString('it-IT')}</div>`:''}
+    </td>`:'';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.nome}</div><div class="etag">${s.entita}</div></td>
-      <td style="color:var(--text2);font-size:12px">${ticoMap[s.tipo]||'📌'} ${s.tipo}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data.split('-').reverse().join('/')}</td>
+      <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
       ${costoCol}
       <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>`;
     if(!done)tr.onclick=()=>markDone(s.id);
     tb.appendChild(tr);
   });
-  updateKPIs();
 }
 
 function renderTimeline(){
   const tb=document.getElementById('tl-body');if(!tb)return;
   tb.innerHTML='';
-  APP.scadenze.filter(s=>s.stato!=='done').sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,9).forEach(s=>{
+  const list=APP.scadenze.filter(s=>s.stato!=='done').sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,9);
+  if(list.length===0){tb.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center">Nessuna scadenza</div>';return;}
+  list.forEach(s=>{
     const d=daysTo(s.data),c=dcColor(d);
-    const parts=s.data.split('-');
+    const parts=s.data?.split('-')||['','',''];
     tb.innerHTML+=`<div class="tl-item"><div class="tl-date" style="color:${c}">${parts[2]}/${parts[1]}</div>
       <div><div class="tl-name">${s.nome}</div><div class="tl-meta">${s.entita} · ${s.tipo}</div></div></div>`;
   });
@@ -883,12 +1009,16 @@ function updateKPIs(){
   const critical=pending.filter(s=>daysTo(s.data)<=7).length;
   const done=APP.scadenze.filter(s=>s.stato==='done').length;
   const soon30=pending.filter(s=>daysTo(s.data)<=30);
-  const costiPrev=soon30.reduce((a,s)=>a+s.costo,0);
+  const costiPrev=soon30.reduce((a,s)=>a+(s.costo||0),0);
   const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   el('h-critiche',critical);
-  el('h-tot',APP.scadenze.length);
-  el('h-done',done+' completate');
-  el('h-costi','€ '+Math.round(costiPrev/100)/10+'k');
+  el('kpi-scad-tot',APP.scadenze.length);
+  el('kpi-scad-sub',done+' '+t('completate'));
+  el('kpi-costi30','€ '+Math.round(costiPrev).toLocaleString('it-IT'));
+  el('kpi-costi30-sub',soon30.length+' scadenze');
+  el('h-nentita',APP.entita.length);
+  const paesi=[...new Set(APP.entita.map(e=>e.paese).filter(Boolean))];
+  el('h-paesi',paesi.length+' paesi');
 }
 
 function filterScad(f,el,tbid){
@@ -897,129 +1027,155 @@ function filterScad(f,el,tbid){
   renderTable(f,tbid);
 }
 
-function markDone(id){
+async function markDone(id){
   const s=APP.scadenze.find(x=>x.id===id);
   if(s){
     s.stato='done';
-    saveData();
-    updateScadenzaStatoDB(id,'done');
-    renderTable('all','sb1');renderTable('all','sb2');renderTimeline();
-    showToast('✓ Completata: '+s.nome);
+    saveLocalData();
+    await updateScadenzaStatoDB(id,'done');
+    renderAll();
+    showToast('✓ '+t('completata')+': '+s.nome);
   }
 }
 
-/* ══ ADD SCADENZA ══ */
 async function addScadenza(){
   const nome=document.getElementById('f-nome').value.trim();
   const data=document.getElementById('f-data').value;
   if(!nome||!data){showToast('⚠ Compila nome e data');return;}
   const nuova={
-    id: Date.now(),
-    nome,
+    id:Date.now(),nome,
     entita:document.getElementById('f-entita').value,
     tipo:document.getElementById('f-tipo').value,
-    data,
-    stato:'pending',
-    costo:parseInt(document.getElementById('f-costo').value)||0,
+    data,stato:'pending',
+    costo:parseFloat(document.getElementById('f-costo').value)||0,
+    prezzo:parseFloat(document.getElementById('f-prezzo').value)||0,
     note:document.getElementById('f-note').value||'',
-    reminder:document.getElementById('f-reminder')?.value||'15'
+    reminder:document.getElementById('f-reminder').value||'15'
   };
-  if(currentUser){
-    const saved=await saveScadenzaToDB(nuova);
-    if(saved)nuova.id=saved.id;
-  }
+  const saved=await saveScadenzaToDB(nuova);
+  if(saved)nuova.id=saved.id;
   APP.scadenze.push(nuova);
   APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
-  saveData();
+  saveLocalData();
   closeModal('scadenza');
-  renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
+  renderAll();
   showToast('✓ Scadenza salvata su Supabase');
-  ['f-nome','f-costo','f-note'].forEach(id=>document.getElementById(id).value='');
+  ['f-nome','f-costo','f-prezzo','f-note'].forEach(id=>document.getElementById(id).value='');
 }
 
-/* ══ FINANCE — dati reali da finance-data.json ══ */
-let ZOHO = null; // cache dati Zoho
+/* ══ FINANCE ══ */
+function populateAnnoFilter(){
+  const sel=document.getElementById('anno-filter');
+  if(!sel||!ZOHO?.perAnno)return;
+  const anni=Object.keys(ZOHO.perAnno).sort().reverse();
+  sel.innerHTML=`<option value="all">${t('tuttiGliAnni')}</option>`+anni.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
 
 function renderFinance(){
-  if(!ZOHO){ renderFinancePlaceholder(); return; }
+  if(!ZOHO){return;}
+  const sel=document.getElementById('anno-filter');
+  const annoSel=sel?.value||'all';
 
-  // ── Finance KPI hero aggiornati ──
-  const s = ZOHO.summary;
-  const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
-  el('fin-fatturato', '€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
-  el('fin-incassato', '€ '+Math.round(s.incassato).toLocaleString('it-IT'));
-  el('fin-attesa', '€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
-  const margine = s.fatturato > 0 ? Math.round((s.incassato/s.fatturato)*100) : 0;
-  el('fin-margine', margine+'%');
+  let fatturato,incassato,inAttesa,numFatture;
+  if(annoSel==='all'){
+    fatturato=ZOHO.summary.fatturato;
+    incassato=ZOHO.summary.incassato;
+    inAttesa=ZOHO.summary.inAttesa;
+    numFatture=ZOHO.summary.numFatture;
+  }else{
+    const d=ZOHO.perAnno[annoSel]||{};
+    fatturato=d.fatturato||0;
+    incassato=d.incassato||0;
+    inAttesa=d.inAttesa||0;
+    numFatture=d.count||0;
+  }
+  const margine=fatturato>0?Math.round((incassato/fatturato)*100):0;
+  const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  el('fin-fatturato','€ '+Math.round(fatturato).toLocaleString('it-IT'));
+  el('fin-incassato','€ '+Math.round(incassato).toLocaleString('it-IT'));
+  el('fin-attesa','€ '+Math.round(inAttesa).toLocaleString('it-IT'));
+  el('fin-margine',margine+'%');
+  el('fin-nfatt',numFatture+' '+t('fatture'));
 
-  // ── Trend YoY ──
-  const anni = Object.keys(ZOHO.perAnno||{}).sort();
-  const annoAtt = new Date().getFullYear().toString();
-  const annoPre = (parseInt(annoAtt)-1).toString();
-  const fattAtt = ZOHO.perAnno[annoAtt]?.fatturato || 0;
-  const fattPre = ZOHO.perAnno[annoPre]?.fatturato || 0;
-  const yoy = fattPre > 0 ? Math.round(((fattAtt-fattPre)/fattPre)*100) : 0;
-  el('fin-yoy', (yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
+  // YoY
+  if(annoSel!=='all'&&ZOHO.perAnno){
+    const annoPre=(parseInt(annoSel)-1).toString();
+    const pre=ZOHO.perAnno[annoPre];
+    if(pre&&pre.fatturato>0){
+      const yoy=Math.round(((fatturato-pre.fatturato)/pre.fatturato)*100);
+      el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
+    }else el('fin-yoy','—');
+  }else{
+    const anno=new Date().getFullYear().toString();
+    const pre=ZOHO.perAnno?.[(parseInt(anno)-1).toString()];
+    const curr=ZOHO.perAnno?.[anno];
+    if(pre&&curr&&pre.fatturato>0){
+      const yoy=Math.round(((curr.fatturato-pre.fatturato)/pre.fatturato)*100);
+      el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% YoY');
+    }
+  }
 
-  // ── Tabella movimenti recenti ──
-  const tb = document.getElementById('fin-tbody');
-  if(tb && ZOHO.invoices){
+  // Movimenti recenti — filtra per anno
+  const tb=document.getElementById('fin-tbody');
+  if(tb&&ZOHO.invoices){
     tb.innerHTML='';
-    ZOHO.invoices.slice(0,15).forEach(i=>{
-      const stato = i.stato==='paid'?'✓ Pagata':i.stato==='partial'?'◑ Parziale':i.stato==='overdue'?'⚠ Scaduta':'→ Inviata';
-      const statoColor = i.stato==='paid'?'var(--accent)':i.stato==='overdue'?'var(--danger)':i.stato==='partial'?'var(--warn)':'var(--text2)';
-      tb.innerHTML+=`<tr>
-        <td><div style="font-weight:500">${i.numero}</div><div style="font-size:11px;color:var(--muted)">${i.cliente}</div></td>
+    let invs=ZOHO.invoices;
+    if(annoSel!=='all')invs=invs.filter(i=>i.data&&i.data.startsWith(annoSel));
+    invs.slice(0,15).forEach(i=>{
+      const stato=i.stato==='paid'?'✓ '+t('completata'):i.stato==='overdue'?'⚠ Scaduta':i.stato==='partial'?'◑ Parziale':'→ Inviata';
+      const sc=i.stato==='paid'?'var(--accent)':i.stato==='overdue'?'var(--danger)':i.stato==='partial'?'var(--warn)':'var(--text2)';
+      tb.innerHTML+=`<tr><td><div style="font-weight:500">${i.numero||'—'}</div><div style="font-size:11px;color:var(--muted)">${i.cliente||'—'}</div></td>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${i.data||'—'}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:11px;color:${statoColor}">${stato}</td>
-        <td class="amt-in">€ ${Math.round(i.totale).toLocaleString('it-IT')}</td>
-      </tr>`;
+        <td style="font-size:11px;color:${sc}">${stato}</td>
+        <td class="amt-in">€ ${Math.round(i.totale||0).toLocaleString('it-IT')}</td></tr>`;
     });
   }
 
-  // ── Cashflow per mese anno corrente ──
-  const cf = document.getElementById('cf-bars');
-  if(cf && ZOHO.perMese){
+  // Cashflow mensile
+  const cf=document.getElementById('cf-bars');
+  if(cf&&ZOHO.perMese){
     cf.innerHTML='';
     const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-    const mesiKeys = Object.keys(ZOHO.perMese).sort();
-    const mx = Math.max(...mesiKeys.map(m=>ZOHO.perMese[m].fatturato),1);
+    let mesiKeys=Object.keys(ZOHO.perMese).sort();
+    if(annoSel!=='all')mesiKeys=mesiKeys.filter(m=>m.startsWith(annoSel));
+    const mx=Math.max(...mesiKeys.map(m=>ZOHO.perMese[m].fatturato||0),1);
     mesiKeys.forEach(m=>{
       const d=ZOHO.perMese[m];
-      const pct=Math.round(d.fatturato/mx*100);
-      const meseNum=parseInt(m.split('-')[1])-1;
-      const label=mesiNomi[meseNum]+' '+m.split('-')[0];
+      const pct=Math.round((d.fatturato||0)/mx*100);
+      const meseN=parseInt(m.split('-')[1])-1;
+      const lbl=mesiNomi[meseN]+' '+m.split('-')[0];
       cf.innerHTML+=`<div class="cf-month">
-        <div class="cf-top"><span class="cf-lbl">${label}</span><span class="cf-val" style="color:var(--accent)">€ ${Math.round(d.fatturato).toLocaleString('it-IT')}</span></div>
+        <div class="cf-top"><span class="cf-lbl">${lbl}</span><span class="cf-val" style="color:var(--accent)">€ ${Math.round(d.fatturato||0).toLocaleString('it-IT')}</span></div>
         <div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-        <div class="cf-sub"><span style="color:var(--accent)">✓ €${Math.round(d.incassato).toLocaleString('it-IT')}</span><span style="color:var(--warn)">⏳ €${Math.round(d.inAttesa).toLocaleString('it-IT')}</span></div>
+        <div class="cf-sub"><span style="color:var(--accent)">✓ €${Math.round(d.incassato||0).toLocaleString('it-IT')}</span><span style="color:var(--warn)">⏳ €${Math.round(d.inAttesa||0).toLocaleString('it-IT')}</span></div>
       </div>`;
     });
   }
 
-  // ── Tabella costi compliance ──
+  // Costi compliance con margine
   const cc=document.getElementById('cc-tbody');
-  if(cc){cc.innerHTML='';APP.scadenze.filter(s=>s.stato!=='done'&&s.costo>0).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,7).forEach(s=>{
-    cc.innerHTML+=`<tr><td>${s.nome}</td><td><span class="etag">${s.entita}</span></td>
-      <td style="color:var(--text2);font-size:12px">${ticoMap[s.tipo]||'📌'} ${s.tipo}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data.split('-').reverse().join('/')}</td>
-      <td class="amt-out">− €${s.costo.toLocaleString('it-IT')}</td></tr>`;
-  });}
+  if(cc){
+    cc.innerHTML='';
+    APP.scadenze.filter(s=>s.stato!=='done').sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,8).forEach(s=>{
+      const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+      const margColor=marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+      cc.innerHTML+=`<tr>
+        <td style="font-size:13px">${s.nome}</td>
+        <td><span class="etag">${s.entita}</span></td>
+        <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
+        <td class="amt-in">${s.prezzo>0?'€'+s.prezzo.toLocaleString('it-IT'):'—'}</td>
+        <td class="amt-out">${s.costo>0?'€'+s.costo.toLocaleString('it-IT'):'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${margColor}">${marg!==null?marg+'%':'—'}</td>
+      </tr>`;
+    });
+  }
 
-  buildCharts();
+  buildCharts(annoSel);
 }
 
-function renderFinancePlaceholder(){
-  const cc=document.getElementById('cc-tbody');
-  if(cc){cc.innerHTML='';APP.scadenze.filter(s=>s.stato!=='done'&&s.costo>0).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,7).forEach(s=>{
-    cc.innerHTML+=`<tr><td>${s.nome}</td><td><span class="etag">${s.entita}</span></td>
-      <td style="color:var(--text2);font-size:12px">${ticoMap[s.tipo]||'📌'} ${s.tipo}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data.split('-').reverse().join('/')}</td>
-      <td class="amt-out">− €${s.costo.toLocaleString('it-IT')}</td></tr>`;
-  });}
-}
-
-function getChartColors(){
+/* ══ CHARTS ══ */
+function getC(){
   const dark=document.documentElement.getAttribute('data-theme')==='dark';
   return{grid:dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)',txt:dark?'#5a6075':'#9098b0',
     acc:dark?'#4fffb0':'#00a96e',dan:dark?'#ff5f6d':'#dc2626',
@@ -1027,163 +1183,217 @@ function getChartColors(){
     pur:dark?'#c084fc':'#9333ea',tel:dark?'#2dd4bf':'#0d9488',sur:dark?'#13161e':'#ffffff'};
 }
 
-function buildCharts(){
-  const c=getChartColors();
-  if(!ZOHO) return;
-
-  // ── Grafico a barre: fatturato per anno ──
-  const anni=Object.keys(ZOHO.perAnno||{}).sort();
-  const fattAnni=anni.map(a=>Math.round(ZOHO.perAnno[a].fatturato));
-  const incAnni=anni.map(a=>Math.round(ZOHO.perAnno[a].incassato));
-  const anniLabel=anni.map(a=>a);
-
+function buildCharts(annoSel){
+  if(!ZOHO)return;
+  const c=getC();
   if(chartBar)chartBar.destroy();
-  const c1=document.getElementById('chart-bar');
-  if(c1)chartBar=new Chart(c1,{type:'bar',data:{labels:anniLabel,datasets:[
-    {label:'Fatturato',data:fattAnni,backgroundColor:c.acc+'33',borderColor:c.acc,borderWidth:1.5,borderRadius:5},
-    {label:'Incassato',data:incAnni,backgroundColor:c.inf+'33',borderColor:c.inf,borderWidth:1.5,borderRadius:5}
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:c.txt,font:{family:'DM Sans',size:11},boxWidth:12,boxHeight:12}}},
-    scales:{x:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10}}},
-      y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
-
-  // ── Donut: top clienti ──
   if(chartDonut)chartDonut.destroy();
+
+  // Bar chart — per anno se tutti, per mese se anno specifico
+  const c1=document.getElementById('chart-bar');
+  if(c1){
+    let labels,fattData,incData;
+    if(!annoSel||annoSel==='all'){
+      const anni=Object.keys(ZOHO.perAnno||{}).sort();
+      labels=anni;
+      fattData=anni.map(a=>Math.round(ZOHO.perAnno[a].fatturato||0));
+      incData=anni.map(a=>Math.round(ZOHO.perAnno[a].incassato||0));
+    }else{
+      const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+      const mesiKeys=Object.keys(ZOHO.perMese||{}).filter(m=>m.startsWith(annoSel)).sort();
+      labels=mesiKeys.map(m=>mesiNomi[parseInt(m.split('-')[1])-1]);
+      fattData=mesiKeys.map(m=>Math.round(ZOHO.perMese[m].fatturato||0));
+      incData=mesiKeys.map(m=>Math.round(ZOHO.perMese[m].incassato||0));
+    }
+    chartBar=new Chart(c1,{type:'bar',data:{labels,datasets:[
+      {label:t('fatturato'),data:fattData,backgroundColor:c.acc+'33',borderColor:c.acc,borderWidth:1.5,borderRadius:5},
+      {label:t('incassato'),data:incData,backgroundColor:c.inf+'33',borderColor:c.inf,borderWidth:1.5,borderRadius:5}
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:c.txt,font:{family:'DM Sans',size:11},boxWidth:12,boxHeight:12}}},
+      scales:{x:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10}}},
+        y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
+  }
+
+  // Donut — top clienti
   const c2=document.getElementById('chart-donut');
-  const top5=( ZOHO.topClienti||[]).slice(0,6);
+  const top6=(ZOHO.topClienti||[]).slice(0,6);
   const colors=[c.acc,c.inf,c.wrn,c.pur,c.tel,c.dan];
-  if(c2&&top5.length>0)chartDonut=new Chart(c2,{type:'doughnut',data:{
-    labels:top5.map(x=>x.nome.length>20?x.nome.substring(0,20)+'...':x.nome),
-    datasets:[{data:top5.map(x=>Math.round(x.fatturato)),
-      backgroundColor:colors.map(col=>col+'99'),borderColor:c.sur,borderWidth:3,hoverOffset:6}]
-  },options:{responsive:true,maintainAspectRatio:false,cutout:'64%',
-    plugins:{legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10,padding:10}}}}});
+  if(c2&&top6.length>0){
+    chartDonut=new Chart(c2,{type:'doughnut',data:{
+      labels:top6.map(x=>x.nome.length>18?x.nome.substring(0,18)+'…':x.nome),
+      datasets:[{data:top6.map(x=>Math.round(x.fatturato)),
+        backgroundColor:colors.map(col=>col+'99'),borderColor:c.sur,borderWidth:3,hoverOffset:6}]
+    },options:{responsive:true,maintainAspectRatio:false,cutout:'64%',
+      plugins:{legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10,padding:10}}}}});
+  }
 }
 
-/* ══ JSON EXPORT ══ */
+/* ══ ZOHO SYNC ══ */
+const GH_URL='https://raw.githubusercontent.com/enomadtax-admin-ch/enomad-app/main/finance-data.json';
+async function syncZoho(){
+  try{
+    const res=await fetch(GH_URL+'?t='+Date.now());
+    if(!res.ok)return;
+    const data=await res.json();
+    ZOHO=data;
+    applyZohoData(data);
+    APP.meta.lastZohoSync=data.lastSync;
+    saveLocalData();
+    showToast('✓ Zoho sync OK');
+    const lbl=document.getElementById('zoho-last-sync');
+    if(lbl){const d=new Date(data.lastSync);lbl.textContent=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});}
+  }catch(e){console.error('syncZoho:',e);}
+}
+
+function applyZohoData(z){
+  if(!z?.summary)return;
+  const s=z.summary;
+  const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const fatK=s.fatturato>=1000?'€ '+(s.fatturato/1000).toFixed(1)+'k':'€ '+Math.round(s.fatturato);
+  el('h-fatturato',fatK);
+  el('h-inattesa','€ '+(s.inAttesa/1000).toFixed(1)+'k');
+  // KPI mese corrente
+  const meseAtt=new Date().toISOString().substring(0,7);
+  const dm=z.perMese?.[meseAtt];
+  if(dm){
+    el('kpi-inc-mese','€ '+Math.round(dm.incassato).toLocaleString('it-IT'));
+    el('kpi-ytd','€ '+Math.round(z.perAnno?.[new Date().getFullYear().toString()]?.fatturato||0).toLocaleString('it-IT'));
+  }
+  // Zoho strip
+  el('zs-fatt','€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
+  el('zs-inc','€ '+Math.round(s.incassato).toLocaleString('it-IT'));
+  el('zs-att','€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
+  el('zs-num',s.numFatture||'—');
+  const syncTime=z.lastSync?new Date(z.lastSync).toLocaleString('it-IT'):'—';
+  el('zoho-strip-sub','Ultimo sync: '+syncTime);
+  populateAnnoFilter();
+}
+
+/* ══ JSON BACKUP ══ */
 function exportJSON(subset){
-  let data,fname;
-  if(subset==='scadenze'){data={scadenze:APP.scadenze,meta:{...APP.meta,exportedAt:new Date().toISOString(),type:'scadenze'}};fname='enomad-scadenze';}
-  else if(subset==='transactions'){data={transactions:APP.transactions,meta:{...APP.meta,exportedAt:new Date().toISOString(),type:'transactions'}};fname='enomad-movimenti';}
-  else{data={...APP,meta:{...APP.meta,exportedAt:new Date().toISOString(),type:'full'}};fname='enomad-backup-completo';}
-  APP.meta.lastExport=new Date().toISOString();saveData();
+  const data=subset==='scadenze'?{scadenze:APP.scadenze,meta:APP.meta}:{...APP,zoho:ZOHO,meta:{...APP.meta,exportedAt:new Date().toISOString()}};
+  const fname=(subset==='scadenze'?'enomad-scadenze':'enomad-backup')+'-'+new Date().toISOString().split('T')[0]+'.json';
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  a.download=fname+'-'+new Date().toISOString().split('T')[0]+'.json';
-  a.click();URL.revokeObjectURL(url);
-  showToast('⬇ Backup scaricato: '+a.download);
-  updateDataStats();
+  const a=document.createElement('a');a.href=url;a.download=fname;a.click();URL.revokeObjectURL(url);
+  APP.meta.lastExport=new Date().toISOString();saveLocalData();
+  showToast('⬇ Backup scaricato');updateDataStats();
 }
-
-/* ══ JSON IMPORT ══ */
 function importJSON(event){
   const file=event.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=e=>{
+  reader.onload=async e=>{
     try{
       const d=JSON.parse(e.target.result);
       if(d.scadenze)APP.scadenze=d.scadenze;
-      if(d.transactions)APP.transactions=d.transactions;
-      if(d.supabase)APP.supabase=d.supabase;
-      APP.meta.lastSaved=new Date().toISOString();
-      saveData();
-      renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();updateDataStats();
-      showToast('⬆ Import completato: '+APP.scadenze.length+' scadenze, '+APP.transactions.length+' movimenti');
+      if(d.entita)APP.entita=d.entita;
+      if(d.tipi)APP.tipi=d.tipi;
+      saveLocalData();
+      renderAll();updateDataStats();
+      showToast('⬆ Import completato: '+APP.scadenze.length+' scadenze');
     }catch(err){showToast('⚠ File JSON non valido');}
   };
-  reader.readAsText(file);
-  event.target.value='';
+  reader.readAsText(file);event.target.value='';
 }
-
 function previewJSON(){
-  const panel=document.getElementById('json-preview-panel');
+  const p=document.getElementById('json-preview-panel');
   document.getElementById('json-preview-area').value=JSON.stringify(APP,null,2);
-  panel.style.display=panel.style.display==='none'?'block':'none';
+  p.style.display=p.style.display==='none'?'block':'none';
 }
-
 function updateDataStats(){
   const el=document.getElementById('data-stats');if(!el)return;
   const pending=APP.scadenze.filter(s=>s.stato!=='done').length;
   const done=APP.scadenze.filter(s=>s.stato==='done').length;
-  const lastSave=APP.meta.lastSaved?new Date(APP.meta.lastSaved).toLocaleString('it-IT'):'mai';
-  const lastExp=APP.meta.lastExport?new Date(APP.meta.lastExport).toLocaleString('it-IT'):'mai';
+  const ls=APP.meta.lastSaved?new Date(APP.meta.lastSaved).toLocaleString('it-IT'):'mai';
+  const le=APP.meta.lastExport?new Date(APP.meta.lastExport).toLocaleString('it-IT'):'mai';
   el.innerHTML=`
     <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Scadenze attive</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px;color:var(--accent)">${pending}</div></div>
     <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Completate</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px">${done}</div></div>
-    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Movimenti</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px">${APP.transactions.length}</div></div>
-    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Ultimo salvataggio</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace">${lastSave}</div></div>
-    <div style="grid-column:span 2;background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Ultimo export JSON</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace">${lastExp}</div></div>
-  `;
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Entità</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px">${APP.entita.length}</div></div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Ultimo salvataggio</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace">${ls}</div></div>
+    <div style="grid-column:span 2;background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Ultimo export JSON</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace">${le}</div></div>`;
 }
 
-/* ══ SUPABASE CONFIG ══ */
-function saveSupabaseConfig(fromModal){
-  const urlId=fromModal?'sb-url2':'sb-url';
-  const keyId=fromModal?'sb-key2':'sb-key';
-  const url=document.getElementById(urlId)?.value.trim();
-  const key=document.getElementById(keyId)?.value.trim();
-  if(!url||!key){showToast('⚠ Inserisci URL e Anon Key');return;}
-  APP.supabase={url,key,connected:true};
-  // sync to both fields
-  ['sb-url','sb-url2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=url;});
-  ['sb-key','sb-key2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=key;});
-  saveData();
-  updateDBStatus(true);
-  if(fromModal)closeModal('dbconfig');
-  showToast('✓ Supabase configurato — connessione attiva');
+/* ══ MFA ══ */
+async function setupMFA(){
+  const msgEl=document.getElementById('mfa-msg');
+  const qrBlock=document.getElementById('mfa-qr-block');
+  if(msgEl)msgEl.textContent='Generazione QR...';
+  try{
+    const{data,error}=await supa.auth.mfa.enroll({factorType:'totp',friendlyName:'EnomadApp'});
+    if(error)throw error;
+    window._mfaFactorId=data.id;
+    const secretEl=document.getElementById('mfa-secret-txt');
+    if(secretEl)secretEl.textContent='Codice manuale: '+data.totp.secret;
+    // QR via img tag
+    const canvas=document.getElementById('mfa-qr-canvas');
+    const img=new Image();img.crossOrigin='anonymous';
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(data.totp.uri);
+    img.style.cssText='border-radius:8px;max-width:180px;';
+    img.onload=()=>{canvas.style.display='none';canvas.parentNode.insertBefore(img,canvas);};
+    if(qrBlock)qrBlock.style.display='block';
+    if(msgEl)msgEl.textContent='';
+  }catch(e){if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}}
 }
-function testSupabase(){showToast('↻ Test connessione Supabase — configurare URL e key reali per connettersi');}
-function clearSupabase(){APP.supabase={url:'',key:'',connected:false};saveData();updateDBStatus(false);showToast('✓ Supabase disconnesso — modalità locale attiva');}
-
-function updateDBStatus(connected){
-  const banner=document.getElementById('db-banner');
-  const title=document.getElementById('db-banner-title');
-  const sub=document.getElementById('db-banner-sub');
-  const pill=document.getElementById('db-status-pill');
-  const pillLabel=document.getElementById('db-status-label');
-  if(connected){
-    banner.className='db-banner connected';
-    title.textContent='Database Supabase connesso — dati permanenti e sicuri';
-    sub.textContent='I tuoi dati sono salvati su Supabase. Puoi aggiornare l\'HTML liberamente.';
-    if(pill){pill.style.color='var(--accent)';pill.querySelector('.sdot').style.background='var(--accent)';}
-    if(pillLabel)pillLabel.textContent='Supabase';
-  }else{
-    banner.className='db-banner disconnected';
-    title.textContent='Database non configurato — dati in modalità locale (localStorage)';
-    sub.textContent='I dati sono nel browser. Configura Supabase per renderli permanenti.';
-    if(pill){pill.style.color='var(--warn)';pill.querySelector('.sdot').style.background='var(--warn)';}
-    if(pillLabel)pillLabel.textContent='locale';
-  }
+async function verifyMFAEnroll(){
+  const code=document.getElementById('mfa-verify-code')?.value.trim();
+  const msgEl=document.getElementById('mfa-msg');
+  if(!code||code.length!==6){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='⚠ Inserisci 6 cifre';}return;}
+  try{
+    const fid=window._mfaFactorId;
+    const{data:cd}=await supa.auth.mfa.challenge({factorId:fid});
+    const{error}=await supa.auth.mfa.verify({factorId:fid,challengeId:cd.id,code});
+    if(error)throw error;
+    document.getElementById('mfa-qr-block').style.display='none';
+    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA attivato con successo!';}
+    checkMFAStatus();showToast('✓ Google Authenticator configurato');
+  }catch(e){if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⛔ Codice errato';}}
+}
+async function removeMFA(){
+  if(!confirm('Rimuovere il 2FA?'))return;
+  const msgEl=document.getElementById('mfa-msg');
+  try{
+    const{data}=await supa.auth.mfa.listFactors();
+    const totp=data?.totp?.[0];if(!totp){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='Nessun 2FA';}return;}
+    const{error}=await supa.auth.mfa.unenroll({factorId:totp.id});
+    if(error)throw error;
+    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA rimosso';}
+    checkMFAStatus();
+  }catch(e){if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}}
+}
+async function checkMFAStatus(){
+  const statusEl=document.getElementById('mfa-status-block');if(!statusEl)return;
+  try{
+    const{data}=await supa.auth.mfa.listFactors();
+    const totp=data?.totp?.[0];
+    if(totp&&totp.status==='verified'){
+      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--accent);padding-left:13px;"><strong style="color:var(--accent)">✓ 2FA attivo</strong><br>Configurato il '+new Date(totp.created_at).toLocaleDateString('it-IT')+'</div>';
+    }else{
+      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--warn);padding-left:13px;"><strong style="color:var(--warn)">⚠ 2FA non configurato</strong></div>';
+    }
+  }catch(e){}
 }
 
 /* ══ NAVIGATION ══ */
 function showView(v,navEl){
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('view-'+v)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
-  const map={dashboard:['Dashboard','panoramica generale'],scadenze:['Scadenze','tutte le scadenze'],
-    entita:['Entità','struttura societaria'],finance:['Finance','analisi finanziaria & previsioni'],
-    zohoview:['Zoho Invoice','fatturazione'],dati:['Dati & Backup','gestione dati e connessioni'],settings:['Impostazioni','configurazione']};
-  const t=map[v]||[v,''];
-  document.getElementById('topbar-title').textContent=t[0];
-  document.getElementById('topbar-sub').textContent='19 marzo 2026 — '+t[1];
-  if(v==='finance'){renderFinance();setTimeout(buildCharts,60);}
-  if(v==='dati'){updateDataStats();loadSupabaseFields();}
-  if(v==='settings'){
-    checkMFAStatus();
-    const emailEl=document.getElementById('settings-email');
-    if(emailEl&&currentUser)emailEl.textContent=currentUser.email;
-  }
-  renderTable('all','sb1');renderTable('all','sb2');renderTimeline();
+  const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',finance:'finance',
+    zohoview:'zoho',dati:'dati',settings:'impostazioni'};
+  document.getElementById('topbar-title').textContent=t(titles[v]||v);
+  document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
+  if(v==='finance'){renderFinance();}
+  if(v==='entita'){renderEntita();renderTipi();}
+  if(v==='dati')updateDataStats();
+  if(v==='settings'){checkMFAStatus();const e=document.getElementById('settings-email');if(e&&currentUser)e.textContent=currentUser.email;}
+  renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
 }
 
-function loadSupabaseFields(){
-  if(APP.supabase.url){
-    ['sb-url','sb-url2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=APP.supabase.url;});
-    ['sb-key','sb-key2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=APP.supabase.key;});
-  }
+function renderAll(){
+  renderTable('all','sb1');renderTable('all','sb2');
+  renderTimeline();updateKPIs();renderEntita();renderTipi();
 }
 
 /* ══ THEME ══ */
@@ -1191,268 +1401,48 @@ function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
   html.setAttribute('data-theme',isDark?'light':'dark');
-  document.getElementById('theme-label').textContent=isDark?'Tema chiaro':'Tema scuro';
-  setTimeout(()=>{if(chartBar||chartDonut)buildCharts();},60);
+  document.getElementById('theme-label').textContent=isDark?t('temaChiaro'):t('temaScuro');
+  localStorage.setItem('enomad_theme',isDark?'light':'dark');
+  setTimeout(()=>{if(chartBar||chartDonut)buildCharts(document.getElementById('anno-filter')?.value);},60);
 }
 
 /* ══ MODAL ══ */
 function openModal(type){
-  document.getElementById('modal-'+type).classList.add('open');
-  if(type==='scadenza'){const d=new Date();d.setDate(d.getDate()+30);document.getElementById('f-data').value=d.toISOString().split('T')[0];}
-  if(type==='dbconfig')loadSupabaseFields();
-}
-function closeModal(type){document.getElementById('modal-'+type).classList.remove('open');}
-
-/* ══ ZOHO SYNC DA GITHUB ══ */
-const GITHUB_USER = 'enomadtax-admin-ch';
-const GITHUB_REPO = 'enomad-app';
-const FINANCE_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/finance-data.json`;
-
-async function syncZoho(){
-  showToast('↻ Carico dati Zoho da GitHub...');
-  try {
-    const res = await fetch(FINANCE_JSON_URL + '?t=' + Date.now());
-    if(!res.ok) throw new Error('File non trovato');
-    const data = await res.json();
-    ZOHO = data;
-    applyZohoData(data);
-    APP.meta.lastZohoSync = data.lastSync;
-    saveData();
-    showToast('✓ Zoho sincronizzato — dati reali caricati');
-    const lbl = document.getElementById('db-status-label');
-    if(lbl) lbl.textContent = 'Zoho ✓';
-  } catch(e) {
-    showToast('⚠ finance-data.json non trovato — lancia il workflow su GitHub Actions');
+  document.getElementById('modal-'+type)?.classList.add('open');
+  if(type==='scadenza'){
+    const d=new Date();d.setDate(d.getDate()+30);
+    document.getElementById('f-data').value=d.toISOString().split('T')[0];
+    renderEntita();renderTipi();
   }
 }
+function closeModal(type){document.getElementById('modal-'+type)?.classList.remove('open');}
 
-function applyZohoData(z){
-  if(!z || !z.summary) return;
-  const s = z.summary;
-  const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
-
-  // ── HERO KPI dashboard ──
-  const fatK = '€ '+(s.fatturato/1000).toFixed(1)+'k';
-  el('h-fatturato', fatK);
-  el('h-critiche', APP.scadenze.filter(x=>x.stato!=='done'&&daysTo(x.data)<=7).length);
-
-  // ── ZOHO STRIP ──
-  const strip = document.getElementById('zoho-strip-data');
-  if(strip){
-    strip.innerHTML = `
-      <div class="zm-item"><div class="zm-lbl">Fatturato</div><div class="zm-val">€ ${Math.round(s.fatturato).toLocaleString('it-IT')}</div></div>
-      <div class="zm-item"><div class="zm-lbl">Incassato</div><div class="zm-val" style="color:var(--accent)">€ ${Math.round(s.incassato).toLocaleString('it-IT')}</div></div>
-      <div class="zm-item"><div class="zm-lbl">In attesa</div><div class="zm-val" style="color:var(--warn)">€ ${Math.round(s.inAttesa).toLocaleString('it-IT')}</div></div>
-      <div class="zm-item"><div class="zm-lbl">Fatture</div><div class="zm-val">${s.numFatture}</div></div>
-    `;
-  }
-
-  // ── KPI secondari ──
-  const annoAtt = new Date().getFullYear().toString();
-  const meseAtt = new Date().toISOString().substring(0,7);
-  const datiMese = z.perMese?.[meseAtt];
-  if(datiMese){
-    el('kpi-incassato-mese', '€ '+Math.round(datiMese.incassato).toLocaleString('it-IT'));
-    el('kpi-attesa-mese', '€ '+Math.round(datiMese.inAttesa).toLocaleString('it-IT'));
-  }
-
-  // ── Finance KPI hero ──
-  el('fin-fatturato', '€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
-  el('fin-incassato', '€ '+Math.round(s.incassato).toLocaleString('it-IT'));
-  el('fin-attesa', '€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
-  const margine = s.fatturato>0?Math.round((s.incassato/s.fatturato)*100):0;
-  el('fin-margine', margine+'%');
-
-  // ── Anno corrente breakdown ──
-  const datiAnno = z.perAnno?.[annoAtt];
-  if(datiAnno){
-    const annoPre=(parseInt(annoAtt)-1).toString();
-    const datiPre=z.perAnno?.[annoPre];
-    const yoy=datiPre&&datiPre.fatturato>0?Math.round(((datiAnno.fatturato-datiPre.fatturato)/datiPre.fatturato)*100):0;
-    el('fin-yoy', (yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
-  }
-
-  // ── Ultimo sync ──
-  const syncTime = z.lastSync ? new Date(z.lastSync).toLocaleString('it-IT') : '—';
-  const subEl = document.getElementById('zoho-sync-sub');
-  if(subEl) subEl.textContent = 'Ultimo sync: '+syncTime;
-
-  // ── Aggiorna Finance se aperta ──
-  renderFinance();
+/* ══ TOAST ══ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
 }
-
-/* ══ MFA SETUP ══ */
-async function setupMFA(){
-  const msgEl=document.getElementById('mfa-msg');
-  const qrBlock=document.getElementById('mfa-qr-block');
-  if(msgEl)msgEl.textContent='Generazione QR code...';
-  try{
-    const{data,error}=await supa.auth.mfa.enroll({factorType:'totp',friendlyName:'EnomadApp'});
-    if(error)throw error;
-    const uri=data.totp.uri;
-    const secret=data.totp.secret;
-    window._mfaFactorId=data.id;
-    // Mostra secret testuale
-    const secretEl=document.getElementById('mfa-secret-txt');
-    if(secretEl)secretEl.textContent='Codice manuale: '+secret;
-    // Genera QR con canvas
-    await generateQR(uri, document.getElementById('mfa-qr-canvas'));
-    if(qrBlock)qrBlock.style.display='block';
-    if(msgEl)msgEl.textContent='';
-  }catch(e){
-    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}
-  }
-}
-
-async function generateQR(text, canvas){
-  // Implementazione QR semplice con API esterna
-  const img = new Image();
-  img.crossOrigin='anonymous';
-  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(text);
-  img.onload=()=>{
-    canvas.width=200;canvas.height=200;
-    canvas.getContext('2d').drawImage(img,0,0);
-  };
-  // Fallback: mostra solo il link
-  canvas.style.display='none';
-  const link=document.createElement('a');
-  link.href=text;link.textContent='Apri in Google Authenticator';
-  link.style.cssText='color:var(--accent);font-size:12px;display:block;margin:8px 0;';
-  canvas.parentNode.insertBefore(link,canvas.nextSibling);
-}
-
-async function verifyMFAEnroll(){
-  const code=document.getElementById('mfa-verify-code')?.value.trim();
-  const msgEl=document.getElementById('mfa-msg');
-  if(!code||code.length!==6){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='⚠ Inserisci il codice a 6 cifre';}return;}
-  try{
-    const factorId=window._mfaFactorId;
-    const{data:challenge}=await supa.auth.mfa.challenge({factorId});
-    const{error}=await supa.auth.mfa.verify({factorId,challengeId:challenge.id,code});
-    if(error)throw error;
-    document.getElementById('mfa-qr-block').style.display='none';
-    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA attivato con successo! Da ora ogni login richiederà il codice OTP.';}
-    checkMFAStatus();
-    showToast('✓ Google Authenticator configurato');
-  }catch(e){
-    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⛔ Codice errato — riprova';}
-  }
-}
-
-async function removeMFA(){
-  const msgEl=document.getElementById('mfa-msg');
-  if(!confirm('Sei sicuro di voler rimuovere il 2FA?'))return;
-  try{
-    const{data}=await supa.auth.mfa.listFactors();
-    const totp=data?.totp?.[0];
-    if(!totp){if(msgEl){msgEl.style.color='var(--warn)';msgEl.textContent='Nessun 2FA configurato';}return;}
-    const{error}=await supa.auth.mfa.unenroll({factorId:totp.id});
-    if(error)throw error;
-    if(msgEl){msgEl.style.color='var(--accent)';msgEl.textContent='✓ 2FA rimosso';}
-    checkMFAStatus();
-  }catch(e){
-    if(msgEl){msgEl.style.color='var(--danger)';msgEl.textContent='⚠ '+e.message;}
-  }
-}
-
-async function checkMFAStatus(){
-  const statusEl=document.getElementById('mfa-status-block');
-  if(!statusEl)return;
-  try{
-    const{data}=await supa.auth.mfa.listFactors();
-    const totp=data?.totp?.[0];
-    if(totp&&totp.status==='verified'){
-      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--accent);padding-left:13px;"><strong style="color:var(--accent)">✓ 2FA attivo</strong><br>Google Authenticator configurato il '+new Date(totp.created_at).toLocaleDateString('it-IT')+'</div>';
-    }else{
-      statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--warn);padding-left:13px;"><strong style="color:var(--warn)">⚠ 2FA non configurato</strong><br>Configura Google Authenticator per maggiore sicurezza</div>';
-    }
-  }catch(e){}
-}
-
-/* ══ SUPABASE DB — Scadenze ══ */
-
-async function loadScadenzeFromDB(){
-  if(!currentUser) return;
-  try{
-    const{data,error}=await supa.from('scadenze').select('*').order('data',{ascending:true});
-    if(error)throw error;
-    if(data && data.length > 0){
-      // Converti formato Supabase → formato app
-      APP.scadenze = data.map(r=>({
-        id: r.id,
-        nome: r.nome,
-        entita: r.entita,
-        tipo: r.tipo,
-        data: r.data,
-        stato: r.stato,
-        costo: parseFloat(r.costo)||0,
-        note: r.note||'',
-        reminder: r.reminder||'15'
-      }));
-      saveData();
-      renderTable('all','sb1');
-      renderTable('all','sb2');
-      renderTimeline();
-      updateKPIs();
-      showToast('✓ Scadenze caricate da Supabase ('+data.length+')');
-    }
-    // Aggiorna banner DB
-    const banner=document.getElementById('db-banner');
-    const title=document.getElementById('db-banner-title');
-    const sub=document.getElementById('db-banner-sub');
-    if(banner){banner.className='db-banner connected';}
-    if(title)title.textContent='Database Supabase connesso — dati permanenti e sicuri';
-    if(sub)sub.textContent='Le scadenze sono salvate su Supabase e sincronizzate automaticamente.';
-    const lbl=document.getElementById('db-status-label');
-    if(lbl)lbl.textContent='Supabase';
-    const pill=document.getElementById('db-status-pill');
-    if(pill){pill.style.color='var(--accent)';pill.querySelector('.sdot').style.background='var(--accent)';}
-  }catch(e){
-    console.error('Errore caricamento scadenze:', e);
-  }
-}
-
-async function saveScadenzaToDB(s){
-  if(!currentUser) return;
-  const row={
-    user_id: currentUser.id,
-    nome: s.nome,
-    entita: s.entita,
-    tipo: s.tipo,
-    data: s.data,
-    stato: s.stato,
-    costo: s.costo||0,
-    note: s.note||'',
-    reminder: s.reminder||'15'
-  };
-  // Se ha un UUID usa upsert, altrimenti insert
-  if(s.id && s.id.includes('-') && s.id.length > 10){
-    const{error}=await supa.from('scadenze').upsert({id:s.id,...row});
-    if(error)console.error('Errore salvataggio scadenza:', error);
-  }else{
-    const{data,error}=await supa.from('scadenze').insert(row).select().single();
-    if(error)console.error('Errore inserimento scadenza:', error);
-    else return data; // ritorna con UUID reale
-  }
-}
-
-async function updateScadenzaStatoDB(id, stato){
-  if(!currentUser) return;
-  // id può essere UUID (Supabase) o numero (localStorage)
-  if(id && String(id).includes('-') && String(id).length > 10){
-    const{error}=await supa.from('scadenze').update({stato}).eq('id',id).eq('user_id',currentUser.id);
-    if(error)console.error('Errore update stato:', error);
-  }
-}
-
-/* ══ MISC ══ */
-function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
 /* ══ INIT ══ */
-if(APP.supabase.connected)updateDBStatus(true);
-renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
-// Carica dati Zoho reali automaticamente all'apertura
-syncZoho();
+document.addEventListener('DOMContentLoaded',()=>{
+  // Ripristina tema
+  const savedTheme=localStorage.getItem('enomad_theme');
+  if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
+  // Ripristina lingua
+  const savedLang=localStorage.getItem('enomad_lang')||'it';
+  LANG=savedLang;
+  document.getElementById('lang-it')?.classList.toggle('active',savedLang==='it');
+  document.getElementById('lang-en')?.classList.toggle('active',savedLang==='en');
+  // Topbar data
+  document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
+  // Enter key listeners
+  document.getElementById('login-password')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('mfa-code')?.addEventListener('keydown',e=>{if(e.key==='Enter')doMFA();});
+  // Aggiorna schema Supabase con colonna prezzo se mancante
+  initAuth();
+});
 </script>
 </body>
 </html>
