@@ -340,6 +340,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span data-t="entita">Entità</span></div>
     <div class="nav-sec" data-t="finanziario">Finanziario</div>
     <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
+    <div class="nav-item" onclick="showView('movimenti',this)"><span class="nav-icon">✦</span><span>Movimenti UAE</span></div>
     <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span><span data-t="zoho">Zoho Invoice</span></div>
     <div class="nav-sec" data-t="sistema">Sistema</div>
     <div class="nav-item" onclick="showView('dati',this)"><span class="nav-icon">◎</span><span data-t="dati">Dati & Backup</span></div>
@@ -450,9 +451,17 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th>
           </tr></thead><tbody id="sb1"></tbody></table>
         </div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title" data-t="timeline">Timeline 60gg</div></div>
-          <div id="tl-body"></div>
+        <div style="display:flex;flex-direction:column;gap:15px;">
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title" data-t="timeline">Timeline 60gg</div></div>
+            <div id="tl-body"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">🌍 Top Countries</div></div>
+            <div style="padding:0 18px 8px;" id="top-countries">
+              <div style="color:var(--muted);font-size:12px;padding:16px 0">Carico...</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -534,12 +543,57 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
     </div>
 
+    <!-- MOVIMENTI UAE -->
+    <div class="view" id="view-movimenti">
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-title">✦ Movimenti manuali UAE / Invoice Ninja</div>
+          <button class="btn btn-primary" onclick="openModal('movimento')">+ Movimento</button>
+        </div>
+        <table class="fin-table"><thead><tr>
+          <th>Descrizione</th><th>Entità</th><th>Data</th><th>Valuta</th><th>Importo</th><th>Tipo</th>
+        </tr></thead><tbody id="mov-tbody"></tbody></table>
+      </div>
+      <div class="grid-2eq">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Totali UAE</div></div>
+          <div style="padding:18px 20px;" id="mov-summary">
+            <div style="color:var(--muted);font-size:13px">Aggiungi movimenti per vedere i totali</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">ℹ️ Come funziona</div></div>
+          <div style="padding:18px 20px;">
+            <div class="cfg-hint">Qui inserisci manualmente le fatture UAE da <strong>Invoice Ninja</strong> o qualsiasi altro movimento non tracciato da Zoho.<br><br>
+            I dati vengono sommati nella sezione Finance per avere il quadro finanziario completo di tutte le entità.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ZOHO -->
     <div class="view" id="view-zohoview">
-      <div class="panel" style="padding:48px;text-align:center;color:var(--muted)">
-        <div style="font-size:28px;margin-bottom:10px">⊡</div>
-        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px" data-t="zoho">Zoho Invoice</div>
-        <div style="font-size:13px">Integrazione diretta — v2</div>
+      <div class="panel" style="padding:36px;">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">⊡ Zoho Invoice — Roadmap</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Funzionalità pianificate per il rilascio futuro</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="cfg-hint" style="border-left:3px solid var(--accent);padding-left:13px;">
+            <strong style="color:var(--accent)">📄 Visualizzazione fatture</strong><br>
+            Elenco completo fatture Zoho con filtri per stato, cliente, periodo. Dettaglio pagamenti ricevuti.
+          </div>
+          <div class="cfg-hint" style="border-left:3px solid var(--info);padding-left:13px;">
+            <strong style="color:var(--info)">✏️ Creazione fatture</strong><br>
+            Crea fatture Zoho direttamente dall'app senza aprire Zoho Invoice. Scegli cliente, servizio, importo.
+          </div>
+          <div class="cfg-hint" style="border-left:3px solid var(--warn);padding-left:13px;">
+            <strong style="color:var(--warn)">📊 Report clienti</strong><br>
+            Storico fatturato per cliente, LTV, pagamenti medi, scadenze non pagate per cliente.
+          </div>
+          <div class="cfg-hint" style="border-left:3px solid var(--purple);padding-left:13px;">
+            <strong style="color:var(--purple)">🔔 Alert pagamenti</strong><br>
+            Notifiche Telegram per fatture scadute, pagamenti ricevuti, reminder automatici ai clienti.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -623,12 +677,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <!-- MODAL SCADENZA -->
 <div class="modal-overlay" id="modal-scadenza">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title" data-t="nomeScadenza">Nuova scadenza</div><button class="modal-close" onclick="closeModal('scadenza')">✕</button></div>
+    <div class="modal-header"><div class="modal-title">Nuova scadenza</div><button class="modal-close" onclick="closeModal('scadenza')">✕</button></div>
     <div class="modal-body">
-      <div class="fg"><label class="fl" data-t="nomeScadenza">Nome scadenza</label><input type="text" class="fi" id="f-nome" placeholder="es. Rinnovo licenza"></div>
       <div class="frow">
         <div class="fg"><label class="fl" data-t="entita">Entità</label><select class="fsel" id="f-entita"></select></div>
-        <div class="fg"><label class="fl" data-t="tipo">Tipo</label><select class="fsel" id="f-tipo"></select></div>
+        <div class="fg"><label class="fl" data-t="tipo">Tipo scadenza</label><select class="fsel" id="f-tipo"></select></div>
       </div>
       <div class="frow">
         <div class="fg"><label class="fl" data-t="data">Data scadenza</label><input type="date" class="fi" id="f-data"></div>
@@ -645,7 +698,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="fg"><label class="fl" data-t="prezzo">Prezzo cliente (€)</label><input type="number" class="fi" id="f-prezzo" placeholder="0"></div>
         <div class="fg"><label class="fl" data-t="costoMio">Costo mio (€)</label><input type="number" class="fi" id="f-costo" placeholder="0"></div>
       </div>
-      <div class="fg"><label class="fl" data-t="note">Note</label><input type="text" class="fi" id="f-note" placeholder="Facoltativo"></div>
+      <div class="fg"><label class="fl" data-t="note">Note aggiuntive (facoltativo)</label><input type="text" class="fi" id="f-note" placeholder="Dettagli aggiuntivi..."></div>
       <div class="tg-hint">✈ Alert Telegram programmato nei giorni selezionati.</div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal('scadenza')" data-t="annulla">Annulla</button><button class="btn btn-primary" onclick="addScadenza()" data-t="salva">Salva</button></div>
@@ -678,12 +731,63 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
 </div>
 
+<!-- MODAL MOVIMENTO UAE -->
+<div class="modal-overlay" id="modal-movimento">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nuovo movimento UAE</div><button class="modal-close" onclick="closeModal('movimento')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Descrizione</label><input type="text" class="fi" id="mov-desc" placeholder="es. Consulenza societaria Dubai"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Entità</label><select class="fsel" id="mov-entita"></select></div>
+        <div class="fg"><label class="fl">Tipo</label>
+          <select class="fsel" id="mov-tipo">
+            <option value="in">↑ Entrata</option>
+            <option value="out">↓ Uscita</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Importo</label><input type="number" class="fi" id="mov-importo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Valuta</label>
+          <select class="fsel" id="mov-valuta">
+            <option value="AED">AED</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Data</label><input type="date" class="fi" id="mov-data"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('movimento')">Annulla</button><button class="btn btn-primary" onclick="addMovimento()">Salva</button></div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><span>✓</span><span id="toast-msg"></span></div>
 
 </div><!-- fine app-screen -->
 
 <script>
+/* ══ SESSION TIMEOUT — 30 minuti di inattività ══ */
+const TIMEOUT_MS = 30 * 60 * 1000; // 30 minuti
+let inactivityTimer = null;
+
+function resetInactivityTimer(){
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(async ()=>{
+    await supa.auth.signOut();
+    showLogin();
+    showToast('⏱ Sessione scaduta per inattività');
+  }, TIMEOUT_MS);
+}
+
+function startInactivityWatcher(){
+  ['mousedown','mousemove','keydown','touchstart','scroll','click'].forEach(ev=>{
+    document.addEventListener(ev, resetInactivityTimer, {passive:true});
+  });
+  resetInactivityTimer();
+}
+
 /* ══ AUTH ══ */
 async function initAuth(){
   await supa.auth.signOut();
@@ -748,6 +852,7 @@ function showApp(user){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   const n=document.getElementById('user-name');if(n)n.textContent=user.email;
+  startInactivityWatcher();
   loadAllData();
 }
 async function doLogout(){await supa.auth.signOut();showToast('✓ Logout');showLogin();}
@@ -776,7 +881,7 @@ function saveLocalData(){
 
 async function loadAllData(){
   loadLocalData();
-  await Promise.all([loadScadenzeFromDB(), loadEntitaFromDB(), loadTipiFromDB()]);
+  await Promise.all([loadScadenzeFromDB(), loadEntitaFromDB(), loadTipiFromDB(), loadMovimentiFromDB()]);
   syncZoho();
   renderAll();
   updateDataStats();
@@ -1039,17 +1144,19 @@ async function markDone(id){
 }
 
 async function addScadenza(){
-  const nome=document.getElementById('f-nome').value.trim();
+  const entita=document.getElementById('f-entita').value;
+  const tipo=document.getElementById('f-tipo').value;
   const data=document.getElementById('f-data').value;
-  if(!nome||!data){showToast('⚠ Compila nome e data');return;}
+  if(!entita||!tipo||!data){showToast('⚠ Compila entità, tipo e data');return;}
+  const note=document.getElementById('f-note').value||'';
+  // Il nome è composto da tipo + note se presente
+  const nome=note?tipo+' — '+note:tipo;
   const nuova={
     id:Date.now(),nome,
-    entita:document.getElementById('f-entita').value,
-    tipo:document.getElementById('f-tipo').value,
-    data,stato:'pending',
+    entita,tipo,data,stato:'pending',
     costo:parseFloat(document.getElementById('f-costo').value)||0,
     prezzo:parseFloat(document.getElementById('f-prezzo').value)||0,
-    note:document.getElementById('f-note').value||'',
+    note,
     reminder:document.getElementById('f-reminder').value||'15'
   };
   const saved=await saveScadenzaToDB(nuova);
@@ -1060,7 +1167,7 @@ async function addScadenza(){
   closeModal('scadenza');
   renderAll();
   showToast('✓ Scadenza salvata su Supabase');
-  ['f-nome','f-costo','f-prezzo','f-note'].forEach(id=>document.getElementById(id).value='');
+  ['f-costo','f-prezzo','f-note'].forEach(id=>document.getElementById(id).value='');
 }
 
 /* ══ FINANCE ══ */
@@ -1214,17 +1321,25 @@ function buildCharts(annoSel){
         y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
   }
 
-  // Donut — top clienti
+  // Donut — top clienti con %
   const c2=document.getElementById('chart-donut');
   const top6=(ZOHO.topClienti||[]).slice(0,6);
+  const totale=top6.reduce((a,x)=>a+x.fatturato,0);
   const colors=[c.acc,c.inf,c.wrn,c.pur,c.tel,c.dan];
   if(c2&&top6.length>0){
     chartDonut=new Chart(c2,{type:'doughnut',data:{
-      labels:top6.map(x=>x.nome.length>18?x.nome.substring(0,18)+'…':x.nome),
+      labels:top6.map(x=>{
+        const pct=totale>0?Math.round((x.fatturato/totale)*100):0;
+        const nome=x.nome.length>16?x.nome.substring(0,16)+'…':x.nome;
+        return nome+' ('+pct+'%)';
+      }),
       datasets:[{data:top6.map(x=>Math.round(x.fatturato)),
         backgroundColor:colors.map(col=>col+'99'),borderColor:c.sur,borderWidth:3,hoverOffset:6}]
-    },options:{responsive:true,maintainAspectRatio:false,cutout:'64%',
-      plugins:{legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10,padding:10}}}}});
+    },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{position:'right',labels:{color:c.txt,font:{family:'DM Sans',size:10},boxWidth:10,boxHeight:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>' €'+Math.round(ctx.parsed).toLocaleString('it-IT')}}
+      }}});
   }
 }
 
@@ -1252,13 +1367,32 @@ function applyZohoData(z){
   const fatK=s.fatturato>=1000?'€ '+(s.fatturato/1000).toFixed(1)+'k':'€ '+Math.round(s.fatturato);
   el('h-fatturato',fatK);
   el('h-inattesa','€ '+(s.inAttesa/1000).toFixed(1)+'k');
+
+  // YoY trend — calcola sempre dopo aver caricato i dati
+  const annoAtt=new Date().getFullYear().toString();
+  const annoPre=(parseInt(annoAtt)-1).toString();
+  const curr=z.perAnno?.[annoAtt];
+  const pre=z.perAnno?.[annoPre];
+  if(curr&&pre&&pre.fatturato>0){
+    const yoy=Math.round(((curr.fatturato-pre.fatturato)/pre.fatturato)*100);
+    el('h-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
+  } else if(curr){
+    el('h-yoy','YTD '+annoAtt+': €'+Math.round(curr.fatturato/1000)+'k');
+  }
+
   // KPI mese corrente
   const meseAtt=new Date().toISOString().substring(0,7);
   const dm=z.perMese?.[meseAtt];
   if(dm){
     el('kpi-inc-mese','€ '+Math.round(dm.incassato).toLocaleString('it-IT'));
-    el('kpi-ytd','€ '+Math.round(z.perAnno?.[new Date().getFullYear().toString()]?.fatturato||0).toLocaleString('it-IT'));
+    el('kpi-inc-sub',LANG==='it'?'mese corrente':'current month');
   }
+  const ytd=z.perAnno?.[annoAtt];
+  if(ytd){
+    el('kpi-ytd','€ '+Math.round(ytd.fatturato).toLocaleString('it-IT'));
+    el('kpi-ytd-sub',annoAtt+' — '+ytd.count+' '+t('fatture'));
+  }
+
   // Zoho strip
   el('zs-fatt','€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
   el('zs-inc','€ '+Math.round(s.incassato).toLocaleString('it-IT'));
@@ -1267,6 +1401,120 @@ function applyZohoData(z){
   const syncTime=z.lastSync?new Date(z.lastSync).toLocaleString('it-IT'):'—';
   el('zoho-strip-sub','Ultimo sync: '+syncTime);
   populateAnnoFilter();
+  renderTopCountries(z);
+}
+
+/* ══ TOP COUNTRIES ══ */
+function renderTopCountries(z){
+  const el=document.getElementById('top-countries');
+  if(!el||!z)return;
+  // Ricava paesi dalle entità
+  const paeseMap={};
+  APP.entita.forEach(e=>{
+    if(!e.paese)return;
+    if(!paeseMap[e.paese])paeseMap[e.paese]={paese:e.paese,entita:0,fatturato:0};
+    paeseMap[e.paese].entita++;
+  });
+  // Aggiungi fatturato dai top clienti se disponibile
+  const totFatt=z.summary?.fatturato||1;
+  const paesi=Object.values(paeseMap).sort((a,b)=>b.entita-a.entita);
+  if(paesi.length===0){el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">Aggiungi entità con paese per vedere le top countries</div>';return;}
+  const flags={'IT':'🇮🇹','UAE':'🇦🇪','CH':'🇨🇭','ID':'🇮🇩','US':'🇺🇸','UK':'🇬🇧','DE':'🇩🇪','FR':'🇫🇷','NL':'🇳🇱','SG':'🇸🇬'};
+  el.innerHTML=paesi.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:20px">${flags[p.paese.toUpperCase()]||'🌍'}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${p.paese}</div>
+        <div style="font-size:11px;color:var(--muted)">${p.entita} entit${p.entita===1?'à':'à'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent)">${p.entita} entità</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══ MOVIMENTI UAE ══ */
+async function loadMovimentiFromDB(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('movimenti_manuali').select('*').order('data',{ascending:false});
+    if(error)throw error;
+    if(data)APP.movimenti=data.map(r=>({
+      id:r.id,descrizione:r.descrizione,entita:r.entita,
+      importo:parseFloat(r.importo)||0,valuta:r.valuta||'AED',
+      tipo:r.tipo,data:r.data,note:r.note||''
+    }));
+  }catch(e){console.error('loadMovimenti:',e);}
+}
+
+async function addMovimento(){
+  const desc=document.getElementById('mov-desc').value.trim();
+  const importo=parseFloat(document.getElementById('mov-importo').value)||0;
+  const data=document.getElementById('mov-data').value;
+  if(!desc||!importo||!data){showToast('⚠ Compila tutti i campi');return;}
+  const mov={
+    descrizione:desc,
+    entita:document.getElementById('mov-entita').value,
+    importo,
+    valuta:document.getElementById('mov-valuta').value,
+    tipo:document.getElementById('mov-tipo').value,
+    data,note:''
+  };
+  if(currentUser){
+    const{data:saved,error}=await supa.from('movimenti_manuali').insert({user_id:currentUser.id,...mov}).select().single();
+    if(error){console.error(error);}
+    else mov.id=saved.id;
+  }
+  if(!APP.movimenti)APP.movimenti=[];
+  APP.movimenti.unshift(mov);
+  saveLocalData();
+  closeModal('movimento');
+  renderMovimenti();
+  showToast('✓ Movimento salvato');
+  ['mov-desc','mov-importo'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderMovimenti(){
+  const tb=document.getElementById('mov-tbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  const movs=APP.movimenti||[];
+  if(movs.length===0){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nessun movimento — aggiungine uno</td></tr>';
+    return;
+  }
+  movs.forEach(m=>{
+    const cls=m.tipo==='in'?'amt-in':'amt-out';
+    const prefix=m.tipo==='in'?'↑ ':'↓ ';
+    tb.innerHTML+=`<tr>
+      <td style="font-size:13px">${m.descrizione}</td>
+      <td><span class="etag">${m.entita}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${m.data?.split('-').reverse().join('/')||'—'}</td>
+      <td><span class="badge bi">${m.valuta}</span></td>
+      <td class="${cls}">${prefix}${m.importo.toLocaleString('it-IT')}</td>
+      <td style="font-size:11px;color:${m.tipo==='in'?'var(--accent)':'var(--danger)'}">${m.tipo==='in'?'Entrata':'Uscita'}</td>
+    </tr>`;
+  });
+  // Summary
+  const sumEl=document.getElementById('mov-summary');
+  if(sumEl){
+    const entrate=movs.filter(m=>m.tipo==='in').reduce((a,m)=>a+m.importo,0);
+    const uscite=movs.filter(m=>m.tipo==='out').reduce((a,m)=>a+m.importo,0);
+    const valute=[...new Set(movs.map(m=>m.valuta))];
+    sumEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--adim);border-radius:8px;padding:12px;border:1px solid rgba(79,255,176,.2);">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Entrate</div>
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--accent);margin-top:4px">${entrate.toLocaleString('it-IT')}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${valute.join(', ')}</div>
+        </div>
+        <div style="background:var(--ddim);border-radius:8px;padding:12px;border:1px solid rgba(255,95,109,.2);">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Uscite</div>
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--danger);margin-top:4px">${uscite.toLocaleString('it-IT')}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${movs.length} movimenti</div>
+        </div>
+      </div>`;
+  }
 }
 
 /* ══ JSON BACKUP ══ */
@@ -1381,10 +1629,18 @@ function showView(v,navEl){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
   const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',finance:'finance',
-    zohoview:'zoho',dati:'dati',settings:'impostazioni'};
-  document.getElementById('topbar-title').textContent=t(titles[v]||v);
+    movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
+  const titleKey=titles[v]||v;
+  document.getElementById('topbar-title').textContent=(titleKey==='Movimenti UAE'?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   if(v==='finance'){renderFinance();}
+  if(v==='movimenti'){
+    renderMovimenti();
+    // Aggiorna select entità nel modal movimento
+    const sel=document.getElementById('mov-entita');
+    if(sel)sel.innerHTML=APP.entita.map(e=>`<option>${e.nome}</option>`).join('');
+    const d=new Date();document.getElementById('mov-data').value=d.toISOString().split('T')[0];
+  }
   if(v==='entita'){renderEntita();renderTipi();}
   if(v==='dati')updateDataStats();
   if(v==='settings'){checkMFAStatus();const e=document.getElementById('settings-email');if(e&&currentUser)e.textContent=currentUser.email;}
