@@ -448,7 +448,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             </div>
           </div>
           <table class="scad-table"><thead><tr>
-            <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th>
+            <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th><th></th>
           </tr></thead><tbody id="sb1"></tbody></table>
         </div>
         <div style="display:flex;flex-direction:column;gap:15px;">
@@ -479,7 +479,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="scad-table"><thead><tr>
-          <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th>
+          <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
@@ -790,8 +790,22 @@ function startInactivityWatcher(){
 
 /* ══ AUTH ══ */
 async function initAuth(){
-  await supa.auth.signOut();
-  showLogin();
+  // Controlla se c'è già una sessione attiva (es. dopo ricaricamento pagina)
+  const{data:{session}}=await supa.auth.getSession();
+  if(session){
+    // Sessione valida — verifica MFA level
+    const{data:aal}=await supa.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(aal?.currentLevel==='aal2'||aal?.nextLevel!=='aal2'){
+      // Sessione completa con MFA già verificato
+      currentUser=session.user;
+      showApp(session.user);
+    }else{
+      // Sessione parziale — serve OTP
+      showMFAStep();
+    }
+  }else{
+    showLogin();
+  }
   supa.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){currentUser=null;showLogin();}
   });
@@ -1068,8 +1082,8 @@ function renderTable(filter,tbid){
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
   const showCosto=tbid==='sb2';
+  const cols=showCosto?7:6;
   if(list.length===0){
-    const cols=showCosto?6:5;
     tb.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Nessuna scadenza</td></tr>`;
     return;
   }
@@ -1084,14 +1098,24 @@ function renderTable(filter,tbid){
       ${s.prezzo>0?`<div class="amt-in" style="font-size:11px">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
       ${s.costo>0?`<div class="amt-out" style="font-size:10px;color:var(--muted)">cost: €${s.costo.toLocaleString('it-IT')}</div>`:''}
     </td>`:'';
+    // Bottoni azione — completare/ripristinare + eliminare
+    const actionBtns=done
+      ?`<td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();markUndone('${s.id}')" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Ripristina">↩</button>
+          <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
+        </td>`
+      :`<td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();markDone('${s.id}')" style="background:var(--adim);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--accent);cursor:pointer;font-size:11px;margin-right:4px" title="Completa">✓</button>
+          <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
+        </td>`;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.nome}</div><div class="etag">${s.entita}</div></td>
       <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
       ${costoCol}
-      <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>`;
-    if(!done)tr.onclick=()=>markDone(s.id);
+      <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
+      ${actionBtns}`;
     tb.appendChild(tr);
   });
 }
@@ -1133,14 +1157,38 @@ function filterScad(f,el,tbid){
 }
 
 async function markDone(id){
+  if(!confirm('Segnare come completata questa scadenza?'))return;
   const s=APP.scadenze.find(x=>x.id===id);
   if(s){
     s.stato='done';
     saveLocalData();
     await updateScadenzaStatoDB(id,'done');
     renderAll();
-    showToast('✓ '+t('completata')+': '+s.nome);
+    showToast('✓ Completata: '+s.nome);
   }
+}
+
+async function markUndone(id){
+  const s=APP.scadenze.find(x=>x.id===id);
+  if(s){
+    s.stato='pending';
+    saveLocalData();
+    await updateScadenzaStatoDB(id,'pending');
+    renderAll();
+    showToast('↩ Riportata in attivo: '+s.nome);
+  }
+}
+
+async function deleteScadenza(id){
+  if(!confirm('Eliminare definitivamente questa scadenza?\nQuesta azione non è reversibile.'))return;
+  const isUUID=typeof id==='string'&&id.length===36&&id.includes('-');
+  if(isUUID&&currentUser){
+    await supa.from('scadenze').delete().eq('id',id).eq('user_id',currentUser.id);
+  }
+  APP.scadenze=APP.scadenze.filter(x=>x.id!==id);
+  saveLocalData();
+  renderAll();
+  showToast('🗑 Scadenza eliminata');
 }
 
 async function addScadenza(){
@@ -1321,19 +1369,33 @@ function buildCharts(annoSel){
         y:{grid:{color:c.grid},ticks:{color:c.txt,font:{family:'DM Mono',size:10},callback:v=>'€'+Math.round(v/1000)+'k'}}}}});
   }
 
-  // Donut — top clienti con %
+  // Donut — top clienti con % — filtrato per anno
   const c2=document.getElementById('chart-donut');
-  const top6=(ZOHO.topClienti||[]).slice(0,6);
-  const totale=top6.reduce((a,x)=>a+x.fatturato,0);
   const colors=[c.acc,c.inf,c.wrn,c.pur,c.tel,c.dan];
+  // Calcola top clienti per anno selezionato dalle fatture
+  let top6;
+  if(annoSel==='all'){
+    top6=(ZOHO.topClienti||[]).slice(0,6);
+  }else{
+    // Ricalcola dai dati invoices filtrati per anno
+    const clientiMap={};
+    (ZOHO.invoices||[]).filter(i=>i.data&&i.data.startsWith(annoSel)).forEach(i=>{
+      const nome=i.cliente||'Sconosciuto';
+      if(!clientiMap[nome])clientiMap[nome]={nome,fatturato:0,count:0};
+      clientiMap[nome].fatturato+=parseFloat(i.totale)||0;
+      clientiMap[nome].count++;
+    });
+    top6=Object.values(clientiMap).sort((a,b)=>b.fatturato-a.fatturato).slice(0,6);
+  }
+  const totale=top6.reduce((a,x)=>a+(x.fatturato||0),0);
   if(c2&&top6.length>0){
     chartDonut=new Chart(c2,{type:'doughnut',data:{
       labels:top6.map(x=>{
-        const pct=totale>0?Math.round((x.fatturato/totale)*100):0;
-        const nome=x.nome.length>16?x.nome.substring(0,16)+'…':x.nome;
+        const pct=totale>0?Math.round(((x.fatturato||0)/totale)*100):0;
+        const nome=(x.nome||'').length>16?(x.nome||'').substring(0,16)+'…':(x.nome||'');
         return nome+' ('+pct+'%)';
       }),
-      datasets:[{data:top6.map(x=>Math.round(x.fatturato)),
+      datasets:[{data:top6.map(x=>Math.round(x.fatturato||0)),
         backgroundColor:colors.map(col=>col+'99'),borderColor:c.sur,borderWidth:3,hoverOffset:6}]
     },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
       plugins:{
@@ -1394,9 +1456,9 @@ function applyZohoData(z){
   }
 
   // Zoho strip
-  el('zs-fatt','€ '+Math.round(s.fatturato).toLocaleString('it-IT'));
-  el('zs-inc','€ '+Math.round(s.incassato).toLocaleString('it-IT'));
-  el('zs-att','€ '+Math.round(s.inAttesa).toLocaleString('it-IT'));
+  el('zs-fatt','€ '+Math.round(s.fatturato||0).toLocaleString('it-IT'));
+  el('zs-inc','€ '+Math.round(s.incassato||0).toLocaleString('it-IT'));
+  el('zs-att','€ '+Math.round(s.inAttesa||0).toLocaleString('it-IT'));
   el('zs-num',s.numFatture||'—');
   const syncTime=z.lastSync?new Date(z.lastSync).toLocaleString('it-IT'):'—';
   el('zoho-strip-sub','Ultimo sync: '+syncTime);
