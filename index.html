@@ -17,17 +17,13 @@ let currentUser = null;
 let mfaStep = false; // true quando siamo nel passo OTP
 
 async function initAuth() {
-  const { data: { session } } = await supa.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    showApp(session.user);
-  } else {
-    showLogin();
-  }
+  // Forza sempre logout all'apertura — ogni sessione deve fare login + OTP
+  await supa.auth.signOut();
+  showLogin();
   supa.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session) {
       currentUser = session.user;
-      showApp(session.user);
+      // Non mostrare app subito — aspetta verifica MFA
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       showLogin();
@@ -46,11 +42,14 @@ async function doLogin() {
   try {
     const { data, error } = await supa.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    // Controlla se serve MFA
-    const { data: mfaData } = await supa.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (mfaData?.nextLevel === 'aal2' && mfaData?.currentLevel !== 'aal2') {
+    // Controlla sempre se MFA è configurato e richiede verifica
+    const { data: mfaData } = await supa.auth.mfa.listFactors();
+    const hasVerifiedTOTP = mfaData?.totp?.some(f => f.status === 'verified');
+    if (hasVerifiedTOTP) {
+      // Ha 2FA configurato — richiedi sempre il codice
       showMFAStep();
     }
+    // Se non ha 2FA configurato entra direttamente
   } catch(e) {
     errEl.textContent = '⛔ ' + (e.message === 'Invalid login credentials' ? 'Email o password errati' : e.message);
     btnEl.textContent = 'Accedi';
