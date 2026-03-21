@@ -1,8 +1,8 @@
 {
-  "lastSync": "2026-03-21T16:14:50.742Z",
+  "lastSync": "2026-03-21T16:23:24.467Z",
   "summary": {
     "fatturato": 1027891.85,
-    "incassato": 0,
+    "incassato": 961556.85,
     "inAttesa": 58915,
     "numFatture": 683,
     "numClienti": 111,
@@ -12,25 +12,25 @@
   "perAnno": {
     "2023": {
       "fatturato": 252673,
-      "incassato": 0,
+      "incassato": 238423,
       "inAttesa": 10250,
       "count": 148
     },
     "2024": {
       "fatturato": 138887.2,
-      "incassato": 0,
+      "incassato": 118287.2,
       "inAttesa": 20600,
       "count": 211
     },
     "2025": {
       "fatturato": 501317.56,
-      "incassato": 0,
+      "incassato": 490467.56,
       "inAttesa": 10590,
       "count": 263
     },
     "2026": {
       "fatturato": 135014.09,
-      "incassato": 0,
+      "incassato": 114379.09,
       "inAttesa": 17475,
       "count": 61
     }
@@ -38,19 +38,19 @@
   "perMese": {
     "2026-03": {
       "fatturato": 33082.85,
-      "incassato": 0,
+      "incassato": 16642.85,
       "inAttesa": 13280,
       "count": 22
     },
     "2026-02": {
       "fatturato": 64356.66,
-      "incassato": 0,
+      "incassato": 62011.66,
       "inAttesa": 2345,
       "count": 19
     },
     "2026-01": {
       "fatturato": 37574.58,
-      "incassato": 0,
+      "incassato": 35724.58,
       "inAttesa": 1850,
       "count": 20
     }
