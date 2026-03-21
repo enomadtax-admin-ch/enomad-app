@@ -174,12 +174,11 @@ jobs:
               perAnno[a].inAttesa = Math.round(perAnno[a].inAttesa * 100) / 100;
             });
 
-            // ── Step 6: Statistiche per mese (anno corrente) ──
+            // ── Step 6: Statistiche per mese (tutti gli anni) ──
             const annoCorrente = new Date().getFullYear().toString();
             const perMese = {};
-            fatture
-              .filter(i => i.date && i.date.startsWith(annoCorrente))
-              .forEach(i => {
+            fatture.forEach(i => {
+                if (!i.date) return;
                 const mese = i.date.substring(0, 7);
                 if (!perMese[mese]) perMese[mese] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
                 perMese[mese].fatturato += parseFloat(i.total) || 0;
