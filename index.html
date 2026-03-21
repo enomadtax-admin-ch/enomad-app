@@ -126,6 +126,9 @@ function showApp(user) {
   document.getElementById('app-screen').style.display = 'flex';
   const n = document.getElementById('user-name');
   if(n) n.textContent = user.email;
+  // Carica dati da Supabase
+  loadScadenzeFromDB();
+  syncZoho();
 }
 
 window.doLogin = doLogin;
@@ -896,24 +899,41 @@ function filterScad(f,el,tbid){
 
 function markDone(id){
   const s=APP.scadenze.find(x=>x.id===id);
-  if(s){s.stato='done';saveData();renderTable('all','sb1');renderTable('all','sb2');renderTimeline();showToast('✓ Completata: '+s.nome);}
+  if(s){
+    s.stato='done';
+    saveData();
+    updateScadenzaStatoDB(id,'done');
+    renderTable('all','sb1');renderTable('all','sb2');renderTimeline();
+    showToast('✓ Completata: '+s.nome);
+  }
 }
 
 /* ══ ADD SCADENZA ══ */
-function addScadenza(){
+async function addScadenza(){
   const nome=document.getElementById('f-nome').value.trim();
   const data=document.getElementById('f-data').value;
   if(!nome||!data){showToast('⚠ Compila nome e data');return;}
-  const newId=Math.max(0,...APP.scadenze.map(s=>s.id))+1;
-  APP.scadenze.push({id:newId,nome,entita:document.getElementById('f-entita').value,
-    tipo:document.getElementById('f-tipo').value,data,stato:'pending',
+  const nuova={
+    id: Date.now(),
+    nome,
+    entita:document.getElementById('f-entita').value,
+    tipo:document.getElementById('f-tipo').value,
+    data,
+    stato:'pending',
     costo:parseInt(document.getElementById('f-costo').value)||0,
-    note:document.getElementById('f-note').value});
+    note:document.getElementById('f-note').value||'',
+    reminder:document.getElementById('f-reminder')?.value||'15'
+  };
+  if(currentUser){
+    const saved=await saveScadenzaToDB(nuova);
+    if(saved)nuova.id=saved.id;
+  }
+  APP.scadenze.push(nuova);
   APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
   saveData();
   closeModal('scadenza');
-  renderTable('all','sb1');renderTable('all','sb2');renderTimeline();
-  showToast('✓ Salvata + Alert Telegram programmato');
+  renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
+  showToast('✓ Scadenza salvata su Supabase');
   ['f-nome','f-costo','f-note'].forEach(id=>document.getElementById(id).value='');
 }
 
@@ -1347,6 +1367,82 @@ async function checkMFAStatus(){
       statusEl.innerHTML='<div class="cfg-hint" style="border-left:3px solid var(--warn);padding-left:13px;"><strong style="color:var(--warn)">⚠ 2FA non configurato</strong><br>Configura Google Authenticator per maggiore sicurezza</div>';
     }
   }catch(e){}
+}
+
+/* ══ SUPABASE DB — Scadenze ══ */
+
+async function loadScadenzeFromDB(){
+  if(!currentUser) return;
+  try{
+    const{data,error}=await supa.from('scadenze').select('*').order('data',{ascending:true});
+    if(error)throw error;
+    if(data && data.length > 0){
+      // Converti formato Supabase → formato app
+      APP.scadenze = data.map(r=>({
+        id: r.id,
+        nome: r.nome,
+        entita: r.entita,
+        tipo: r.tipo,
+        data: r.data,
+        stato: r.stato,
+        costo: parseFloat(r.costo)||0,
+        note: r.note||'',
+        reminder: r.reminder||'15'
+      }));
+      saveData();
+      renderTable('all','sb1');
+      renderTable('all','sb2');
+      renderTimeline();
+      updateKPIs();
+      showToast('✓ Scadenze caricate da Supabase ('+data.length+')');
+    }
+    // Aggiorna banner DB
+    const banner=document.getElementById('db-banner');
+    const title=document.getElementById('db-banner-title');
+    const sub=document.getElementById('db-banner-sub');
+    if(banner){banner.className='db-banner connected';}
+    if(title)title.textContent='Database Supabase connesso — dati permanenti e sicuri';
+    if(sub)sub.textContent='Le scadenze sono salvate su Supabase e sincronizzate automaticamente.';
+    const lbl=document.getElementById('db-status-label');
+    if(lbl)lbl.textContent='Supabase';
+    const pill=document.getElementById('db-status-pill');
+    if(pill){pill.style.color='var(--accent)';pill.querySelector('.sdot').style.background='var(--accent)';}
+  }catch(e){
+    console.error('Errore caricamento scadenze:', e);
+  }
+}
+
+async function saveScadenzaToDB(s){
+  if(!currentUser) return;
+  const row={
+    user_id: currentUser.id,
+    nome: s.nome,
+    entita: s.entita,
+    tipo: s.tipo,
+    data: s.data,
+    stato: s.stato,
+    costo: s.costo||0,
+    note: s.note||'',
+    reminder: s.reminder||'15'
+  };
+  // Se ha un UUID usa upsert, altrimenti insert
+  if(s.id && s.id.includes('-') && s.id.length > 10){
+    const{error}=await supa.from('scadenze').upsert({id:s.id,...row});
+    if(error)console.error('Errore salvataggio scadenza:', error);
+  }else{
+    const{data,error}=await supa.from('scadenze').insert(row).select().single();
+    if(error)console.error('Errore inserimento scadenza:', error);
+    else return data; // ritorna con UUID reale
+  }
+}
+
+async function updateScadenzaStatoDB(id, stato){
+  if(!currentUser) return;
+  // id può essere UUID (Supabase) o numero (localStorage)
+  if(id && String(id).includes('-') && String(id).length > 10){
+    const{error}=await supa.from('scadenze').update({stato}).eq('id',id).eq('user_id',currentUser.id);
+    if(error)console.error('Errore update stato:', error);
+  }
 }
 
 /* ══ MISC ══ */
