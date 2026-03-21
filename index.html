@@ -65,14 +65,29 @@ async function doMFA() {
   btnEl.textContent = 'Verifica...';
   btnEl.disabled = true;
   try {
-    const { data: factors } = await supa.auth.mfa.listFactors();
-    const totp = factors?.totp?.[0];
-    if (!totp) throw new Error('Nessun fattore MFA trovato');
-    const { data: challenge } = await supa.auth.mfa.challenge({ factorId: totp.id });
-    const { error } = await supa.auth.mfa.verify({ factorId: totp.id, challengeId: challenge.id, code });
-    if (error) throw error;
+    // Ottieni la lista dei fattori
+    const { data: factors, error: factorsErr } = await supa.auth.mfa.listFactors();
+    if (factorsErr) throw factorsErr;
+    const totp = factors?.totp?.find(f => f.status === 'verified');
+    if (!totp) throw new Error('Nessun fattore TOTP verificato trovato');
+    // Crea challenge
+    const { data: challengeData, error: challengeErr } = await supa.auth.mfa.challenge({ factorId: totp.id });
+    if (challengeErr) throw challengeErr;
+    // Verifica codice
+    const { data: verifyData, error: verifyErr } = await supa.auth.mfa.verify({
+      factorId: totp.id,
+      challengeId: challengeData.id,
+      code: code
+    });
+    if (verifyErr) throw verifyErr;
+    // Successo — ottieni sessione aggiornata
+    const { data: { session } } = await supa.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      showApp(session.user);
+    }
   } catch(e) {
-    errEl.textContent = '⛔ Codice OTP errato';
+    errEl.textContent = '⛔ ' + (e.message.includes('Invalid') ? 'Codice OTP errato — riprova' : e.message);
     btnEl.textContent = 'Verifica';
     btnEl.disabled = false;
   }
