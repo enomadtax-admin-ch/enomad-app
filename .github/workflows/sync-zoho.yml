@@ -224,7 +224,7 @@ jobs:
               perAnno,
               perMese,
               topClienti,
-              invoices: fatture.slice(0, 50).map(i => ({
+              invoices: fatture.sort((a,b) => new Date(b.date) - new Date(a.date)).map(i => ({
                 id: i.invoice_id,
                 numero: i.invoice_number,
                 cliente: i.customer_name,
