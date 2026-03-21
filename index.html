@@ -102,11 +102,23 @@ function showMFAStep() {
 function showLogin() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
+  // Reset steps
   document.getElementById('login-form-step').style.display = 'block';
   document.getElementById('mfa-form-step').style.display = 'none';
+  // Reset errori
   document.getElementById('login-error').textContent = '';
+  // Reset campi
+  const emailEl = document.getElementById('login-email');
+  const passEl = document.getElementById('login-password');
+  const mfaEl = document.getElementById('mfa-code');
+  if(emailEl) emailEl.value = '';
+  if(passEl) passEl.value = '';
+  if(mfaEl) mfaEl.value = '';
+  // Reset bottoni
   const btn = document.getElementById('login-btn');
-  if(btn){btn.textContent='Accedi';btn.disabled=false;}
+  const mfaBtn = document.getElementById('mfa-btn');
+  if(btn){ btn.textContent='Accedi'; btn.disabled=false; }
+  if(mfaBtn){ mfaBtn.textContent='Verifica'; mfaBtn.disabled=false; }
 }
 
 function showApp(user) {
