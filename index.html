@@ -6,52 +6,114 @@
 <title>Enomad — Compliance & Finance</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-const FB={apiKey:"AIzaSyAKQ9aAPCRFXZ_9bbknilnsAIfOA1s-iig",authDomain:"enomad-app.firebaseapp.com",projectId:"enomad-app",storageBucket:"enomad-app.firebasestorage.app",messagingSenderId:"444471065529",appId:"1:444471065529:web:1c7ab6bd6efd85f9295468"};
-const auth=getAuth(initializeApp(FB));
-const provider=new GoogleAuthProvider();
-// ── Email unica autorizzata ──
-const ALLOWED_EMAIL='enomadtax@gmail.com';
-provider.setCustomParameters({login_hint:ALLOWED_EMAIL,prompt:'select_account'});
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPA_URL = 'https://nkushczwfrdwgbezfjux.supabase.co';
+const SUPA_KEY = 'sb_publishable_AdUp4598EwOLTjAgnKLA6A_dPfsQfWZ';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-function isAllowed(user){ return user && user.email && user.email.toLowerCase()===ALLOWED_EMAIL.toLowerCase(); }
+// ── Auth state ──
+let currentUser = null;
+let mfaStep = false; // true quando siamo nel passo OTP
 
-window.googleLogin=async()=>{
-  const errEl=document.getElementById('login-error');
-  try{
-    const r=await signInWithPopup(auth,provider);
-    if(!isAllowed(r.user)){
-      await signOut(auth);
-      if(errEl)errEl.textContent='⛔ Accesso negato: '+r.user.email+' non è autorizzata.';
-      return;
-    }
-  }catch(e){
-    if(e.code!=='auth/cancelled-popup-request'&&e.code!=='auth/popup-closed-by-user'){
-      if(errEl)errEl.textContent='⚠ Errore: '+e.message;
-    }
+async function initAuth() {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    showApp(session.user);
+  } else {
+    showLogin();
   }
-};
-window.googleLogout=async()=>{
-  await signOut(auth);
+  supa.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      showApp(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showLogin();
+    }
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btnEl = document.getElementById('login-btn');
+  errEl.textContent = '';
+  btnEl.textContent = 'Accesso in corso...';
+  btnEl.disabled = true;
+  try {
+    const { data, error } = await supa.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    // Controlla se serve MFA
+    const { data: mfaData } = await supa.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (mfaData?.nextLevel === 'aal2' && mfaData?.currentLevel !== 'aal2') {
+      showMFAStep();
+    }
+  } catch(e) {
+    errEl.textContent = '⛔ ' + (e.message === 'Invalid login credentials' ? 'Email o password errati' : e.message);
+    btnEl.textContent = 'Accedi';
+    btnEl.disabled = false;
+  }
+}
+
+async function doMFA() {
+  const code = document.getElementById('mfa-code').value.trim();
+  const errEl = document.getElementById('login-error');
+  const btnEl = document.getElementById('mfa-btn');
+  errEl.textContent = '';
+  btnEl.textContent = 'Verifica...';
+  btnEl.disabled = true;
+  try {
+    const { data: factors } = await supa.auth.mfa.listFactors();
+    const totp = factors?.totp?.[0];
+    if (!totp) throw new Error('Nessun fattore MFA trovato');
+    const { data: challenge } = await supa.auth.mfa.challenge({ factorId: totp.id });
+    const { error } = await supa.auth.mfa.verify({ factorId: totp.id, challengeId: challenge.id, code });
+    if (error) throw error;
+  } catch(e) {
+    errEl.textContent = '⛔ Codice OTP errato';
+    btnEl.textContent = 'Verifica';
+    btnEl.disabled = false;
+  }
+}
+
+function showMFAStep() {
+  document.getElementById('login-form-step').style.display = 'none';
+  document.getElementById('mfa-form-step').style.display = 'block';
+  document.getElementById('login-error').textContent = '';
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-form-step').style.display = 'block';
+  document.getElementById('mfa-form-step').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
+  const btn = document.getElementById('login-btn');
+  if(btn){btn.textContent='Accedi';btn.disabled=false;}
+}
+
+function showApp(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  const n = document.getElementById('user-name');
+  if(n) n.textContent = user.email;
+}
+
+window.doLogin = doLogin;
+window.doMFA = doMFA;
+window.googleLogout = async () => {
+  await supa.auth.signOut();
   showToast('✓ Logout effettuato');
 };
-onAuthStateChanged(auth,user=>{
-  const ls=document.getElementById('login-screen');
-  const as=document.getElementById('app-screen');
-  if(!ls||!as)return;
-  if(isAllowed(user)){
-    ls.style.display='none';
-    as.style.display='flex';
-    const n=document.getElementById('user-name');if(n)n.textContent=user.displayName||user.email;
-    const av=document.getElementById('user-avatar');if(av&&user.photoURL){av.src=user.photoURL;av.style.display='block';}
-  }else{
-    // Forza logout se utente non autorizzato è ancora in sessione
-    if(user)signOut(auth);
-    ls.style.display='flex';
-    as.style.display='none';
-  }
+
+// Invio con Enter
+document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
+  document.getElementById('login-password')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('mfa-code')?.addEventListener('keydown', e => { if(e.key==='Enter') doMFA(); });
 });
 </script>
 <style>
@@ -283,17 +345,39 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <body>
 
 <!-- ══ LOGIN SCREEN ══ -->
-<div id="login-screen">
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div class="login-card">
     <div class="login-logo">E</div>
     <div class="login-title">Enomad Admin</div>
-    <div class="login-sub">Area riservata — accedi con il tuo account Google autorizzato</div>
-    <button class="login-btn" onclick="googleLogin()">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-      Accedi con Google
-    </button>
+    <div class="login-sub">Area riservata — accesso controllato</div>
+
+    <!-- STEP 1: Email + Password -->
+    <div id="login-form-step">
+      <div class="fg" style="margin-bottom:10px;text-align:left">
+        <label class="fl">Email</label>
+        <input type="email" class="fi" id="login-email" placeholder="la tua email" autocomplete="email">
+      </div>
+      <div class="fg" style="margin-bottom:16px;text-align:left">
+        <label class="fl">Password</label>
+        <input type="password" class="fi" id="login-password" placeholder="••••••••••" autocomplete="current-password">
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Accedi</button>
+    </div>
+
+    <!-- STEP 2: OTP -->
+    <div id="mfa-form-step" style="display:none">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5;">
+        Inserisci il codice a 6 cifre da <strong style="color:var(--text)">Google Authenticator</strong>
+      </div>
+      <div class="fg" style="margin-bottom:16px;text-align:left">
+        <label class="fl">Codice OTP</label>
+        <input type="text" class="fi" id="mfa-code" placeholder="000000" maxlength="6" style="letter-spacing:4px;font-size:20px;text-align:center;font-family:'DM Mono',monospace" autocomplete="one-time-code">
+      </div>
+      <button class="login-btn" id="mfa-btn" onclick="doMFA()">Verifica</button>
+    </div>
+
     <div class="login-error" id="login-error"></div>
-    <div class="login-footer">🔒 Solo account autorizzati possono accedere</div>
+    <div class="login-footer">🔒 Protetto da Supabase Auth + MFA</div>
   </div>
 </div>
 
