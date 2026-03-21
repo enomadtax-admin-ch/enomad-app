@@ -1,5 +1,5 @@
 {
-  "lastSync": "2026-03-21T17:01:50.868Z",
+  "lastSync": "2026-03-21T17:14:35.133Z",
   "summary": {
     "fatturato": 1027891.85,
     "incassato": 961556.85,
@@ -53,6 +53,198 @@
       "incassato": 35724.58,
       "inAttesa": 1850,
       "count": 20
+    },
+    "2025-12": {
+      "fatturato": 56557.39,
+      "incassato": 56207.39,
+      "inAttesa": 350,
+      "count": 22
+    },
+    "2025-11": {
+      "fatturato": 48578,
+      "incassato": 48578,
+      "inAttesa": 0,
+      "count": 17
+    },
+    "2025-10": {
+      "fatturato": 55245,
+      "incassato": 55245,
+      "inAttesa": 0,
+      "count": 20
+    },
+    "2025-09": {
+      "fatturato": 53030,
+      "incassato": 53030,
+      "inAttesa": 0,
+      "count": 19
+    },
+    "2025-08": {
+      "fatturato": 30308.52,
+      "incassato": 30058.52,
+      "inAttesa": 250,
+      "count": 16
+    },
+    "2025-07": {
+      "fatturato": 22105.65,
+      "incassato": 21105.65,
+      "inAttesa": 1000,
+      "count": 20
+    },
+    "2025-06": {
+      "fatturato": 31550,
+      "incassato": 29850,
+      "inAttesa": 1700,
+      "count": 25
+    },
+    "2025-05": {
+      "fatturato": 66038,
+      "incassato": 64338,
+      "inAttesa": 1440,
+      "count": 31
+    },
+    "2025-04": {
+      "fatturato": 32700,
+      "incassato": 31350,
+      "inAttesa": 1350,
+      "count": 22
+    },
+    "2025-03": {
+      "fatturato": 57845,
+      "incassato": 56345,
+      "inAttesa": 1500,
+      "count": 25
+    },
+    "2025-02": {
+      "fatturato": 22310,
+      "incassato": 20810,
+      "inAttesa": 1500,
+      "count": 23
+    },
+    "2025-01": {
+      "fatturato": 25050,
+      "incassato": 23550,
+      "inAttesa": 1500,
+      "count": 23
+    },
+    "2024-12": {
+      "fatturato": 12400,
+      "incassato": 10900,
+      "inAttesa": 1500,
+      "count": 19
+    },
+    "2024-11": {
+      "fatturato": 15900,
+      "incassato": 14400,
+      "inAttesa": 1500,
+      "count": 21
+    },
+    "2024-10": {
+      "fatturato": 21200,
+      "incassato": 18800,
+      "inAttesa": 2400,
+      "count": 22
+    },
+    "2024-09": {
+      "fatturato": 9750,
+      "incassato": 7350,
+      "inAttesa": 2400,
+      "count": 18
+    },
+    "2024-08": {
+      "fatturato": 9950,
+      "incassato": 7200,
+      "inAttesa": 2750,
+      "count": 19
+    },
+    "2024-07": {
+      "fatturato": 8900,
+      "incassato": 7000,
+      "inAttesa": 1900,
+      "count": 16
+    },
+    "2024-06": {
+      "fatturato": 11790,
+      "incassato": 10390,
+      "inAttesa": 1400,
+      "count": 18
+    },
+    "2024-05": {
+      "fatturato": 13150,
+      "incassato": 11250,
+      "inAttesa": 1900,
+      "count": 17
+    },
+    "2024-04": {
+      "fatturato": 6500,
+      "incassato": 5000,
+      "inAttesa": 1500,
+      "count": 14
+    },
+    "2024-03": {
+      "fatturato": 10297.2,
+      "incassato": 8797.2,
+      "inAttesa": 1500,
+      "count": 17
+    },
+    "2024-02": {
+      "fatturato": 7650,
+      "incassato": 6650,
+      "inAttesa": 1000,
+      "count": 13
+    },
+    "2024-01": {
+      "fatturato": 11400,
+      "incassato": 10550,
+      "inAttesa": 850,
+      "count": 17
+    },
+    "2023-12": {
+      "fatturato": 12460,
+      "incassato": 11960,
+      "inAttesa": 500,
+      "count": 17
+    },
+    "2023-11": {
+      "fatturato": 20523,
+      "incassato": 8023,
+      "inAttesa": 8500,
+      "count": 15
+    },
+    "2023-10": {
+      "fatturato": 16494,
+      "incassato": 15494,
+      "inAttesa": 1000,
+      "count": 21
+    },
+    "2023-09": {
+      "fatturato": 31897,
+      "incassato": 31897,
+      "inAttesa": 0,
+      "count": 24
+    },
+    "2023-08": {
+      "fatturato": 8247,
+      "incassato": 7997,
+      "inAttesa": 250,
+      "count": 18
+    },
+    "2023-07": {
+      "fatturato": 104947,
+      "incassato": 104947,
+      "inAttesa": 0,
+      "count": 20
+    },
+    "2023-06": {
+      "fatturato": 24188,
+      "incassato": 24188,
+      "inAttesa": 0,
+      "count": 17
+    },
+    "2023-05": {
+      "fatturato": 33917,
+      "incassato": 33917,
+      "inAttesa": 0,
+      "count": 16
     }
   },
   "topClienti": [
