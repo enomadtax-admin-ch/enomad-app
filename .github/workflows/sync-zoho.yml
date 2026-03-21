@@ -134,19 +134,6 @@ jobs:
               .filter(i => ['sent','overdue','viewed','partial'].includes(i.status))
               .reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
 
-            // ── Step 5: Statistiche per anno ──
-            const perAnno = {};
-            fatture.forEach(i => {
-              const anno = i.date ? i.date.substring(0, 4) : 'sconosciuto';
-              if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-              perAnno[anno].fatturato += parseFloat(i.total) || 0;
-              perAnno[anno].count++;
-              if (i.status === 'paid') perAnno[anno].incassato += parseFloat(i.total) || 0;
-              if (['sent','overdue','viewed','partial'].includes(i.status)) {
-                perAnno[anno].inAttesa += parseFloat(i.balance) || 0;
-              }
-            });
-
             // ── Step 5: Statistiche per anno — fatturato da fatture, incassato da pagamenti reali ──
             const perAnno = {};
             fatture.forEach(i => {
