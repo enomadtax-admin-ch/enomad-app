@@ -2,7 +2,7 @@ name: Sync Finance Data
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Ogni giorno alle 8:00 ora italiana
+    - cron: '*/30 * * * *'  # Ogni 30 minuti
   workflow_dispatch:       # Puoi lanciarlo manualmente quando vuoi
 
 jobs:
@@ -116,6 +116,19 @@ jobs:
               'customerpayments',
               headers
             );
+            // Prova anche endpoint alternativo se il primo è vuoto
+            let allPaymentsFinal = allPayments;
+            if(allPayments.length === 0) {
+              console.log('customerpayments vuoto, provo endpoint payments...');
+              const altPayments = await fetchAllPages(
+                'www.zohoapis.eu',
+                '/invoice/v3/payments',
+                'payments',
+                headers
+              );
+              console.log('payments alternativo: ' + altPayments.length + ' elementi');
+              allPaymentsFinal = altPayments;
+            }
 
             // ── Step 3: Filtra — escludi draft e void ──
             const STATI_VALIDI = ['sent', 'paid', 'partial', 'overdue', 'viewed'];
@@ -123,7 +136,7 @@ jobs:
             const escluse = allInvoices.length - fatture.length;
             console.log('Fatture totali: ' + allInvoices.length);
             console.log('Fatture valide (escluso draft/void): ' + fatture.length);
-            console.log('Pagamenti reali: ' + allPayments.length);
+            console.log('Pagamenti reali: ' + allPaymentsFinal.length);
             console.log('Escluse: ' + escluse);
 
             // ── Step 4: Calcola totali — incassato da stato fatture (payments API non disponibile) ──
