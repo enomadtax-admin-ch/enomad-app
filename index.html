@@ -340,6 +340,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span data-t="entita">Entità</span></div>
     <div class="nav-sec" data-t="finanziario">Finanziario</div>
     <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
+    <div class="nav-item" onclick="showView('ricorrenti',this)"><span class="nav-icon">♻</span><span>Ricavi ricorrenti</span></div>
     <div class="nav-item" onclick="showView('movimenti',this)"><span class="nav-icon">✦</span><span>Movimenti UAE</span></div>
     <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span><span data-t="zoho">Zoho Invoice</span></div>
     <div class="nav-sec" data-t="sistema">Sistema</div>
@@ -540,6 +541,77 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="panel-header"><div class="panel-title" data-t="costiCompliance90">Costi compliance 90gg</div><span class="badge bw">stima</span></div>
         <table class="fin-table"><thead><tr><th data-t="scadenze">Scadenza</th><th data-t="entita">Entità</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="prezzo">Prezzo cliente</th><th data-t="costoMio">Costo mio</th><th data-t="margine">Margine</th></tr></thead>
         <tbody id="cc-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- RICAVI RICORRENTI -->
+    <div class="view" id="view-ricorrenti">
+      <!-- KPI Strip -->
+      <div class="fin-hero" style="margin-bottom:16px;">
+        <div class="fin-kpi fin-kpi-a">
+          <div class="fin-kpi-lbl">Floor annuale garantito</div>
+          <div class="fin-kpi-val" style="color:var(--accent)" id="rr-floor">—</div>
+          <div class="fin-kpi-trend" id="rr-floor-sub">scadenze annuali attive</div>
+        </div>
+        <div class="fin-kpi fin-kpi-d">
+          <div class="fin-kpi-lbl">Revenue at Risk</div>
+          <div class="fin-kpi-val" style="color:var(--danger)" id="rr-risk">—</div>
+          <div class="fin-kpi-trend" id="rr-risk-sub">se perdi il cliente più grande</div>
+        </div>
+        <div class="fin-kpi fin-kpi-i">
+          <div class="fin-kpi-lbl">Prossimi 30gg</div>
+          <div class="fin-kpi-val" style="color:var(--info)" id="rr-30">—</div>
+          <div class="fin-kpi-trend" id="rr-30-sub">rinnovi in scadenza</div>
+        </div>
+        <div class="fin-kpi fin-kpi-w">
+          <div class="fin-kpi-lbl">Clienti ricorrenti</div>
+          <div class="fin-kpi-val" style="color:var(--warn)" id="rr-clienti">—</div>
+          <div class="fin-kpi-trend">entità con rinnovi attivi</div>
+        </div>
+      </div>
+
+      <div class="grid-2eq" style="margin-bottom:16px;">
+        <!-- Revenue at Risk per entità -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">⚠ Revenue at Risk — per entità</div>
+            <span class="badge bw">simulazione perdita cliente</span>
+          </div>
+          <table class="fin-table"><thead><tr>
+            <th>Entità / Cliente</th>
+            <th>Rinnovi annuali</th>
+            <th>Valore annuo</th>
+            <th>% sul floor</th>
+          </tr></thead>
+          <tbody id="rr-risk-tbody"></tbody></table>
+        </div>
+
+        <!-- Proiezione prossimi 12 mesi -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📅 Proiezione rinnovi — prossimi 12 mesi</div>
+            <span class="badge bo">ricorrenti</span>
+          </div>
+          <div class="cf-wrap" id="rr-projection"></div>
+        </div>
+      </div>
+
+      <!-- Dettaglio scadenze ricorrenti -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">♻ Scadenze ricorrenti attive</div>
+          <span class="badge bi" id="rr-count-badge">0 attive</span>
+        </div>
+        <table class="fin-table"><thead><tr>
+          <th>Scadenza</th>
+          <th>Entità</th>
+          <th>Tipo</th>
+          <th>Prossima scadenza</th>
+          <th>Prezzo cliente</th>
+          <th>Costo mio</th>
+          <th>Margine</th>
+        </tr></thead>
+        <tbody id="rr-detail-tbody"></tbody></table>
       </div>
     </div>
 
@@ -1549,6 +1621,136 @@ function renderTopCountries(z){
     </div>`).join('');
 }
 
+/* ══ RICAVI RICORRENTI ══ */
+function renderRicorrenti(){
+  const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done');
+  const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+
+  // Floor annuale
+  const floor=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
+  el('rr-floor','€ '+Math.round(floor).toLocaleString('it-IT'));
+  el('rr-floor-sub',scadAnnuali.length+' scadenze annuali attive');
+  el('rr-count-badge',scadAnnuali.length+' attive');
+
+  // Prossimi 30gg
+  const oggi=new Date();
+  const fra30=new Date();fra30.setDate(oggi.getDate()+30);
+  const prossime30=scadAnnuali.filter(s=>{const d=new Date(s.data);return d>=oggi&&d<=fra30;});
+  const val30=prossime30.reduce((a,s)=>a+(s.prezzo||0),0);
+  el('rr-30','€ '+Math.round(val30).toLocaleString('it-IT'));
+  el('rr-30-sub',prossime30.length+' rinnovi in scadenza');
+
+  // Revenue at Risk per entità
+  const byEntita={};
+  scadAnnuali.forEach(s=>{
+    if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0};
+    byEntita[s.entita].count++;
+    byEntita[s.entita].valore+=s.prezzo||0;
+  });
+  const entitaList=Object.values(byEntita).sort((a,b)=>b.valore-a.valore);
+  el('rr-clienti',entitaList.length);
+
+  // Biggest risk
+  if(entitaList.length>0){
+    el('rr-risk','€ '+Math.round(entitaList[0].valore).toLocaleString('it-IT'));
+    el('rr-risk-sub','se perdi '+entitaList[0].entita);
+  }else{
+    el('rr-risk','€ 0');
+    el('rr-risk-sub','nessun cliente ricorrente');
+  }
+
+  // Tabella risk per entità
+  const riskTb=document.getElementById('rr-risk-tbody');
+  if(riskTb){
+    riskTb.innerHTML='';
+    if(entitaList.length===0){
+      riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza annuale — aggiungile con ricorrenza "Annuale"</td></tr>';
+    }else{
+      entitaList.forEach(e=>{
+        const pct=floor>0?Math.round((e.valore/floor)*100):0;
+        const riskColor=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--text2)';
+        riskTb.innerHTML+=`<tr>
+          <td style="font-weight:500">${e.entita}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px">${e.count}</td>
+          <td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}</td>
+          <td><div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${riskColor};border-radius:3px"></div>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:${riskColor};min-width:32px">${pct}%</span>
+          </div></td>
+        </tr>`;
+      });
+    }
+  }
+
+  // Proiezione prossimi 12 mesi
+  const proj=document.getElementById('rr-projection');
+  if(proj){
+    proj.innerHTML='';
+    const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const proiezione={};
+    // Calcola per ogni mese nei prossimi 12
+    for(let i=0;i<12;i++){
+      const d=new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth()+i);
+      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      proiezione[key]={label:mesiNomi[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};
+    }
+    scadAnnuali.forEach(s=>{
+      const d=new Date(s.data);
+      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      if(proiezione[key]){
+        proiezione[key].valore+=s.prezzo||0;
+        proiezione[key].count++;
+      }
+    });
+    const maxVal=Math.max(...Object.values(proiezione).map(p=>p.valore),1);
+    Object.entries(proiezione).forEach(([k,p])=>{
+      const pct=Math.round((p.valore/maxVal)*100);
+      proj.innerHTML+=`<div class="cf-month">
+        <div class="cf-top">
+          <span class="cf-lbl">${p.label}</span>
+          <span class="cf-val" style="color:${p.valore>0?'var(--accent)':'var(--muted)'}">
+            ${p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—'}
+          </span>
+        </div>
+        ${p.valore>0?`<div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+        <div class="cf-sub"><span style="color:var(--text2)">${p.count} rinnov${p.count===1?'o':'i'}</span></div>`:''}
+      </div>`;
+    });
+  }
+
+  // Dettaglio scadenze ricorrenti
+  const detTb=document.getElementById('rr-detail-tbody');
+  if(detTb){
+    detTb.innerHTML='';
+    if(scadAnnuali.length===0){
+      detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza annuale attiva</td></tr>';
+    }else{
+      scadAnnuali.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(s=>{
+        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+        const margColor=marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+        const d=daysTo(s.data);
+        const dColor=d<=30?'var(--warn)':'var(--text2)';
+        detTb.innerHTML+=`<tr>
+          <td style="font-weight:500">${s.nome}</td>
+          <td><span class="etag">${s.entita}</span></td>
+          <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:${dColor}">
+            ${s.data?.split('-').reverse().join('/')||'—'}
+            <div style="font-size:10px;color:var(--muted)">${d}gg</div>
+          </td>
+          <td class="amt-in">${s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT'):'—'}</td>
+          <td class="amt-out">${s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—'}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${margColor}">${marg!==null?marg+'%':'—'}</td>
+        </tr>`;
+      });
+    }
+  }
+}
+
 /* ══ MOVIMENTI UAE ══ */
 async function loadMovimentiFromDB(){
   if(!currentUser)return;
@@ -1745,11 +1947,12 @@ function showView(v,navEl){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
   const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',finance:'finance',
-    movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
+    ricorrenti:'Ricavi ricorrenti',movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
   const titleKey=titles[v]||v;
-  document.getElementById('topbar-title').textContent=(titleKey==='Movimenti UAE'?titleKey:t(titleKey));
+  document.getElementById('topbar-title').textContent=(titleKey==='Movimenti UAE'||titleKey==='Ricavi ricorrenti'?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   if(v==='finance'){renderFinance();}
+  if(v==='ricorrenti'){renderRicorrenti();}
   if(v==='movimenti'){
     renderMovimenti();
     // Aggiorna select entità nel modal movimento
