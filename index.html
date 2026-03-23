@@ -749,10 +749,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <span class="badge bw">simulazione perdita cliente</span>
           </div>
           <table class="fin-table"><thead><tr>
-            <th>Entità / Cliente</th>
-            <th>Rinnovi annuali</th>
+            <th>Cliente</th>
             <th>Valore annuo</th>
-            <th>% sul floor</th>
+            <th>Concentrazione sul floor</th>
+            <th>Rischio</th>
           </tr></thead>
           <tbody id="rr-risk-tbody"></tbody></table>
         </div>
@@ -2504,12 +2504,32 @@ function renderRicorrenti(){
   scadMensili.forEach(s=>{if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};byEntita[s.entita].count++;byEntita[s.entita].valore+=(s.prezzo||0)*12;byEntita[s.entita].tipi.push('mensile');});
   const entitaList=Object.values(byEntita).sort((a,b)=>b.valore-a.valore);
   el('rr-clienti',entitaList.length);
-  if(entitaList.length>0){el('rr-risk','€ '+Math.round(entitaList[0].valore).toLocaleString('it-IT'));el('rr-risk-sub','se perdi '+entitaList[0].entita);}
-  else{el('rr-risk','€ 0');el('rr-risk-sub','nessun cliente ricorrente');}
+  // Revenue at Risk = cliente con % concentrazione più alta
+  if(entitaList.length>0){
+    const top=entitaList[0];
+    const pctTop=floor>0?Math.round((top.valore/floor)*100):0;
+    el('rr-risk',pctTop+'%');
+    el('rr-risk-sub',top.entita+' (€'+Math.round(top.valore).toLocaleString('it-IT')+'/y)');
+  }else{el('rr-risk','0%');el('rr-risk-sub','nessun cliente ricorrente');}
   const riskTb=document.getElementById('rr-risk-tbody');
   if(riskTb){riskTb.innerHTML='';
     if(entitaList.length===0){riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente</td></tr>';}
-    else{entitaList.forEach(e=>{const pct=floor>0?Math.round((e.valore/floor)*100):0;const rc=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--text2)';const tipiU=[...new Set(e.tipi)].join(', ');riskTb.innerHTML+=`<tr><td><div style="font-weight:500">${e.entita}</div><div style="font-size:10px;color:var(--muted)">${tipiU}</div></td><td style="font-family:'DM Mono',monospace;font-size:12px">${e.count}</td><td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/anno</div></td><td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${rc};border-radius:3px"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:${rc};min-width:32px">${pct}%</span></div></td></tr>`;});}}
+    else{entitaList.forEach(e=>{
+      const pct=floor>0?Math.round((e.valore/floor)*100):0;
+      const rc=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--accent)';
+      const tipiU=[...new Set(e.tipi)].join(', ');
+      const riskLabel=pct>=40?'🔴 Critico':pct>=20?'🟡 Medio':'🟢 Basso';
+      riskTb.innerHTML+=`<tr>
+        <td><div style="font-weight:500">${e.entita}</div><div style="font-size:10px;color:var(--muted)">${tipiU}</div></td>
+        <td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/anno</div></td>
+        <td><div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${rc};border-radius:4px"></div>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:${rc};font-weight:700;min-width:36px">${pct}%</span>
+        </div></td>
+        <td style="font-size:12px">${riskLabel}</td>
+      </tr>`;});}
   const proj=document.getElementById('rr-projection');
   if(proj){proj.innerHTML='';const mN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];const pro={};
     for(let i=0;i<12;i++){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+i);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');pro[k]={label:mN[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};}
