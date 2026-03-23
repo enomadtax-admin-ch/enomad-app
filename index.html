@@ -51,7 +51,7 @@ const T={
     connessioni:'Connessioni',
     clienti:'Clienti',serviziRicorrenti:'Servizi ricorrenti',
     listino:'Listino prezzi',movimentiUAE:'Movimenti UAE',
-    ricaviRicorrenti:'Ricavi ricorrenti',aiAssistant:'AI Assistant',
+    plRicorrente:'P&L ricorrente',aiAssistant:'AI Assistant',
     floorLordo:'Floor lordo annuo',costiVivi:'Costi vivi annui',
     floorNetto:'Floor netto annuo',revenueAtRisk:'Revenue at Risk',
     nuovoCliente:'Nuovo cliente',nuovoServizio:'Nuovo servizio ricorrente',
@@ -98,7 +98,7 @@ const T={
     connessioni:'Connections',
     clienti:'Clients',serviziRicorrenti:'Recurring services',
     listino:'Price list',movimentiUAE:'UAE Movements',
-    ricaviRicorrenti:'Recurring revenue',aiAssistant:'AI Assistant',
+    plRicorrente:'Recurring P&L',aiAssistant:'AI Assistant',
     floorLordo:'Annual gross floor',costiVivi:'Annual direct costs',
     floorNetto:'Annual net floor',revenueAtRisk:'Revenue at Risk',
     nuovoCliente:'New client',nuovoServizio:'New recurring service',
@@ -415,7 +415,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span><span data-t="dashboard">Dashboard</span></div>
     <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span>Clienti</span></div>
     <div class="nav-sec">Economico</div>
-    <div class="nav-item" onclick="showView('ricorrenti',this)"><span class="nav-icon">♻</span><span>Ricavi ricorrenti</span></div>
+    <div class="nav-item" onclick="showView('ricorrenti',this)"><span class="nav-icon">♻</span><span>P&L ricorrente</span></div>
     <div class="nav-sec">Finanziario</div>
     <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span>Scadenze finanziarie</span></div>
     <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
@@ -776,7 +776,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="view" id="view-ricorrenti">
       <!-- Anno filter -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">♻ Ricavi ricorrenti</div>
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">♻ P&L ricorrente</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <label style="font-size:12px;color:var(--muted)" id="lbl-anno-rr">Anno:</label>
           <select class="fi" id="rr-anno-filter" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderRicorrenti()">
@@ -1764,14 +1764,21 @@ async function saveServizioCliente(){
     monthly_cost_calculated,
     costo:monthly_cost_calculated, // compatibilità vecchio codice (costo mensile)
     // Cash out
-    cash_out_amount, cash_out_frequency, next_cash_out_date, reminder,
-    dataScadenza:next_cash_out_date, // compatibilità vecchio codice
+    cash_out_amount, cash_out_frequency, next_cash_out_date:effectiveCashoutDate, reminder,
+    dataScadenza:effectiveCashoutDate,
   };
 
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
 
   // Gestione scadenza in DB per cash out non mensile
-  const needsScadenza=cash_out_frequency!=='monthly'&&next_cash_out_date;
+  // needsScadenza = true per qualsiasi cash_out non mensile
+  // Se la data manca ma la frequenza è annuale, imposta una data di default (+1 anno)
+  let effectiveCashoutDate=next_cash_out_date;
+  if(cash_out_frequency!=='monthly'&&!effectiveCashoutDate){
+    const d=new Date();d.setFullYear(d.getFullYear()+1);
+    effectiveCashoutDate=d.toISOString().split('T')[0];
+  }
+  const needsScadenza=cash_out_frequency!=='monthly';
 
   if(editIdx>=0){
     const old=APP.servizi_ricorrenti[editIdx];
@@ -1780,19 +1787,34 @@ async function saveServizioCliente(){
       const s=APP.scadenze.find(x=>String(x.id)===String(old.scadenzaId));
       if(s){
         s.tipo=tipo;s.nome=tipo;
-        s.data=next_cash_out_date;
-        s.prezzo=cash_out_amount; // cash out reale in Scadenze, NON ammortizzato
+        s.data=effectiveCashoutDate;
+        s.prezzo=cash_out_amount;
         s.costo=0;
         s.reminder=reminder;
         const isUUID=typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
         if(isUUID&&currentUser){
           await supa.from('scadenze').update({
-            tipo,nome:tipo,data:next_cash_out_date,
+            tipo,nome:tipo,data:effectiveCashoutDate,
             prezzo:cash_out_amount,costo:0,reminder
           }).eq('id',s.id).eq('user_id',currentUser.id);
         }
       }
       obj.scadenzaId=old.scadenzaId;
+    }else if(needsScadenza&&!old.scadenzaId){
+      // Servizio esistente senza scadenza collegata — creala ora (recovery)
+      const nuovaScad={
+        id:Date.now(),nome:tipo,entita:cliente,tipo,
+        data:effectiveCashoutDate,stato:'pending',
+        prezzo:cash_out_amount,costo:0,
+        note:'💸 Uscita fornitore: '+(supplier_name||tipo),
+        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':'once'
+      };
+      try{
+        const saved=await saveScadenzaToDB(nuovaScad);
+        if(saved)nuovaScad.id=saved.id;
+      }catch(e){console.error('Errore recovery scadenza:',e);}
+      APP.scadenze.push(nuovaScad);
+      obj.scadenzaId=nuovaScad.id;
     }else if(old.scadenzaId&&!needsScadenza){
       // Frequenza cambiata a mensile — elimina scadenza
       const isUUID=typeof old.scadenzaId==='string'&&old.scadenzaId.length===36;
@@ -1806,8 +1828,8 @@ async function saveServizioCliente(){
       const nuovaScad={
         id:Date.now(),
         nome:tipo,entita:cliente,tipo,
-        data:next_cash_out_date,stato:'pending',
-        prezzo:cash_out_amount, // SEMPRE cash_out_amount reale, MAI ammortizzato
+        data:effectiveCashoutDate,stato:'pending',
+        prezzo:cash_out_amount,
         costo:0,
         note:'💸 Uscita fornitore: '+(supplier_name||tipo),
         reminder,ricorrenza:cash_out_frequency==='annual'?'annual':'once'
@@ -3233,10 +3255,10 @@ async function showView(v,navEl){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
   const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'Clienti',
-    ai:'AI Assistant',finance:'finance',ricorrenti:'Ricavi ricorrenti',
+    ai:'AI Assistant',finance:'finance',ricorrenti:'P&L ricorrente',
     listino:'Listino prezzi',movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
   const titleKey=titles[v]||v;
-  const fixedTitles=['AI Assistant','Movimenti UAE','Ricavi ricorrenti','Listino prezzi','Clienti'];
+  const fixedTitles=['AI Assistant','Movimenti UAE','P&L ricorrente','Listino prezzi','Clienti'];
   document.getElementById('topbar-title').textContent=(fixedTitles.includes(titleKey)?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   // Ricarica dati freschi da Supabase ad ogni cambio sezione
