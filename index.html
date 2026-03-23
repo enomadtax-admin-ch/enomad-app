@@ -2665,12 +2665,15 @@ function renderRicorrenti(){
   // Servizi mensili: sempre attivi, validi per qualsiasi anno
   const scadMensili=APP.scadenze.filter(s=>s.ricorrenza==='monthly'&&s.stato!=='done');
   // Servizi ricorrenti da clienti: annuali solo se scadono nell'anno selezionato
+  // Servizi annuali da clienti: escludi quelli che hanno già una scadenza collegata
+  // (già contati in scadAnnuali tramite auto-creazione)
   const srAnnuali=APP.servizi_ricorrenti.filter(s=>{
     if(s.freq!=='annual')return false;
     if(!s.dataScadenza)return false;
+    if(s.scadenzaId)return false; // già in scadAnnuali, non duplicare
     return new Date(s.dataScadenza).getFullYear()===annoSel;
   });
-  const srMensili=APP.servizi_ricorrenti.filter(s=>s.freq==='monthly');
+  const srMensili=APP.servizi_ricorrenti.filter(s=>s.freq==='monthly'&&!s.scadenzaId);
   const scadRicorrenti=[...scadAnnuali,...scadMensili];
 
   // Floor = annuali (valore pieno) + mensili × 12
