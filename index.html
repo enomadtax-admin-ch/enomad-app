@@ -291,6 +291,21 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 /* TOAST */
 .toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:9px 15px;font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;z-index:999;font-family:'DM Mono',monospace;transform:translateY(80px);opacity:0;transition:all .3s ease;box-shadow:var(--shadow);}
 .toast.show{transform:translateY(0);opacity:1;}
+.ai-msg{display:flex;flex-direction:column;max-width:85%;}
+.ai-msg-user{align-self:flex-end;}
+.ai-msg-assistant{align-self:flex-start;}
+.ai-bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;}
+.ai-msg-user .ai-bubble{background:var(--accent);color:#0a0f0a;border-radius:12px 12px 2px 12px;}
+[data-theme="light"] .ai-msg-user .ai-bubble{color:#fff;}
+.ai-msg-assistant .ai-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 2px;color:var(--text);}
+.ai-msg-assistant .ai-bubble strong{color:var(--accent);}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:12px 14px;}
+.ai-typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:typing 1.2s infinite;}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.ai-quick-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text2);cursor:pointer;font-size:12px;text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.ai-quick-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--adim);}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
@@ -338,9 +353,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span><span data-t="dashboard">Dashboard</span></div>
     <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span data-t="scadenze">Scadenze</span></div>
     <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span data-t="entita">Entità</span></div>
+    <div class="nav-item" onclick="showView('ai',this)"><span class="nav-icon">✦</span><span>AI Assistant</span></div>
     <div class="nav-sec" data-t="finanziario">Finanziario</div>
     <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
     <div class="nav-item" onclick="showView('ricorrenti',this)"><span class="nav-icon">♻</span><span>Ricavi ricorrenti</span></div>
+    <div class="nav-item" onclick="showView('listino',this)"><span class="nav-icon">💶</span><span>Listino prezzi</span></div>
     <div class="nav-item" onclick="showView('movimenti',this)"><span class="nav-icon">✦</span><span>Movimenti UAE</span></div>
     <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span><span data-t="zoho">Zoho Invoice</span></div>
     <div class="nav-sec" data-t="sistema">Sistema</div>
@@ -449,7 +466,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             </div>
           </div>
           <table class="scad-table"><thead><tr>
-            <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th><th></th>
+            <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="stato">Stato</th><th></th>
           </tr></thead><tbody id="sb1"></tbody></table>
         </div>
         <div style="display:flex;flex-direction:column;gap:15px;">
@@ -480,7 +497,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="scad-table"><thead><tr>
-          <th data-t="scadenze">Scadenza</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th><th></th>
+          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
@@ -541,6 +558,83 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="panel-header"><div class="panel-title" data-t="costiCompliance90">Costi compliance 90gg</div><span class="badge bw">stima</span></div>
         <table class="fin-table"><thead><tr><th data-t="scadenze">Scadenza</th><th data-t="entita">Entità</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="prezzo">Prezzo cliente</th><th data-t="costoMio">Costo mio</th><th data-t="margine">Margine</th></tr></thead>
         <tbody id="cc-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- AI ASSISTANT -->
+    <div class="view" id="view-ai">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 120px);">
+
+        <!-- Chat -->
+        <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+          <div class="panel-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--info));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;">✦</div>
+              <div>
+                <div class="panel-title">Enomad AI Assistant</div>
+                <div style="font-size:10px;color:var(--muted)">Conosce i tuoi dati in tempo reale</div>
+              </div>
+            </div>
+            <button class="btn" onclick="clearAIChat()" style="font-size:11px">🗑 Pulisci</button>
+          </div>
+          <!-- Messages -->
+          <div id="ai-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <div class="ai-msg ai-msg-assistant">
+              <div class="ai-bubble">Ciao Giorgio! 👋 Sono il tuo assistente AI. Conosco i tuoi dati Zoho, le scadenze, le entità e i ricavi ricorrenti in tempo reale.<br><br>
+              Puoi chiedermi qualsiasi cosa — analisi finanziarie, proiezioni, consigli strategici. Come posso aiutarti?</div>
+            </div>
+          </div>
+          <!-- Input -->
+          <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+            <input type="text" class="fi" id="ai-input" placeholder="Chiedi qualcosa... es. 'Come sta andando il 2026?'" style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}">
+            <button class="btn btn-primary" onclick="sendAIMessage()" id="ai-send-btn" style="padding:8px 16px;">Invia</button>
+          </div>
+        </div>
+
+        <!-- Sidebar suggerimenti -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">💡 Domande rapide</div></div>
+            <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+              <button class="ai-quick-btn" onclick="askQuick('Come sta andando il 2026 rispetto al 2025?')">📊 2026 vs 2025</button>
+              <button class="ai-quick-btn" onclick="askQuick('Quali sono i miei clienti più importanti per fatturato?')">👥 Top clienti</button>
+              <button class="ai-quick-btn" onclick="askQuick('Quali scadenze ho nei prossimi 30 giorni e quanto mi costeranno?')">📅 Scadenze 30gg</button>
+              <button class="ai-quick-btn" onclick="askQuick('Qual è il mio floor di ricavi ricorrenti annuali?')">♻ Floor ricorrente</button>
+              <button class="ai-quick-btn" onclick="askQuick('Se perdo il cliente con più scadenze annuali, quanto perdo?')">⚠ Revenue at Risk</button>
+              <button class="ai-quick-btn" onclick="askQuick('Dammi un riepilogo completo della situazione finanziaria')">📋 Riepilogo completo</button>
+              <button class="ai-quick-btn" onclick="askQuick('Qual è il mese con più fatturato storico?')">🏆 Mese top</button>
+              <button class="ai-quick-btn" onclick="askQuick('Quante entità ho attive e in quali paesi?')">🌍 Entità e paesi</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">📊 Contesto attivo</div></div>
+            <div style="padding:12px;font-size:11px;color:var(--text2);line-height:1.8;" id="ai-context-summary">
+              Carico dati...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTINO PREZZI -->
+    <div class="view" id="view-listino">
+      <div class="grid-2eq" style="margin-bottom:16px;">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">💶 Listino prezzi</div>
+            <button class="btn btn-primary" onclick="openModal('add-servizio')">+ Servizio</button>
+          </div>
+          <table class="fin-table"><thead><tr>
+            <th>Servizio</th><th>Categoria</th><th>Prezzo cliente</th><th>Costo mio</th><th>Margine</th><th></th>
+          </tr></thead>
+          <tbody id="listino-tbody"></tbody></table>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📊 Riepilogo</div></div>
+          <div style="padding:16px 18px;" id="listino-summary">
+            <div style="color:var(--muted);font-size:13px">Aggiungi servizi per vedere il riepilogo</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -842,6 +936,78 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
 </div>
 
+<!-- MODAL AGGIUNGI SERVIZIO -->
+<div class="modal-overlay" id="modal-add-servizio">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nuovo servizio</div><button class="modal-close" onclick="closeModal('add-servizio')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome servizio</label><input type="text" class="fi" id="srv-nome" placeholder="es. Nominee Director UAE"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Categoria</label>
+          <select class="fsel" id="srv-categoria">
+            <option>Compliance</option>
+            <option>Banking</option>
+            <option>Fiscale</option>
+            <option>Societario</option>
+            <option>Consulenza</option>
+            <option>Altro</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Valuta</label>
+          <select class="fsel" id="srv-valuta">
+            <option>EUR</option><option>AED</option><option>USD</option><option>CHF</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-prezzo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Costo mio</label><input type="number" class="fi" id="srv-costo" placeholder="0"></div>
+      </div>
+      <div class="fg"><label class="fl">Note / descrizione</label><input type="text" class="fi" id="srv-note" placeholder="es. Include registrazione, apostille..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('add-servizio')">Annulla</button><button class="btn btn-primary" onclick="addServizio()">Salva</button></div>
+  </div>
+</div>
+
+<!-- MODAL MODIFICA SCADENZA -->
+<div class="modal-overlay" id="modal-edit-scadenza">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">✎ Modifica scadenza</div><button class="modal-close" onclick="closeModal('edit-scadenza')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="frow">
+        <div class="fg"><label class="fl">Entità</label><select class="fsel" id="edit-entita"></select></div>
+        <div class="fg"><label class="fl">Tipo scadenza</label><select class="fsel" id="edit-tipo"></select></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Data scadenza</label><input type="date" class="fi" id="edit-data"></div>
+        <div class="fg"><label class="fl">Ricorrenza</label>
+          <select class="fsel" id="edit-ricorrenza">
+            <option value="once">Una tantum</option>
+            <option value="annual">Annuale — si rinnova automaticamente</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Reminder Telegram</label>
+          <select class="fsel" id="edit-reminder">
+            <option value="7">7 giorni prima</option>
+            <option value="15">15 giorni prima</option>
+            <option value="30">30 giorni prima</option>
+            <option value="7,15,30">7 + 15 + 30 giorni</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Prezzo cliente (€)</label><input type="number" class="fi" id="edit-prezzo" placeholder="0"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Costo mio (€)</label><input type="number" class="fi" id="edit-costo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="edit-note" placeholder="Facoltativo"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('edit-scadenza')">Annulla</button><button class="btn btn-primary" onclick="saveEditScadenza()">✓ Salva modifiche</button></div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><span>✓</span><span id="toast-msg"></span></div>
 
@@ -957,6 +1123,7 @@ let APP={
   scadenze:[],
   entita:[],
   tipi:[],
+  servizi:[],
   meta:{lastSaved:null,lastExport:null,lastZohoSync:null}
 };
 let ZOHO=null;
@@ -1196,12 +1363,14 @@ function renderTable(filter,tbid){
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`
       :`<td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();editScadenza('${s.id}')" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Modifica">✎</button>
           <button onclick="event.stopPropagation();markDone('${s.id}')" style="background:var(--adim);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--accent);cursor:pointer;font-size:11px;margin-right:4px" title="Completa">✓</button>
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.nome}${s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:5px">♻ annuale</span>':''}</div><div class="etag">${s.entita}</div></td>
-      <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
+    const annualBadge=s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">♻</span>':'';
+    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}</div><div class="etag">${s.nome}</div></td>
+      <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
       ${costoCol}
@@ -1545,6 +1714,10 @@ async function syncZoho(){
     showToast('✓ Zoho sync OK');
     const lbl=document.getElementById('zoho-last-sync');
     if(lbl){const d=new Date(data.lastSync);lbl.textContent=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});}
+    // Ricarica la view corrente se è Finance
+    const activeView=document.querySelector('.view.active');
+    if(activeView?.id==='view-finance')renderFinance();
+    if(activeView?.id==='view-ricorrenti')renderRicorrenti();
   }catch(e){console.error('syncZoho:',e);}
 }
 
@@ -1619,6 +1792,336 @@ function renderTopCountries(z){
         <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent)">${p.entita} entità</div>
       </div>
     </div>`).join('');
+}
+
+/* ══ MODIFICA SCADENZA ══ */
+function editScadenza(id){
+  const s=APP.scadenze.find(x=>x.id===id);
+  if(!s)return;
+  // Popola select entità e tipi
+  const selE=document.getElementById('edit-entita');
+  const selT=document.getElementById('edit-tipo');
+  if(selE)selE.innerHTML=APP.entita.map(e=>`<option${e.nome===s.entita?' selected':''}>${e.nome}</option>`).join('');
+  if(selT)selT.innerHTML=APP.tipi.map(t=>`<option${t===s.tipo?' selected':''}>${t}</option>`).join('');
+  // Popola campi
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-data').value=s.data||'';
+  document.getElementById('edit-ricorrenza').value=s.ricorrenza||'once';
+  document.getElementById('edit-reminder').value=s.reminder||'15';
+  document.getElementById('edit-prezzo').value=s.prezzo||0;
+  document.getElementById('edit-costo').value=s.costo||0;
+  document.getElementById('edit-note').value=s.note||'';
+  openModal('edit-scadenza');
+}
+
+async function saveEditScadenza(){
+  const id=document.getElementById('edit-id').value;
+  const s=APP.scadenze.find(x=>String(x.id)===String(id));
+  if(!s)return;
+  const tipo=document.getElementById('edit-tipo').value;
+  const note=document.getElementById('edit-note').value||'';
+  s.entita=document.getElementById('edit-entita').value;
+  s.tipo=tipo;
+  s.nome=note?tipo+' — '+note:tipo;
+  s.data=document.getElementById('edit-data').value;
+  s.ricorrenza=document.getElementById('edit-ricorrenza').value;
+  s.reminder=document.getElementById('edit-reminder').value;
+  s.prezzo=parseFloat(document.getElementById('edit-prezzo').value)||0;
+  s.costo=parseFloat(document.getElementById('edit-costo').value)||0;
+  s.note=note;
+  // Aggiorna su Supabase
+  const isUUID=typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
+  if(isUUID&&currentUser){
+    await supa.from('scadenze').update({
+      entita:s.entita,tipo:s.tipo,nome:s.nome,data:s.data,
+      ricorrenza:s.ricorrenza,reminder:s.reminder,
+      prezzo:s.prezzo,costo:s.costo,note:s.note
+    }).eq('id',s.id).eq('user_id',currentUser.id);
+  }
+  saveLocalData();
+  closeModal('edit-scadenza');
+  renderAll();
+  showToast('✓ Scadenza aggiornata');
+}
+
+/* ══ LISTINO PREZZI ══ */
+function renderListino(){
+  if(!APP.servizi)APP.servizi=[];
+  const tb=document.getElementById('listino-tbody');
+  if(tb){
+    tb.innerHTML='';
+    if(APP.servizi.length===0){
+      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nessun servizio — aggiungine uno con il bottone "+ Servizio"</td></tr>';
+    }else{
+      APP.servizi.forEach((s,i)=>{
+        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+        const margColor=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+        tb.innerHTML+=`<tr>
+          <td>
+            <div style="font-weight:500">${s.nome}</div>
+            ${s.note?`<div style="font-size:11px;color:var(--muted)">${s.note}</div>`:''}
+          </td>
+          <td><span class="badge bi" style="font-size:10px">${s.categoria||'—'}</span></td>
+          <td class="amt-in">${s.prezzo>0?s.valuta+' '+s.prezzo.toLocaleString('it-IT'):'—'}</td>
+          <td class="amt-out">${s.costo>0?s.valuta+' '+s.costo.toLocaleString('it-IT'):'—'}</td>
+          <td style="font-family:'DM Mono',monospace;font-weight:600;color:${margColor}">${marg!==null?marg+'%':'—'}</td>
+          <td style="white-space:nowrap">
+            <button onclick="editServizio(${i})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Modifica">✎</button>
+            <button onclick="deleteServizio(${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
+          </td>
+        </tr>`;
+      });
+    }
+  }
+  // Summary
+  const sumEl=document.getElementById('listino-summary');
+  if(sumEl&&APP.servizi.length>0){
+    const totPrezzo=APP.servizi.reduce((a,s)=>a+s.prezzo,0);
+    const totCosto=APP.servizi.reduce((a,s)=>a+(s.costo||0),0);
+    const margMedio=totPrezzo>0?Math.round(((totPrezzo-totCosto)/totPrezzo)*100):0;
+    const categorie=[...new Set(APP.servizi.map(s=>s.categoria))];
+    sumEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:var(--adim);border-radius:8px;padding:12px;border:1px solid rgba(79,255,176,.2)">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Servizi totali</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);margin-top:4px">${APP.servizi.length}</div>
+        </div>
+        <div style="background:var(--idim);border-radius:8px;padding:12px;border:1px solid rgba(124,131,253,.2)">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Margine medio</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--info);margin-top:4px">${margMedio}%</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px"><strong>Categorie:</strong> ${categorie.join(', ')}</div>
+      <div style="font-size:11px;color:var(--text2)"><strong>Prezzo medio:</strong> €${APP.servizi.length>0?Math.round(totPrezzo/APP.servizi.length).toLocaleString('it-IT'):0}</div>`;
+  }
+}
+
+function addServizio(){
+  const nome=document.getElementById('srv-nome').value.trim();
+  if(!nome){showToast('⚠ Inserisci il nome del servizio');return;}
+  if(!APP.servizi)APP.servizi=[];
+  APP.servizi.push({
+    nome,
+    categoria:document.getElementById('srv-categoria').value,
+    valuta:document.getElementById('srv-valuta').value,
+    prezzo:parseFloat(document.getElementById('srv-prezzo').value)||0,
+    costo:parseFloat(document.getElementById('srv-costo').value)||0,
+    note:document.getElementById('srv-note').value||''
+  });
+  saveLocalData();
+  closeModal('add-servizio');
+  renderListino();
+  ['srv-nome','srv-prezzo','srv-costo','srv-note'].forEach(id=>document.getElementById(id).value='');
+  showToast('✓ Servizio aggiunto al listino');
+}
+
+function editServizio(i){
+  const s=APP.servizi[i];
+  if(!s)return;
+  const nuovoNome=prompt('Nome servizio:',s.nome);
+  if(!nuovoNome)return;
+  const nuovoPrezzo=prompt('Prezzo cliente ('+s.valuta+'):',s.prezzo);
+  const nuovoCosto=prompt('Costo mio ('+s.valuta+'):',s.costo||0);
+  s.nome=nuovoNome.trim();
+  s.prezzo=parseFloat(nuovoPrezzo)||0;
+  s.costo=parseFloat(nuovoCosto)||0;
+  saveLocalData();
+  renderListino();
+  showToast('✓ Servizio aggiornato');
+}
+
+function deleteServizio(i){
+  if(!confirm('Eliminare "'+APP.servizi[i].nome+'"?'))return;
+  APP.servizi.splice(i,1);
+  saveLocalData();
+  renderListino();
+  showToast('✓ Servizio eliminato');
+}
+
+/* ══ AI ASSISTANT ══ */
+let aiHistory=[];
+
+function buildAIContext(){
+  const annoAtt=new Date().getFullYear().toString();
+  const annoPre=(parseInt(annoAtt)-1).toString();
+  const scadPending=APP.scadenze.filter(s=>s.stato!=='done');
+  const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done');
+  const floor=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
+  const critiche=scadPending.filter(s=>daysTo(s.data)<=7).length;
+  const prossime30=scadPending.filter(s=>daysTo(s.data)<=30);
+
+  let ctx=`Sei l'AI assistant di Enomad, il sistema di gestione compliance e finance di Giorgio Troia.
+Rispondi sempre in italiano. Sii conciso, diretto e usa i dati reali forniti.
+Usa emoji per rendere le risposte più leggibili. Evidenzia i numeri importanti in grassetto.
+
+## DATI AGGIORNATI AL ${new Date().toLocaleDateString('it-IT')}
+
+### ZOHO INVOICE — DATI STORICI\n`;
+
+  if(ZOHO?.summary){
+    const s=ZOHO.summary;
+    ctx+=`- Fatturato totale storico: €${Math.round(s.fatturato).toLocaleString('it-IT')}
+- Incassato totale: €${Math.round(s.incassato).toLocaleString('it-IT')}
+- In attesa di incasso: €${Math.round(s.inAttesa).toLocaleString('it-IT')}
+- Fatture totali: ${s.numFatture}
+- Clienti totali: ${s.numClienti}\n`;
+  }
+
+  if(ZOHO?.perAnno){
+    ctx+=`\n### PER ANNO\n`;
+    Object.keys(ZOHO.perAnno).sort().forEach(a=>{
+      const d=ZOHO.perAnno[a];
+      ctx+=`- ${a}: Fatturato €${Math.round(d.fatturato).toLocaleString('it-IT')} | Incassato €${Math.round(d.incassato).toLocaleString('it-IT')} | ${d.count} fatture\n`;
+    });
+  }
+
+  if(ZOHO?.topClienti&&ZOHO.topClienti.length>0){
+    ctx+=`\n### TOP 10 CLIENTI PER FATTURATO\n`;
+    ZOHO.topClienti.slice(0,10).forEach((c,i)=>{
+      ctx+=`${i+1}. ${c.nome}: €${Math.round(c.fatturato).toLocaleString('it-IT')} (${c.count} fatture)\n`;
+    });
+  }
+
+  ctx+=`\n### SCADENZE COMPLIANCE
+- Scadenze attive (pending): ${scadPending.length}
+- Scadenze critiche (≤7gg): ${critiche}
+- Scadenze prossime 30gg: ${prossime30.length} (costo stimato: €${prossime30.reduce((a,s)=>a+(s.costo||0),0).toLocaleString('it-IT')})\n`;
+
+  if(scadPending.length>0){
+    ctx+=`\nPRISSIME SCADENZE:\n`;
+    scadPending.sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,8).forEach(s=>{
+      ctx+=`- ${s.tipo} | ${s.entita} | ${s.data} | ${daysTo(s.data)}gg | prezzo: €${s.prezzo||0} | costo: €${s.costo||0}${s.ricorrenza==='annual'?' ♻ annuale':''}\n`;
+    });
+  }
+
+  ctx+=`\n### ENTITÀ ATTIVE (${APP.entita.length})\n`;
+  APP.entita.forEach(e=>{
+    ctx+=`- ${e.nome} (${e.paese||'—'}, ${e.valuta||'EUR'})\n`;
+  });
+
+  ctx+=`\n### RICAVI RICORRENTI
+- Floor annuale garantito: €${Math.round(floor).toLocaleString('it-IT')}
+- Scadenze annuali attive: ${scadAnnuali.length}\n`;
+
+  if(scadAnnuali.length>0){
+    const byEntita={};
+    scadAnnuali.forEach(s=>{
+      if(!byEntita[s.entita])byEntita[s.entita]=0;
+      byEntita[s.entita]+=s.prezzo||0;
+    });
+    ctx+=`Per entità:\n`;
+    Object.entries(byEntita).sort((a,b)=>b[1]-a[1]).forEach(([e,v])=>{
+      ctx+=`- ${e}: €${Math.round(v).toLocaleString('it-IT')}/anno\n`;
+    });
+  }
+
+  return ctx;
+}
+
+function updateAIContextSummary(){
+  const el=document.getElementById('ai-context-summary');
+  if(!el)return;
+  const annoAtt=new Date().getFullYear().toString();
+  const ytd=ZOHO?.perAnno?.[annoAtt];
+  const scadPending=APP.scadenze.filter(s=>s.stato!=='done').length;
+  const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done').length;
+  const floor=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done').reduce((a,s)=>a+(s.prezzo||0),0);
+  el.innerHTML=`
+    <div style="margin-bottom:6px"><span style="color:var(--muted)">YTD ${annoAtt}:</span> <strong style="color:var(--accent)">€${ytd?Math.round(ytd.fatturato).toLocaleString('it-IT'):'—'}</strong></div>
+    <div style="margin-bottom:6px"><span style="color:var(--muted)">Fatture totali:</span> <strong>${ZOHO?.summary?.numFatture||'—'}</strong></div>
+    <div style="margin-bottom:6px"><span style="color:var(--muted)">Scadenze attive:</span> <strong>${scadPending}</strong></div>
+    <div style="margin-bottom:6px"><span style="color:var(--muted)">Floor ricorrente:</span> <strong style="color:var(--accent)">€${Math.round(floor).toLocaleString('it-IT')}</strong></div>
+    <div style="margin-bottom:6px"><span style="color:var(--muted)">Entità:</span> <strong>${APP.entita.length}</strong></div>
+    <div style="color:var(--muted);font-size:10px;margin-top:8px">Dati aggiornati al sync Zoho</div>`;
+}
+
+async function sendAIMessage(){
+  const input=document.getElementById('ai-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  input.value='';
+  appendAIMessage('user',msg);
+  await callAI(msg);
+}
+
+function askQuick(msg){
+  document.getElementById('ai-input').value=msg;
+  sendAIMessage();
+  showView('ai',document.querySelector('.nav-item[onclick*="ai"]'));
+}
+
+function appendAIMessage(role,content){
+  const container=document.getElementById('ai-messages');
+  if(!container)return;
+  const div=document.createElement('div');
+  div.className=`ai-msg ai-msg-${role}`;
+  const bubble=document.createElement('div');
+  bubble.className='ai-bubble';
+  // Formatta il testo — grassetto e newline
+  bubble.innerHTML=content
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+  return div;
+}
+
+function showAITyping(){
+  const container=document.getElementById('ai-messages');
+  const div=document.createElement('div');
+  div.className='ai-msg ai-msg-assistant';
+  div.id='ai-typing-indicator';
+  div.innerHTML='<div class="ai-bubble ai-typing"><span></span><span></span><span></span></div>';
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+function removeAITyping(){
+  document.getElementById('ai-typing-indicator')?.remove();
+}
+
+async function callAI(userMessage){
+  const btn=document.getElementById('ai-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  showAITyping();
+
+  const systemPrompt=buildAIContext();
+  aiHistory.push({role:'user',content:userMessage});
+
+  try{
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:systemPrompt,
+        messages:aiHistory
+      })
+    });
+    const data=await response.json();
+    const reply=data.content?.[0]?.text||'Errore nella risposta';
+    aiHistory.push({role:'assistant',content:reply});
+    // Mantieni massimo 20 messaggi in history
+    if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+    removeAITyping();
+    appendAIMessage('assistant',reply);
+  }catch(e){
+    removeAITyping();
+    appendAIMessage('assistant','⚠ Errore di connessione. Riprova tra un momento.');
+    console.error('AI error:',e);
+  }
+  if(btn){btn.disabled=false;btn.textContent='Invia';}
+}
+
+function clearAIChat(){
+  aiHistory=[];
+  const container=document.getElementById('ai-messages');
+  if(container){
+    container.innerHTML='';
+    appendAIMessage('assistant','Chat pulita. Come posso aiutarti?');
+  }
 }
 
 /* ══ RICAVI RICORRENTI ══ */
@@ -1946,13 +2449,17 @@ function showView(v,navEl){
   document.getElementById('view-'+v)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
-  const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',finance:'finance',
-    ricorrenti:'Ricavi ricorrenti',movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
+  const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',
+    ai:'AI Assistant',finance:'finance',ricorrenti:'Ricavi ricorrenti',
+    listino:'Listino prezzi',movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
   const titleKey=titles[v]||v;
-  document.getElementById('topbar-title').textContent=(titleKey==='Movimenti UAE'||titleKey==='Ricavi ricorrenti'?titleKey:t(titleKey));
+  const fixedTitles=['AI Assistant','Movimenti UAE','Ricavi ricorrenti','Listino prezzi'];
+  document.getElementById('topbar-title').textContent=(fixedTitles.includes(titleKey)?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   if(v==='finance'){renderFinance();}
   if(v==='ricorrenti'){renderRicorrenti();}
+  if(v==='listino'){renderListino();}
+  if(v==='ai'){updateAIContextSummary();}
   if(v==='movimenti'){
     renderMovimenti();
     // Aggiorna select entità nel modal movimento
