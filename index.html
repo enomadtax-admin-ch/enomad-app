@@ -755,9 +755,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div style="display:flex;align-items:center;gap:8px;">
           <label style="font-size:12px;color:var(--muted)" id="lbl-anno-rr">Anno:</label>
           <select class="fi" id="rr-anno-filter" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderRicorrenti()">
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-            <option value="2028">2028</option>
           </select>
         </div>
       </div>
@@ -3041,7 +3038,24 @@ async function showView(v,navEl){
     await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB()]);
   }
   if(v==='finance'){renderFinance();}
-  if(v==='ricorrenti'){renderRicorrenti();}
+  if(v==='ricorrenti'){
+    // Ricostruisce sempre il dropdown: dal 2026 (lancio app) fino a anno corrente +2
+    const selAnno=document.getElementById('rr-anno-filter');
+    if(selAnno){
+      const currentVal=selAnno.value;
+      const now=new Date().getFullYear();
+      selAnno.innerHTML='';
+      for(let y=2026;y<=now+2;y++){
+        const opt=document.createElement('option');
+        opt.value=y;opt.textContent=y;
+        if(y===parseInt(currentVal||now))opt.selected=true;
+        selAnno.appendChild(opt);
+      }
+      // Se nessun valore selezionato, default anno corrente
+      if(!selAnno.value)selAnno.value=now;
+    }
+    renderRicorrenti();
+  }
   if(v==='listino'){renderListino();}
   if(v==='ai'){updateAIContextSummary();}
   if(v==='movimenti'){
