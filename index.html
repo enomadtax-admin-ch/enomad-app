@@ -137,6 +137,26 @@ function refreshAllText(){
     :'Le scadenze vengono create automaticamente quando aggiungi un servizio annuale nella scheda cliente. Qui puoi completarle, modificarle o eliminarle.';
   const backBtn=document.getElementById('btn-back-clienti');
   if(backBtn)backBtn.textContent=LANG==='en'?'← All clients':'← Tutti i clienti';
+  // Update ricavi ricorrenti KPI labels
+  const lbls={
+    'lbl-floor-lordo': LANG==='en'?'Annual gross floor':'Floor lordo annuo',
+    'lbl-costi-vivi': LANG==='en'?'Annual direct costs':'Costi vivi annui',
+    'lbl-floor-netto': LANG==='en'?'Annual net floor':'Floor netto annuo',
+    'lbl-30gg': LANG==='en'?'Next 30 days':'Prossimi 30gg',
+    'lbl-margine': LANG==='en'?'Avg margin %':'Margine medio %',
+    'lbl-clienti-ric': LANG==='en'?'Recurring clients':'Clienti ricorrenti',
+    'lbl-servizi-att': LANG==='en'?'Active services':'Servizi attivi',
+  };
+  Object.entries(lbls).forEach(([id,txt])=>{const e=document.getElementById(id);if(e)e.textContent=txt;});
+  // Update table headers
+  const thMap={
+    'th-cliente':LANG==='en'?'Client':'Cliente',
+    'th-paese':LANG==='en'?'Country':'Paese',
+    'th-scadenze':LANG==='en'?'Deadlines':'Scadenze',
+    'th-servizi':LANG==='en'?'Rec. services':'Servizi ric.',
+    'th-valore':LANG==='en'?'Annual value':'Valore annuo',
+  };
+  Object.entries(thMap).forEach(([id,txt])=>{const e=document.getElementById(id);if(e)e.textContent=txt;});
   // Re-render if in clienti view
   const active=document.querySelector('.view.active');
   if(active?.id==='view-entita'){renderClienti();if(currentCliente)renderClienteDetail(currentCliente);}
@@ -559,7 +579,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div id="clienti-list-view">
         <div class="panel">
           <table class="fin-table"><thead><tr>
-            <th>Cliente</th><th>Paese</th><th>Scadenze</th><th>Servizi ricorrenti</th><th>Valore annuo</th><th></th>
+            <th id="th-cliente">Cliente</th><th id="th-paese">Paese</th><th id="th-scadenze">Scadenze</th><th id="th-servizi">Servizi ric.</th><th id="th-valore">Valore annuo</th><th></th>
           </tr></thead>
           <tbody id="clienti-tbody"></tbody></table>
         </div>
@@ -726,22 +746,22 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <!-- KPI Strip -->
       <div class="fin-hero" style="margin-bottom:16px;">
         <div class="fin-kpi fin-kpi-a">
-          <div class="fin-kpi-lbl">Floor lordo annuo</div>
+          <div class="fin-kpi-lbl" id="lbl-floor-lordo">Floor lordo annuo</div>
           <div class="fin-kpi-val" style="color:var(--accent)" id="rr-floor">—</div>
           <div class="fin-kpi-trend" id="rr-floor-sub">ricavi ricorrenti totali</div>
         </div>
         <div class="fin-kpi fin-kpi-d">
-          <div class="fin-kpi-lbl">Costi vivi annui</div>
+          <div class="fin-kpi-lbl" id="lbl-costi-vivi">Costi vivi annui</div>
           <div class="fin-kpi-val" style="color:var(--danger)" id="rr-costi">—</div>
           <div class="fin-kpi-trend" id="rr-costi-sub">costi operativi ricorrenti</div>
         </div>
         <div class="fin-kpi fin-kpi-i">
-          <div class="fin-kpi-lbl">Floor netto annuo</div>
+          <div class="fin-kpi-lbl" id="lbl-floor-netto">Floor netto annuo</div>
           <div class="fin-kpi-val" style="color:var(--info)" id="rr-netto">—</div>
           <div class="fin-kpi-trend" id="rr-netto-sub">lordo - costi vivi</div>
         </div>
         <div class="fin-kpi fin-kpi-w">
-          <div class="fin-kpi-lbl">Revenue at Risk</div>
+          <div class="fin-kpi-lbl" id="lbl-risk">Revenue at Risk</div>
           <div class="fin-kpi-val" style="color:var(--warn)" id="rr-risk">—</div>
           <div class="fin-kpi-trend" id="rr-risk-sub">se perdi il cliente più grande</div>
         </div>
@@ -749,24 +769,24 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <!-- Seconda riga KPI -->
       <div class="kpi-row" style="margin-bottom:16px;">
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Prossimi 30gg</span><span class="kpi-card-ico">📅</span></div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" id="lbl-30gg">Prossimi 30gg</span><span class="kpi-card-ico">📅</span></div>
           <div class="kpi-card-val" style="color:var(--accent)" id="rr-30">—</div>
           <div class="kpi-card-sub" id="rr-30-sub">rinnovi in scadenza</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Margine medio %</span><span class="kpi-card-ico">📊</span></div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" id="lbl-margine">Margine medio %</span><span class="kpi-card-ico">📊</span></div>
           <div class="kpi-card-val" style="color:var(--accent)" id="rr-margine">—</div>
           <div class="kpi-card-sub">su tutti i servizi ricorrenti</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Clienti ricorrenti</span><span class="kpi-card-ico">👥</span></div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" id="lbl-clienti-ric">Clienti ricorrenti</span><span class="kpi-card-ico">👥</span></div>
           <div class="kpi-card-val" id="rr-clienti">—</div>
           <div class="kpi-card-sub">entità con rinnovi attivi</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card-top"><span class="kpi-card-lbl">Servizi attivi</span><span class="kpi-card-ico">♻</span></div>
+          <div class="kpi-card-top"><span class="kpi-card-lbl" id="lbl-servizi-att">Servizi attivi</span><span class="kpi-card-ico">♻</span></div>
           <div class="kpi-card-val" id="rr-count-badge">—</div>
-          <div class="kpi-card-sub">annuali + mensili</div>
+          <div class="kpi-card-sub">${LANG==='en'?'annual + monthly':'annuali + mensili'}</div>
         </div>
       </div>
 
@@ -775,7 +795,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">⚠ Revenue at Risk — per entità</div>
-            <span class="badge bw">simulazione perdita cliente</span>
+            <span class="badge bw">${LANG==='en'?'client loss simulation':'simulazione perdita cliente'}</span>
           </div>
           <table class="fin-table"><thead><tr>
             <th>Cliente</th>
@@ -1376,11 +1396,11 @@ function renderClienti(){
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
   const tbody=document.getElementById('clienti-tbody');
   const subEl=document.getElementById('clienti-count-sub');
-  if(subEl)subEl.textContent=APP.entita.length+' clienti registrati';
+  if(subEl)subEl.textContent=(LANG==='en'?APP.entita.length+' clients registered':APP.entita.length+' clienti registrati');
   if(!tbody)return;
   tbody.innerHTML='';
   if(APP.entita.length===0){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nessun cliente — aggiungine uno</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">'+(LANG==='en'?'No clients — add one':'Nessun cliente — aggiungine uno')+'</td></tr>';
   }else{
     APP.entita.forEach((e,i)=>{
       const scadAttive=APP.scadenze.filter(s=>s.entita===e.nome&&s.stato!=='done').length;
@@ -2182,29 +2202,39 @@ function applyZohoData(z){
 function renderTopCountries(z){
   const el=document.getElementById('top-countries');
   if(!el||!z)return;
-  // Ricava paesi dalle entità
   const paeseMap={};
   APP.entita.forEach(e=>{
     if(!e.paese)return;
-    if(!paeseMap[e.paese])paeseMap[e.paese]={paese:e.paese,entita:0,fatturato:0};
-    paeseMap[e.paese].entita++;
+    const key=e.paese.toUpperCase().trim();
+    if(!paeseMap[key])paeseMap[key]={paese:e.paese,entita:0};
+    paeseMap[key].entita++;
   });
-  // Aggiungi fatturato dai top clienti se disponibile
-  const totFatt=z.summary?.fatturato||1;
   const paesi=Object.values(paeseMap).sort((a,b)=>b.entita-a.entita);
-  if(paesi.length===0){el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">Aggiungi entità con paese per vedere le top countries</div>';return;}
-  const flags={'IT':'🇮🇹','UAE':'🇦🇪','CH':'🇨🇭','ID':'🇮🇩','US':'🇺🇸','UK':'🇬🇧','DE':'🇩🇪','FR':'🇫🇷','NL':'🇳🇱','SG':'🇸🇬'};
-  el.innerHTML=paesi.map(p=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:20px">${flags[p.paese.toUpperCase()]||'🌍'}</span>
+  if(paesi.length===0){
+    el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">'+(LANG==='en'?'Add clients with a country to see top countries':'Aggiungi clienti con paese per vedere le top countries')+'</div>';
+    return;
+  }
+  const flags={
+    'IT':'🇮🇹','UAE':'🇦🇪','AE':'🇦🇪','CH':'🇨🇭','ID':'🇮🇩',
+    'US':'🇺🇸','UK':'🇬🇧','GB':'🇬🇧','DE':'🇩🇪','FR':'🇫🇷',
+    'NL':'🇳🇱','SG':'🇸🇬','CY':'🇨🇾','HK':'🇭🇰','ES':'🇪🇸',
+    'MT':'🇲🇹','LU':'🇱🇺','PT':'🇵🇹','AU':'🇦🇺','CA':'🇨🇦',
+    'BVI':'🇻🇬','KY':'🇰🇾','PA':'🇵🇦','MU':'🇲🇺','SC':'🇸🇨'
+  };
+  const clientiLabel=LANG==='en'?'client':'cliente';
+  const clientiLabelPl=LANG==='en'?'clients':'clienti';
+  el.innerHTML=paesi.map(p=>{
+    const key=p.paese.toUpperCase().trim();
+    const flag=flags[key]||'🌍';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:22px">${flag}</span>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">${p.paese}</div>
-        <div style="font-size:11px;color:var(--muted)">${p.entita} entit${p.entita===1?'à':'à'}</div>
+        <div style="font-size:11px;color:var(--muted)">${p.entita} ${p.entita===1?clientiLabel:clientiLabelPl}</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent)">${p.entita} entità</div>
-      </div>
-    </div>`).join('');
+      <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);font-weight:600">${p.entita}</div>
+    </div>`;
+  }).join('');
 }
 
 function openRicorrenteModal(tipo){
@@ -2720,8 +2750,8 @@ function renderRicorrenti(){
         pro[k].valore+=s.prezzo||0;pro[k].count++;
       });
     });
-    APP.servizi_ricorrenti.filter(s=>s.freq==='annual').forEach(s=>{
-      const d=new Date();
+    APP.servizi_ricorrenti.filter(s=>s.freq==='annual'&&s.dataScadenza).forEach(s=>{
+      const d=new Date(s.dataScadenza);
       const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
       if(pro[k]){pro[k].valore+=s.prezzo||0;pro[k].count++;}
     });
