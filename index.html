@@ -411,18 +411,20 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <aside class="sidebar">
   <div class="logo"><div class="logo-mark">E</div>Enomad</div>
   <nav class="nav">
-    <div class="nav-sec" data-t="generale">Generale</div>
+    <div class="nav-sec">Operativo</div>
     <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span><span data-t="dashboard">Dashboard</span></div>
-    <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span data-t="scadenze">Scadenze</span></div>
     <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span>Clienti</span></div>
-    <div class="nav-item" onclick="showView('ai',this)"><span class="nav-icon">✦</span><span>AI Assistant</span></div>
-    <div class="nav-sec" data-t="finanziario">Finanziario</div>
-    <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
+    <div class="nav-sec">Economico</div>
     <div class="nav-item" onclick="showView('ricorrenti',this)"><span class="nav-icon">♻</span><span>Ricavi ricorrenti</span></div>
-    <div class="nav-item" onclick="showView('listino',this)"><span class="nav-icon">💶</span><span>Listino prezzi</span></div>
+    <div class="nav-sec">Finanziario</div>
+    <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span>Scadenze finanziarie</span></div>
+    <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
     <div class="nav-item" onclick="showView('movimenti',this)"><span class="nav-icon">✦</span><span>Movimenti UAE</span></div>
     <div class="nav-item" onclick="showView('zohoview',this)"><span class="nav-icon">⊡</span><span data-t="zoho">Zoho Invoice</span></div>
+    <div class="nav-sec">Commerciale</div>
+    <div class="nav-item" onclick="showView('listino',this)"><span class="nav-icon">💶</span><span>Listino prezzi</span></div>
     <div class="nav-sec" data-t="sistema">Sistema</div>
+    <div class="nav-item" onclick="showView('ai',this)"><span class="nav-icon">✦</span><span>AI Assistant</span></div>
     <div class="nav-item" onclick="showView('dati',this)"><span class="nav-icon">◎</span><span data-t="dati">Dati & Backup</span></div>
     <div class="nav-item" onclick="showView('settings',this)"><span class="nav-icon">⊙</span><span data-t="impostazioni">Impostazioni</span></div>
   </nav>
@@ -503,6 +505,29 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="kpi-card-sub" id="kpi-costi30-sub">—</div>
         </div>
       </div>
+      <!-- KPI economici ricorrenti -->
+      <div class="kpi-row" style="margin-bottom:16px;">
+        <div class="kpi-card" style="border-left:2px solid var(--accent)">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Floor ricorrente</span><span class="kpi-card-ico">♻</span></div>
+          <div class="kpi-card-val" style="color:var(--accent)" id="h-floor">—</div>
+          <div class="kpi-card-sub">revenue annua ricorrente</div>
+        </div>
+        <div class="kpi-card" style="border-left:2px solid var(--info)">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Netto mensile medio</span><span class="kpi-card-ico">📊</span></div>
+          <div class="kpi-card-val" style="color:var(--info)" id="h-netto-mensile">—</div>
+          <div class="kpi-card-sub">competenza, non cassa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Clienti attivi</span><span class="kpi-card-ico">👥</span></div>
+          <div class="kpi-card-val" id="h-nentita2">—</div>
+          <div class="kpi-card-sub" id="h-paesi2">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl" data-t="scadenzeCritiche">Critiche</span><span class="kpi-card-ico">🔴</span></div>
+          <div class="kpi-card-val" style="color:var(--danger)" id="h-critiche2">—</div>
+          <div class="kpi-card-sub">nei prossimi 7 giorni</div>
+        </div>
+      </div>
       <div class="zoho-strip">
         <div class="zoho-l">
           <div class="zoho-ico">💼</div>
@@ -519,7 +544,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="grid-2">
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title" data-t="scadenzeAttive">Scadenze attive</div>
+            <div class="panel-title">💸 Scadenze finanziarie</div>
             <div class="ftabs">
               <button class="ftab active" onclick="filterScad('all',this,'sb1')" data-t="tutte">Tutte</button>
               <button class="ftab" onclick="filterScad('critical',this,'sb1')" data-t="critiche">Critiche</button>
@@ -548,12 +573,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <!-- SCADENZE -->
     <div class="view" id="view-scadenze">
       <div class="cfg-hint" style="margin-bottom:14px;border-left:3px solid var(--info);padding-left:13px;">
-        <strong style="color:var(--info)">📅 <span id="scad-area-title">Area Alert — Solo lettura</span></strong><br>
-        <span id="scad-info-txt">Le scadenze vengono create automaticamente quando aggiungi un servizio annuale nella scheda cliente. Qui puoi completarle, modificarle o eliminarle.</span>
+        <strong style="color:var(--info)">💸 <span id="scad-area-title">Scadenze finanziarie — Solo lettura</span></strong><br>
+        <span id="scad-info-txt">Pagamenti reali verso fornitori, generati automaticamente dai servizi ricorrenti. Le scadenze legacy (create prima del nuovo sistema) sono visibili ma non influenzano i KPI economici.</span>
       </div>
       <div class="panel">
         <div class="panel-header">
-          <div class="panel-title" data-t="scadenze">Scadenze</div>
+          <div class="panel-title" id="scad-fin-title">💸 Scadenze finanziarie</div>
           <div class="ftabs">
             <button class="ftab active" onclick="filterScad('all',this,'sb2')" data-t="tutte">Tutte</button>
             <button class="ftab" onclick="filterScad('critical',this,'sb2')" data-t="critiche">Critiche</button>
@@ -562,7 +587,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="scad-table"><thead><tr>
-          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th data-t="costo">Costo</th><th data-t="stato">Stato</th><th></th>
+          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
@@ -831,22 +856,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         </div>
       </div>
 
-      <!-- Dettaglio scadenze ricorrenti -->
+      <!-- Servizi ricorrenti attivi — fonte KPI economici -->
       <div class="panel">
         <div class="panel-header">
-          <div class="panel-title">♻ Scadenze ricorrenti attive</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn" onclick="openRicorrenteModal('monthly')" style="font-size:11px">+ Mensile</button>
-            <button class="btn btn-primary" onclick="openRicorrenteModal('annual')" style="font-size:11px">+ Annuale</button>
-          </div>
+          <div class="panel-title">📋 Servizi ricorrenti attivi <span style="font-size:10px;color:var(--muted);font-weight:400">— fonte KPI economici</span></div>
+          <span class="badge bi" style="font-size:10px">gestiti dalla scheda cliente</span>
         </div>
         <table class="fin-table"><thead><tr>
-          <th>Scadenza</th>
-          <th>Entità</th>
-          <th>Tipo</th>
-          <th>Prossima scadenza</th>
+          <th>Servizio</th>
+          <th>Cliente</th>
+          <th>Freq. ricavo</th>
           <th>Prezzo cliente</th>
-          <th>Costo mio</th>
+          <th>Costo economico/y</th>
+          <th style="color:var(--danger)">Cash out fornitore</th>
           <th>Margine</th>
         </tr></thead>
         <tbody id="rr-detail-tbody"></tbody></table>
@@ -1083,40 +1105,78 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 <!-- MODAL SERVIZIO CLIENTE -->
 <div class="modal-overlay" id="modal-servizio-cliente">
-  <div class="modal">
+  <div class="modal" style="max-width:560px">
     <div class="modal-header"><div class="modal-title" id="modal-srv-title">Nuovo servizio ricorrente</div><button class="modal-close" onclick="closeModal('servizio-cliente')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="srv-cli-cliente">
       <input type="hidden" id="srv-cli-edit-idx" value="-1">
-      <div class="frow">
-        <div class="fg"><label class="fl">Tipo servizio</label><select class="fsel" id="srv-cli-tipo-sel"></select></div>
-        <div class="fg"><label class="fl">Frequenza</label>
-          <select class="fsel" id="srv-cli-freq" onchange="onSrvFreqChange()">
-            <option value="monthly">Mensile</option>
-            <option value="annual">Annuale</option>
-          </select>
-        </div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label class="fl">Prezzo cliente (€)</label><input type="number" class="fi" id="srv-cli-prezzo" placeholder="0"></div>
-        <div class="fg"><label class="fl">Costo mio (€)</label><input type="number" class="fi" id="srv-cli-costo" placeholder="0"></div>
-      </div>
-      <!-- Campi extra per annuale -->
-      <div id="srv-cli-annual-fields" style="display:none;">
+
+      <!-- BLOCCO 1: REVENUE -->
+      <div style="background:var(--adim);border-radius:8px;padding:12px 14px;margin-bottom:12px;border:1px solid rgba(79,255,176,.15)">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💰 Ricavo cliente</div>
         <div class="frow">
-          <div class="fg"><label class="fl">Data scadenza</label><input type="date" class="fi" id="srv-cli-data"></div>
-          <div class="fg"><label class="fl">Reminder Telegram</label>
-            <select class="fsel" id="srv-cli-reminder">
-              <option value="7">7 giorni prima</option>
-              <option value="15" selected>15 giorni prima</option>
-              <option value="30">30 giorni prima</option>
-              <option value="7,15,30">7 + 15 + 30 giorni</option>
+          <div class="fg"><label class="fl">Tipo servizio</label><select class="fsel" id="srv-cli-tipo-sel"></select></div>
+          <div class="fg"><label class="fl">Frequenza fatturazione</label>
+            <select class="fsel" id="srv-cli-freq" onchange="onSrvFreqChange()">
+              <option value="monthly">Mensile</option>
+              <option value="quarterly">Trimestrale</option>
+              <option value="annual">Annuale</option>
             </select>
           </div>
         </div>
-        <div class="tg-hint">📅 Verrà aggiunto automaticamente in Scadenze come alert annuale.</div>
+        <div class="fg" style="margin-top:8px"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-cli-prezzo" placeholder="0" min="0"></div>
       </div>
-      <div class="fg" style="margin-top:10px"><label class="fl">Note (facoltativo)</label><input type="text" class="fi" id="srv-cli-note" placeholder="Dettagli aggiuntivi..."></div>
+
+      <!-- BLOCCO 2: COSTO ECONOMICO -->
+      <div style="background:var(--ddim);border-radius:8px;padding:12px 14px;margin-bottom:12px;border:1px solid rgba(255,82,82,.12)">
+        <div style="font-size:10px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📊 Costo economico (competenza)</div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Costo totale fornitore</label><input type="number" class="fi" id="srv-cli-supplier-cost" placeholder="0" min="0"></div>
+          <div class="fg"><label class="fl">Periodo competenza</label>
+            <select class="fsel" id="srv-cli-cost-period">
+              <option value="monthly">Mensile</option>
+              <option value="quarterly">Trimestrale</option>
+              <option value="annual" selected>Annuale</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px" id="srv-cli-cost-hint">Costo ammortizzato: — /mese</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">Usato per margine e netto mensile. Mai mostrato nelle Scadenze finanziarie.</div>
+      </div>
+
+      <!-- BLOCCO 3: CASH OUT -->
+      <div style="background:var(--wdim);border-radius:8px;padding:12px 14px;margin-bottom:12px;border:1px solid rgba(255,184,0,.12)">
+        <div style="font-size:10px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💸 Uscita finanziaria reale</div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Nome fornitore</label><input type="text" class="fi" id="srv-cli-supplier" placeholder="es. DIFC, Intertrust..."></div>
+          <div class="fg"><label class="fl">Frequenza pagamento</label>
+            <select class="fsel" id="srv-cli-cashout-freq" onchange="onSrvFreqChange()">
+              <option value="monthly">Mensile</option>
+              <option value="quarterly">Trimestrale</option>
+              <option value="annual" selected>Annuale</option>
+            </select>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:8px">
+          <div class="fg"><label class="fl">Importo pagamento fornitore</label><input type="number" class="fi" id="srv-cli-cashout" placeholder="0" min="0" oninput="onCashoutChange()"></div>
+        </div>
+        <!-- Campi data solo se pagamento non mensile -->
+        <div id="srv-cli-cashout-date-fields" style="margin-top:8px;">
+          <div class="frow">
+            <div class="fg"><label class="fl">Data prossimo pagamento</label><input type="date" class="fi" id="srv-cli-cashout-date"></div>
+            <div class="fg"><label class="fl">Reminder Telegram</label>
+              <select class="fsel" id="srv-cli-reminder">
+                <option value="7">7 giorni prima</option>
+                <option value="15" selected>15 giorni prima</option>
+                <option value="30">30 giorni prima</option>
+                <option value="7,15,30">7 + 15 + 30 giorni</option>
+              </select>
+            </div>
+          </div>
+        <div class="tg-hint">💸 Usato per Scadenze finanziarie e cash flow. Mai per il costo ammortizzato. Importo reale: € <span id="srv-cli-cashout-preview">0</span></div>
+      </div>
+
+      <div class="fg"><label class="fl">Note (facoltativo)</label><input type="text" class="fi" id="srv-cli-note" placeholder="Dettagli aggiuntivi..."></div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal('servizio-cliente')">Annulla</button><button class="btn btn-primary" onclick="saveServizioCliente()">Salva</button></div>
   </div>
@@ -1343,13 +1403,20 @@ async function loadScadenzeFromDB(){
     const{data,error}=await supa.from('scadenze').select('*').order('data',{ascending:true});
     if(error)throw error;
     if(data){
-      APP.scadenze=data.map(r=>({
-        id:r.id,nome:r.nome,entita:r.entita,tipo:r.tipo,data:r.data,
-        stato:r.stato,costo:parseFloat(r.costo)||0,
-        prezzo:parseFloat(r.prezzo)||0,
-        note:r.note||'',reminder:r.reminder||'15',
-        ricorrenza:r.ricorrenza||'once'
-      }));
+      // Get all scadenzaIds from servizi_ricorrenti to identify generated scadenze
+      const generatedIds=new Set((APP.servizi_ricorrenti||[]).map(s=>String(s.scadenzaId)).filter(Boolean));
+      APP.scadenze=data.map(r=>{
+        const isGenerated=generatedIds.has(String(r.id));
+        return {
+          id:r.id,nome:r.nome,entita:r.entita,tipo:r.tipo,data:r.data,
+          stato:r.stato,costo:parseFloat(r.costo)||0,
+          prezzo:parseFloat(r.prezzo)||0,
+          note:r.note||'',reminder:r.reminder||'15',
+          ricorrenza:r.ricorrenza||'once',
+          // is_legacy = true se non generata da un servizio ricorrente attivo
+          is_legacy:!isGenerated
+        };
+      });
       saveLocalData();
     }
   }catch(e){console.error('loadScadenze:',e);}
@@ -1484,8 +1551,18 @@ function renderClienteDetail(nome){
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
   const scad=APP.scadenze.filter(s=>s.entita===nome&&s.stato!=='done').sort((a,b)=>new Date(a.data)-new Date(b.data));
   const srList=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
-  const valoreAnnuo=srList.reduce((a,s)=>a+(s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0)),0);
-  const costiAnnuo=srList.reduce((a,s)=>a+(s.freq==='monthly'?(s.costo||0)*12:(s.costo||0)),0);
+  // Revenue annualizzato per frequenza fatturazione cliente
+  const valoreAnnuo=srList.reduce((a,s)=>{
+    const price=s.client_price||s.prezzo||0;
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    return a+(freq==='monthly'?price*12:freq==='quarterly'?price*4:price);
+  },0);
+  // Costo economico annualizzato (competenza, NON cash out)
+  const costiAnnuo=srList.reduce((a,s)=>{
+    const cost=s.supplier_cost_total||0;
+    const period=s.cost_allocation_period||'annual';
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+  },0);
   const nettoAnnuo=valoreAnnuo-costiAnnuo;
 
   // KPI cliente
@@ -1503,13 +1580,19 @@ function renderClienteDetail(nome){
       srTb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Nessun servizio — aggiungi contabilità o altri servizi</td></tr>';
     }else{
       srList.forEach((s,i)=>{
-        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+        const marg=s.client_price>0||s.prezzo>0?Math.round((((s.client_price||s.prezzo||0)-(s.monthly_cost_calculated||s.costo||0))/(s.client_price||s.prezzo||1))*100):null;
         const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+        const price=s.client_price||s.prezzo||0;
+        const freq=s.revenue_frequency||s.freq||'monthly';
+        const cashout=s.cash_out_amount||s.costo||0;
+        const cashoutFreq=s.cash_out_frequency||freq;
+        const freqLabel=freq==='monthly'?t('mensile'):freq==='quarterly'?'trim.':t('annuale');
+        const cashoutLabel=cashoutFreq==='monthly'?t('mensile'):cashoutFreq==='quarterly'?'trim.':t('annuale');
         srTb.innerHTML+=`<tr>
-          <td style="font-weight:500">${s.tipo}</td>
-          <td><span class="badge ${s.freq==='monthly'?'bw':'bi'}" style="font-size:10px">${s.freq==='monthly'?t('mensile'):t('annuale')}</span></td>
-          <td class="amt-in">€ ${(s.prezzo||0).toLocaleString('it-IT')}</td>
-          <td class="amt-out">${s.costo>0?'€ '+(s.costo||0).toLocaleString('it-IT'):'—'}</td>
+          <td style="font-weight:500">${s.tipo}${s.supplier_name?`<div style="font-size:10px;color:var(--muted)">${s.supplier_name}</div>`:''}</td>
+          <td><span class="badge ${freq==='monthly'?'bw':'bi'}" style="font-size:10px">${freqLabel}</span></td>
+          <td class="amt-in">€ ${price.toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/${freq==='monthly'?'mese':freq==='quarterly'?'trim':'anno'}</div></td>
+          <td class="amt-out">${cashout>0?'€ '+cashout.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">'+cashoutLabel+'</div>':'—'}</td>
           <td style="white-space:nowrap">
             <button onclick="editServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px">✎</button>
             <button onclick="deleteServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
@@ -1547,16 +1630,43 @@ function renderClienteDetail(nome){
   }
 }
 
+/* ══ FREQUENZA COSTO HELPERS ══ */
+function freqMonths(freq){
+  return freq==='monthly'?1:freq==='quarterly'?3:12;
+}
+function annualizeAmount(amount, freq){
+  return (amount||0) * (12/freqMonths(freq));
+}
+
+function onCashoutChange(){
+  const v=parseFloat(document.getElementById('srv-cli-cashout')?.value)||0;
+  const prev=document.getElementById('srv-cli-cashout-preview');
+  if(prev)prev.textContent=v.toLocaleString('it-IT');
+  // Aggiorna hint costo ammortizzato
+  updateCostHint();
+}
+
+function updateCostHint(){
+  const cost=parseFloat(document.getElementById('srv-cli-supplier-cost')?.value)||0;
+  const period=document.getElementById('srv-cli-cost-period')?.value||'annual';
+  const months=freqMonths(period);
+  const monthly=cost/months;
+  const hint=document.getElementById('srv-cli-cost-hint');
+  if(hint)hint.textContent='Costo ammortizzato: € '+monthly.toLocaleString('it-IT',{maximumFractionDigits:2})+'/mese (solo per P&L, mai in Scadenze)';
+}
+
 function onSrvFreqChange(){
-  const freq=document.getElementById('srv-cli-freq').value;
-  const annualFields=document.getElementById('srv-cli-annual-fields');
-  if(annualFields){
-    annualFields.style.display=freq==='annual'?'block':'none';
-    if(freq==='annual'&&!document.getElementById('srv-cli-data').value){
-      const d=new Date();d.setFullYear(d.getFullYear()+1);
-      document.getElementById('srv-cli-data').value=d.toISOString().split('T')[0];
+  const cashoutFreq=document.getElementById('srv-cli-cashout-freq')?.value||'annual';
+  const dateFields=document.getElementById('srv-cli-cashout-date-fields');
+  if(dateFields){
+    // Mostra campi data solo se pagamento non è mensile
+    dateFields.style.display=cashoutFreq==='monthly'?'none':'block';
+    if(cashoutFreq!=='monthly'&&!document.getElementById('srv-cli-cashout-date').value){
+      const d=new Date();d.setFullYear(d.getFullYear()+(cashoutFreq==='annual'?1:0));
+      document.getElementById('srv-cli-cashout-date').value=d.toISOString().split('T')[0];
     }
   }
+  updateCostHint();
 }
 
 function openAddServizioCliente(){
@@ -1566,12 +1676,19 @@ function openAddServizioCliente(){
   document.getElementById('srv-cli-cliente').value=currentCliente||'';
   document.getElementById('srv-cli-edit-idx').value=-1;
   document.getElementById('modal-srv-title').textContent=LANG==='en'?'New recurring service':'Nuovo servizio ricorrente';
-  // Popola select tipo dal listino tipi
   const sel=document.getElementById('srv-cli-tipo-sel');
   if(sel)sel.innerHTML=APP.tipi.map(t=>`<option>${t}</option>`).join('');
-  ['srv-cli-prezzo','srv-cli-costo','srv-cli-note'].forEach(id=>document.getElementById(id).value='');
+  ['srv-cli-prezzo','srv-cli-supplier-cost','srv-cli-cashout','srv-cli-note','srv-cli-supplier'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
   document.getElementById('srv-cli-freq').value='monthly';
-  document.getElementById('srv-cli-annual-fields').style.display='none';
+  document.getElementById('srv-cli-cost-period').value='annual';
+  document.getElementById('srv-cli-cashout-freq').value='annual';
+  document.getElementById('srv-cli-cashout-date-fields').style.display='block';
+  const d=new Date();d.setFullYear(d.getFullYear()+1);
+  document.getElementById('srv-cli-cashout-date').value=d.toISOString().split('T')[0];
+  document.getElementById('srv-cli-cashout-preview').textContent='0';
+  document.getElementById('srv-cli-cost-hint').textContent='Costo ammortizzato: — /mese';
   openModal('servizio-cliente');
 }
 
@@ -1583,21 +1700,25 @@ function editServizioCliente(nome,i){
   document.getElementById('srv-cli-edit-idx').value=globalIdx;
   document.getElementById('modal-srv-title').textContent=LANG==='en'?'✎ Edit service':'✎ Modifica servizio';
   const sel=document.getElementById('srv-cli-tipo-sel');
-  if(sel){
-    sel.innerHTML=APP.tipi.map(t=>`<option${t===s.tipo?' selected':''}>${t}</option>`).join('');
-  }
-  document.getElementById('srv-cli-freq').value=s.freq||'monthly';
-  document.getElementById('srv-cli-prezzo').value=s.prezzo||0;
-  document.getElementById('srv-cli-costo').value=s.costo||0;
+  if(sel)sel.innerHTML=APP.tipi.map(t=>`<option${t===s.tipo?' selected':''}>${t}</option>`).join('');
+  // Blocco Revenue
+  document.getElementById('srv-cli-prezzo').value=s.prezzo||s.client_price||0;
+  document.getElementById('srv-cli-freq').value=s.freq||s.revenue_frequency||'monthly';
+  document.getElementById('srv-cli-supplier').value=s.supplier_name||'';
+  // Blocco Costo economico — migrazione da vecchio campo costo
+  document.getElementById('srv-cli-supplier-cost').value=s.supplier_cost_total||(s.costo||0);
+  document.getElementById('srv-cli-cost-period').value=s.cost_allocation_period||'annual';
+  // Blocco Cash out — migrazione da vecchio campo costo
+  document.getElementById('srv-cli-cashout').value=s.cash_out_amount||(s.costo||0);
+  document.getElementById('srv-cli-cashout-freq').value=s.cash_out_frequency||'annual';
+  document.getElementById('srv-cli-cashout-date').value=s.next_cash_out_date||s.dataScadenza||'';
+  document.getElementById('srv-cli-reminder').value=s.reminder||'15';
   document.getElementById('srv-cli-note').value=s.note||'';
-  const annualFields=document.getElementById('srv-cli-annual-fields');
-  if(s.freq==='annual'){
-    annualFields.style.display='block';
-    document.getElementById('srv-cli-data').value=s.dataScadenza||'';
-    document.getElementById('srv-cli-reminder').value=s.reminder||'15';
-  }else{
-    annualFields.style.display='none';
-  }
+  // Aggiorna UI
+  const cashoutFreq=s.cash_out_frequency||'annual';
+  document.getElementById('srv-cli-cashout-date-fields').style.display=cashoutFreq==='monthly'?'none':'block';
+  document.getElementById('srv-cli-cashout-preview').textContent=(s.cash_out_amount||(s.costo||0)).toLocaleString('it-IT');
+  updateCostHint();
   openModal('servizio-cliente');
 }
 
@@ -1607,52 +1728,94 @@ async function saveServizioCliente(){
   if(!tipo){showToast(LANG==='en'?'⚠ Select a service type':'⚠ Seleziona un tipo di servizio');return;}
   const cliente=document.getElementById('srv-cli-cliente').value;
   const editIdx=parseInt(document.getElementById('srv-cli-edit-idx').value);
-  const freq=document.getElementById('srv-cli-freq').value;
-  const prezzo=parseFloat(document.getElementById('srv-cli-prezzo').value)||0;
-  const costo=parseFloat(document.getElementById('srv-cli-costo').value)||0;
-  const note=document.getElementById('srv-cli-note').value||'';
-  const dataScadenza=freq==='annual'?document.getElementById('srv-cli-data').value:'';
-  const reminder=freq==='annual'?document.getElementById('srv-cli-reminder').value:'15';
 
-  if(freq==='annual'&&!dataScadenza){
-    showToast(LANG==='en'?'⚠ Enter the deadline date':'⚠ Inserisci la data di scadenza');return;
+  // Blocco Revenue
+  const client_price=parseFloat(document.getElementById('srv-cli-prezzo').value)||0;
+  const revenue_frequency=document.getElementById('srv-cli-freq').value;
+  const supplier_name=document.getElementById('srv-cli-supplier').value||'';
+
+  // Blocco Costo economico
+  const supplier_cost_total=parseFloat(document.getElementById('srv-cli-supplier-cost').value)||0;
+  const cost_allocation_period=document.getElementById('srv-cli-cost-period').value;
+
+  // Blocco Cash out
+  const cash_out_amount=parseFloat(document.getElementById('srv-cli-cashout').value)||0;
+  const cash_out_frequency=document.getElementById('srv-cli-cashout-freq').value;
+  const next_cash_out_date=cash_out_frequency!=='monthly'?document.getElementById('srv-cli-cashout-date').value:'';
+  const reminder=document.getElementById('srv-cli-reminder').value||'15';
+  const note=document.getElementById('srv-cli-note').value||'';
+
+  if(cash_out_frequency!=='monthly'&&!next_cash_out_date){
+    showToast(LANG==='en'?'⚠ Enter the payment date':'⚠ Inserisci la data di pagamento fornitore');return;
   }
 
-  const obj={cliente,tipo,freq,prezzo,costo,note,dataScadenza,reminder};
+  // Calcoli derivati
+  const revenue_annual=annualizeAmount(client_price, revenue_frequency);
+  const cost_annual=annualizeAmount(supplier_cost_total, cost_allocation_period);
+  const monthly_cost_calculated=supplier_cost_total/freqMonths(cost_allocation_period);
+
+  const obj={
+    cliente, tipo, note, supplier_name,
+    // Revenue
+    client_price, revenue_frequency,
+    prezzo:client_price, freq:revenue_frequency, // compatibilità vecchio codice
+    // Costo economico
+    supplier_cost_total, cost_allocation_period,
+    monthly_cost_calculated,
+    costo:monthly_cost_calculated, // compatibilità vecchio codice (costo mensile)
+    // Cash out
+    cash_out_amount, cash_out_frequency, next_cash_out_date, reminder,
+    dataScadenza:next_cash_out_date, // compatibilità vecchio codice
+  };
+
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
+
+  // Gestione scadenza in DB per cash out non mensile
+  const needsScadenza=cash_out_frequency!=='monthly'&&next_cash_out_date;
 
   if(editIdx>=0){
     const old=APP.servizi_ricorrenti[editIdx];
-    APP.servizi_ricorrenti[editIdx]=obj;
-    // Se era annuale e ha una scadenza collegata, aggiornala
-    if(freq==='annual'&&old.scadenzaId){
-      const s=APP.scadenze.find(x=>x.id===old.scadenzaId);
+    // Aggiorna scadenza collegata se esiste
+    if(old.scadenzaId&&needsScadenza){
+      const s=APP.scadenze.find(x=>String(x.id)===String(old.scadenzaId));
       if(s){
-        s.tipo=tipo;s.data=dataScadenza;s.prezzo=prezzo;s.costo=costo;
-        s.nome=tipo;s.reminder=reminder;
+        s.tipo=tipo;s.nome=tipo;
+        s.data=next_cash_out_date;
+        s.prezzo=cash_out_amount; // cash out reale in Scadenze, NON ammortizzato
+        s.costo=0;
+        s.reminder=reminder;
         const isUUID=typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
         if(isUUID&&currentUser){
-          await supa.from('scadenze').update({tipo,nome:tipo,data:dataScadenza,prezzo,costo,reminder}).eq('id',s.id).eq('user_id',currentUser.id);
+          await supa.from('scadenze').update({
+            tipo,nome:tipo,data:next_cash_out_date,
+            prezzo:cash_out_amount,costo:0,reminder
+          }).eq('id',s.id).eq('user_id',currentUser.id);
         }
       }
       obj.scadenzaId=old.scadenzaId;
-      APP.servizi_ricorrenti[editIdx]=obj;
+    }else if(old.scadenzaId&&!needsScadenza){
+      // Frequenza cambiata a mensile — elimina scadenza
+      const isUUID=typeof old.scadenzaId==='string'&&old.scadenzaId.length===36;
+      if(isUUID&&currentUser)await supa.from('scadenze').delete().eq('id',old.scadenzaId).eq('user_id',currentUser.id);
+      APP.scadenze=APP.scadenze.filter(x=>String(x.id)!==String(old.scadenzaId));
     }
+    APP.servizi_ricorrenti[editIdx]=obj;
   }else{
-    // Nuovo servizio
-    if(freq==='annual'){
-      // Crea automaticamente in Scadenze
+    // Nuovo servizio — crea scadenza per cash out non mensile
+    if(needsScadenza){
       const nuovaScad={
-        id:Date.now(),nome:tipo,entita:cliente,tipo,
-        data:dataScadenza,stato:'pending',
-        prezzo,costo,note,reminder,ricorrenza:'annual'
+        id:Date.now(),
+        nome:tipo,entita:cliente,tipo,
+        data:next_cash_out_date,stato:'pending',
+        prezzo:cash_out_amount, // SEMPRE cash_out_amount reale, MAI ammortizzato
+        costo:0,
+        note:'💸 Uscita fornitore: '+(supplier_name||tipo),
+        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':'once'
       };
       try{
         const saved=await saveScadenzaToDB(nuovaScad);
         if(saved)nuovaScad.id=saved.id;
-      }catch(e){
-        console.error('Errore salvataggio scadenza da servizio:', e);
-      }
+      }catch(e){console.error('Errore salvataggio scadenza cash out:',e);}
       APP.scadenze.push(nuovaScad);
       APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
       obj.scadenzaId=nuovaScad.id;
@@ -1662,19 +1825,13 @@ async function saveServizioCliente(){
 
   saveLocalData();
   closeModal('servizio-cliente');
-  // Ricarica scadenze dal DB per assicurarsi che siano aggiornate
-  if(freq==='annual'){
-    await loadScadenzeFromDB();
-  }
+  if(needsScadenza)await loadScadenzeFromDB();
   renderClienteDetail(cliente);
-  renderTable('all','sb1');
-  renderTable('all','sb2');
-  renderTimeline();
-  updateKPIs();
-  renderClienti();
-  const msg=freq==='annual'
-    ?(LANG==='en'?'✓ Annual service saved + alert added to Deadlines':'✓ Servizio annuale salvato + alert aggiunto in Scadenze')
-    :(LANG==='en'?'✓ Monthly service saved':'✓ Servizio mensile salvato');
+  renderTable('all','sb1');renderTable('all','sb2');
+  renderTimeline();updateKPIs();renderClienti();
+  const msg=needsScadenza
+    ?(LANG==='en'?'✓ Service saved + cash out alert added to Deadlines':'✓ Servizio salvato + alert pagamento aggiunto in Scadenze')
+    :(LANG==='en'?'✓ Service saved':'✓ Servizio salvato');
   showToast(msg);
 }
 
@@ -1799,8 +1956,8 @@ function renderTable(filter,tbid){
     const dLabel=done?'✓':d+'gg';
     const statusTxt=done?t('completata'):d<=7?t('urgente'):d<=30?t('prossima'):t('ok');
     const costoCol=showCosto?`<td>
-      ${s.prezzo>0?`<div class="amt-in" style="font-size:11px">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
-      ${s.costo>0?`<div class="amt-out" style="font-size:10px;color:var(--muted)">cost: €${s.costo.toLocaleString('it-IT')}</div>`:''}
+      ${s.prezzo>0?`<div class="amt-out" style="font-size:11px;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
+      ${s.note&&s.note.includes('fornitore')?`<div style="font-size:9px;color:var(--muted)">${s.note.replace('💸 Uscita fornitore: ','')}</div>`:''}
     </td>`:'';
     // Bottoni azione — completare/ripristinare + eliminare
     const actionBtns=done
@@ -1814,8 +1971,10 @@ function renderTable(filter,tbid){
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`;
     const tr=document.createElement('tr');
-    const annualBadge=s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">♻</span>':'';
-    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}</div><div class="etag">${s.nome}</div></td>
+    const annualBadge=s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">♻</span>'
+      :s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">↺</span>':'';
+    const legacyBadge=s.is_legacy?'<span style="font-size:9px;color:var(--muted);background:var(--surface3);padding:1px 5px;border-radius:4px;margin-left:4px">legacy</span>':'';
+    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}${legacyBadge}</div><div class="etag">${s.nome}</div></td>
       <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
@@ -1844,7 +2003,8 @@ function updateKPIs(){
   const critical=pending.filter(s=>daysTo(s.data)<=7).length;
   const done=APP.scadenze.filter(s=>s.stato==='done').length;
   const soon30=pending.filter(s=>daysTo(s.data)<=30);
-  const costiPrev=soon30.reduce((a,s)=>a+(s.costo||0),0);
+  // Costi 30gg = cash_out reale dalle scadenze (area finanziaria)
+  const costiPrev=soon30.reduce((a,s)=>a+(s.prezzo||0),0);
   const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   el('h-critiche',critical);
   el('kpi-scad-tot',APP.scadenze.length);
@@ -1852,8 +2012,27 @@ function updateKPIs(){
   el('kpi-costi30','€ '+Math.round(costiPrev).toLocaleString('it-IT'));
   el('kpi-costi30-sub',soon30.length+' scadenze');
   el('h-nentita',APP.entita.length);
+  el('h-nentita2',APP.entita.length);
   const paesi=[...new Set(APP.entita.map(e=>e.paese).filter(Boolean))];
   el('h-paesi',paesi.length+' paesi');
+  el('h-paesi2',paesi.length+' paesi');
+  el('h-critiche2',critical);
+  // Floor economico — SOLO APP.servizi_ricorrenti (fonte unica, separata da Scadenze)
+  if(APP.servizi_ricorrenti){
+    const revenueAnnuo=APP.servizi_ricorrenti.reduce((a,s)=>{
+      const price=s.client_price||s.prezzo||0;
+      const freq=s.revenue_frequency||s.freq||'monthly';
+      return a+(freq==='annual'?price:freq==='quarterly'?price*4:price*12);
+    },0);
+    const costiAnnui=APP.servizi_ricorrenti.reduce((a,s)=>{
+      const cost=s.supplier_cost_total||0;
+      const period=s.cost_allocation_period||'annual';
+      return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+    },0);
+    const nettoAnnuo=revenueAnnuo-costiAnnui;
+    el('h-floor','€ '+Math.round(revenueAnnuo).toLocaleString('it-IT'));
+    el('h-netto-mensile','€ '+Math.round(nettoAnnuo/12).toLocaleString('it-IT'));
+  }
 }
 
 function filterScad(f,el,tbid){
@@ -2653,55 +2832,71 @@ function renderRicorrenti(){
   const annoSel=parseInt(document.getElementById('rr-anno-filter')?.value||new Date().getFullYear());
   const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
 
-  // FONTE UNICA per annuali: APP.scadenze (creati automaticamente da servizi annuali)
-  // Filtra per anno selezionato
-  const scadAnnuali=APP.scadenze.filter(s=>{
-    if(s.ricorrenza!=='annual'||s.stato==='done')return false;
-    return new Date(s.data).getFullYear()===annoSel;
+  // ══ FONTE DATI ══
+  // KPI ECONOMICI → leggono SOLO APP.servizi_ricorrenti (mai APP.scadenze)
+  // SCADENZE FINANZIARIE → leggono SOLO APP.scadenze (cash out reale)
+  // Questa separazione è DEFINITIVA e NON deve essere violata.
+
+  const srAnnuali=APP.servizi_ricorrenti.filter(s=>{
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    return freq==='annual';
+  });
+  const srMensili=APP.servizi_ricorrenti.filter(s=>{
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    return freq==='monthly'||freq==='quarterly';
   });
 
-  // FONTE UNICA per mensili: APP.servizi_ricorrenti con freq=monthly
-  const srMensili=APP.servizi_ricorrenti.filter(s=>s.freq==='monthly');
-
-  // Floor lordo
-  const floorAnnuali=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
-  const floorMensili=srMensili.reduce((a,s)=>a+(s.prezzo||0),0)*12;
+  // Floor lordo — revenue annualizzata per frequenza fatturazione cliente
+  const floorAnnuali=srAnnuali.reduce((a,s)=>a+(s.client_price||s.prezzo||0),0);
+  const floorMensili=srMensili.reduce((a,s)=>{
+    const price=s.client_price||s.prezzo||0;
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    return a+(freq==='quarterly'?price*4:price*12);
+  },0);
   const floor=floorAnnuali+floorMensili;
 
-  // Costi
-  const costiAnnuali=scadAnnuali.reduce((a,s)=>a+(s.costo||0),0);
-  const costiMensili=srMensili.reduce((a,s)=>a+(s.costo||0),0)*12;
+  // Costi economici — supplier_cost_total annualizzato (competenza, NON cash)
+  const costiAnnuali=srAnnuali.reduce((a,s)=>{
+    const cost=s.supplier_cost_total||0;
+    const period=s.cost_allocation_period||'annual';
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+  },0);
+  const costiMensili=srMensili.reduce((a,s)=>{
+    const cost=s.supplier_cost_total||0;
+    const period=s.cost_allocation_period||'annual';
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+  },0);
   const costiTot=costiAnnuali+costiMensili;
   const netto=floor-costiTot;
   const margMed=floor>0?Math.round((netto/floor)*100):0;
 
   el('rr-floor','€ '+Math.round(floor).toLocaleString('it-IT'));
-  el('rr-floor-sub',scadAnnuali.length+' annuali + '+srMensili.length+' mensili (×12)');
+  el('rr-floor-sub',srAnnuali.length+' annuali + '+srMensili.length+' mensili (×12)');
   el('rr-costi','€ '+Math.round(costiTot).toLocaleString('it-IT'));
   el('rr-costi-sub','margine lordo: '+margMed+'%');
   el('rr-netto','€ '+Math.round(netto).toLocaleString('it-IT'));
   el('rr-netto-sub','margine netto: '+margMed+'%');
   el('rr-margine',margMed+'%');
-  el('rr-count-badge',scadAnnuali.length+srMensili.length);
+  el('rr-count-badge',APP.servizi_ricorrenti.length);
 
+  // Prossimi 30gg — da APP.scadenze (cash out reale)
   const oggi=new Date();
   const fra30=new Date();fra30.setDate(oggi.getDate()+30);
-  const prossime30=scadAnnuali.filter(s=>{const d=new Date(s.data);return d>=oggi&&d<=fra30;});
+  const prossime30=APP.scadenze.filter(s=>s.stato!=='done'&&s.prezzo>0&&new Date(s.data)>=oggi&&new Date(s.data)<=fra30);
   const val30=prossime30.reduce((a,s)=>a+(s.prezzo||0),0);
   el('rr-30','€ '+Math.round(val30).toLocaleString('it-IT'));
-  el('rr-30-sub',prossime30.length+(LANG==='en'?' renewals upcoming':' rinnovi in scadenza'));
+  el('rr-30-sub',prossime30.length+(LANG==='en'?' payments due':' pagamenti in scadenza'));
 
-  // Revenue at Risk — usa solo il floor dell'anno selezionato
+  // Revenue at Risk — per cliente da APP.servizi_ricorrenti
   const byEntita={};
-  scadAnnuali.forEach(s=>{
-    if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,valore:0,tipi:[]};
-    byEntita[s.entita].valore+=s.prezzo||0;
-    if(!byEntita[s.entita].tipi.includes('annuale'))byEntita[s.entita].tipi.push('annuale');
-  });
-  srMensili.forEach(s=>{
+  APP.servizi_ricorrenti.forEach(s=>{
+    const price=s.client_price||s.prezzo||0;
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    const valoreAnnuo=freq==='annual'?price:freq==='quarterly'?price*4:price*12;
     if(!byEntita[s.cliente])byEntita[s.cliente]={entita:s.cliente,valore:0,tipi:[]};
-    byEntita[s.cliente].valore+=(s.prezzo||0)*12;
-    if(!byEntita[s.cliente].tipi.includes('mensile'))byEntita[s.cliente].tipi.push('mensile');
+    byEntita[s.cliente].valore+=valoreAnnuo;
+    const tipoLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
+    if(!byEntita[s.cliente].tipi.includes(tipoLabel))byEntita[s.cliente].tipi.push(tipoLabel);
   });
   const entitaList=Object.values(byEntita).sort((a,b)=>b.valore-a.valore);
   el('rr-clienti',entitaList.length);
@@ -2720,7 +2915,7 @@ function renderRicorrenti(){
   if(riskTb){
     riskTb.innerHTML='';
     if(entitaList.length===0){
-      riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">'+(LANG==='en'?'No recurring services':'Nessuna scadenza ricorrente')+'</td></tr>';
+      riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">'+(LANG==='en'?'No recurring services':'Nessun servizio ricorrente')+'</td></tr>';
     }else{
       entitaList.forEach(e=>{
         const pct=floor>0?Math.round((e.valore/floor)*100):0;
@@ -2743,7 +2938,7 @@ function renderRicorrenti(){
     }
   }
 
-  // Proiezione 12 mesi anno selezionato
+  // Proiezione 12 mesi anno selezionato — usa servizi_ricorrenti come fonte perpetua
   const proj=document.getElementById('rr-projection');
   if(proj){
     proj.innerHTML='';
@@ -2753,41 +2948,49 @@ function renderRicorrenti(){
     const pro={};
     for(let m=0;m<12;m++){
       const k=annoSel+'-'+String(m+1).padStart(2,'0');
-      pro[k]={label:mN[m]+' '+annoSel,valore:0,items:[]};
+      pro[k]={label:mN[m]+' '+annoSel,revenue:0,cashout:0,items:[]};
     }
-    // Mensili — ogni mese
+    // Mensili — revenue ogni mese + cash out se mensile
     srMensili.forEach(s=>{
+      const price=s.client_price||s.prezzo||0;
+      const cashFreq=s.cash_out_frequency||'monthly';
       Object.keys(pro).forEach(k=>{
-        pro[k].valore+=s.prezzo||0;
-        pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:s.prezzo||0});
+        pro[k].revenue+=price;
+        pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:price,tipo:'revenue'});
+        if(cashFreq==='monthly'){
+          const cashAmt=s.cash_out_amount||0;
+          pro[k].cashout+=cashAmt;
+        }
       });
     });
-    // Annuali — proietto nel mese corrispondente dell'anno selezionato
-  // Uso servizi_ricorrenti come fonte perpetua (non dipende da scadenze nel DB)
-  APP.servizi_ricorrenti.filter(s=>s.freq==='annual'&&s.dataScadenza).forEach(s=>{
-      const d=new Date(s.dataScadenza);
-      // Usa il mese/giorno della scadenza originale ma nell'anno selezionato
-      const k=annoSel+'-'+String(d.getMonth()+1).padStart(2,'0');
-      if(pro[k]){
-        pro[k].valore+=s.prezzo||0;
-        pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:s.prezzo||0});
+    // Annuali — revenue nel mese della data scadenza, cash out nel mese del pagamento
+    srAnnuali.forEach(s=>{
+      const price=s.client_price||s.prezzo||0;
+      const dataScad=s.next_cash_out_date||s.dataScadenza||'';
+      if(dataScad){
+        const d=new Date(dataScad);
+        const k=annoSel+'-'+String(d.getMonth()+1).padStart(2,'0');
+        if(pro[k]){
+          pro[k].revenue+=price;
+          pro[k].cashout+=s.cash_out_amount||0;
+          pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:price,tipo:'annual'});
+        }
       }
     });
-    const mx=Math.max(...Object.values(pro).map(p=>p.valore),1);
+    const mx=Math.max(...Object.values(pro).map(p=>p.revenue),1);
     Object.entries(pro).forEach(([k,p])=>{
-      const pct=Math.round((p.valore/mx)*100);
+      const pct=Math.round((p.revenue/mx)*100);
       const div=document.createElement('div');
-      div.className='cf-month';
-      div.style.cursor='pointer';
+      div.className='cf-month';div.style.cursor='pointer';
       const detailHtml=p.items.map(i=>'<div style="display:flex;justify-content:space-between;gap:16px;font-size:11px;padding:2px 0">'
         +'<span>'+i.nome+' <span style="color:var(--muted)">('+i.cliente+')</span></span>'
-        +'<span style="font-family:\'DM Mono\',monospace;color:var(--accent)">€ '+i.prezzo.toLocaleString('it-IT')+'</span>'
-        +'</div>').join('');
+        +'<span style="font-family:\'DM Mono\',monospace;color:var(--accent)">€ '+i.prezzo.toLocaleString('it-IT')+'</span></div>').join('');
       div.innerHTML='<div class="cf-top"><span class="cf-lbl">'+p.label+'</span>'
-        +'<span class="cf-val" style="color:'+(p.valore>0?'var(--accent)':'var(--muted)')+'">'+
-        (p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—')+'</span></div>'
-        +(p.valore>0?'<div class="cf-track"><div class="cf-fill" style="width:'+pct+'%;background:var(--accent)"></div></div>'
-        +'<div class="cf-sub"><span style="color:var(--text2)">'+p.items.length+' '+(LANG==='en'?'services':'servizi')+'</span></div>'
+        +'<span class="cf-val" style="color:'+(p.revenue>0?'var(--accent)':'var(--muted)')+'">'+
+        (p.revenue>0?'€ '+Math.round(p.revenue).toLocaleString('it-IT'):'—')+'</span></div>'
+        +(p.revenue>0?'<div class="cf-track"><div class="cf-fill" style="width:'+pct+'%;background:var(--accent)"></div></div>'
+        +'<div class="cf-sub" style="display:flex;justify-content:space-between"><span style="color:var(--text2)">'+p.items.length+' servizi</span>'
+        +(p.cashout>0?'<span style="color:var(--danger);font-size:10px">💸 €'+p.cashout.toLocaleString('it-IT')+'</span>':'')+'</div>'
         +'<div id="det-'+k+'" style="display:none;background:var(--surface2);border-radius:6px;padding:8px 10px;margin-top:6px">'+detailHtml+'</div>'
         :'');
       div.onclick=()=>{const det=document.getElementById('det-'+k);if(det)det.style.display=det.style.display==='none'?'block':'none';};
@@ -2795,36 +2998,39 @@ function renderRicorrenti(){
     });
   }
 
-  // Tabella dettaglio
+  // Tabella servizi ricorrenti attivi — SOLO APP.servizi_ricorrenti
   const detTb=document.getElementById('rr-detail-tbody');
   if(detTb){
     detTb.innerHTML='';
-    const allItems=[
-      ...scadAnnuali.map(s=>({nome:s.nome||s.tipo,entita:s.entita,tipo:s.tipo,data:s.data,prezzo:s.prezzo||0,costo:s.costo||0,ricorrenza:'annual'})),
-      ...srMensili.map(s=>({nome:s.tipo,entita:s.cliente,tipo:s.tipo,data:'—',prezzo:s.prezzo||0,costo:s.costo||0,ricorrenza:'monthly'}))
-    ];
-    if(allItems.length===0){
-      detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">'+(LANG==='en'?'No active recurring services':'Nessun servizio ricorrente attivo')+'</td></tr>';
+    if(APP.servizi_ricorrenti.length===0){
+      detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">'+(LANG==='en'?'No active recurring services — add them from client detail':'Nessun servizio ricorrente attivo — aggiungili dalla scheda cliente')+'</td></tr>';
     }else{
-      allItems.forEach(s=>{
-        const marg=s.prezzo>0?Math.round(((s.prezzo-s.costo)/s.prezzo)*100):null;
+      APP.servizi_ricorrenti.forEach(s=>{
+        const price=s.client_price||s.prezzo||0;
+        const freq=s.revenue_frequency||s.freq||'monthly';
+        const cost=s.supplier_cost_total||0;
+        const period=s.cost_allocation_period||'annual';
+        const costAnnuo=period==='monthly'?cost*12:period==='quarterly'?cost*4:cost;
+        const revenueAnnuo=freq==='annual'?price:freq==='quarterly'?price*4:price*12;
+        const marg=revenueAnnuo>0?Math.round(((revenueAnnuo-costAnnuo)/revenueAnnuo)*100):null;
         const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
-        const dataStr=s.data==='—'?'—':s.data.split('-').reverse().join('/');
-        const fb=s.ricorrenza==='monthly'
-          ?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">mensile</span>'
-          :'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">annuale</span>';
-        const va=s.ricorrenza==='monthly'?s.prezzo*12:s.prezzo;
-        const prezzoLabel=s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT')+(s.ricorrenza==='monthly'?'/mese':'/anno'):'—';
+        const freqLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
+        const cashout=s.cash_out_amount||0;
+        const cashFreq=s.cash_out_frequency||'annual';
+        const cashLabel=cashFreq==='monthly'?(LANG==='en'?'monthly':'mensile'):cashFreq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
         const row=document.createElement('tr');
-        row.innerHTML='<td style="font-weight:500">'+s.nome+fb+'</td>'
-          +'<td><span class="etag">'+s.entita+'</span></td>'
-          +'<td style="color:var(--text2);font-size:12px">'+ticoIcon(s.tipo)+' '+s.tipo+'</td>'
-          +'<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2)">'+dataStr+'</td>'
-          +'<td class="amt-in">'+prezzoLabel+'</td>'
-          +'<td class="amt-out">'+(s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—')+'</td>'
+        row.innerHTML='<td style="font-weight:500">'+s.tipo
+          +(s.supplier_name?'<div style="font-size:10px;color:var(--muted)">'+s.supplier_name+'</div>':'')+'</td>'
+          +'<td><span class="etag">'+s.cliente+'</span></td>'
+          +'<td><span class="badge '+(freq==='monthly'?'bw':'bi')+'" style="font-size:10px">'+freqLabel+'</span></td>'
+          +'<td class="amt-in">€ '+price.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">/'+(freq==='monthly'?'mese':freq==='quarterly'?'trim':'anno')+'</div></td>'
+          +'<td class="amt-out">€ '+costAnnuo.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">/anno</div></td>'
+          // Cash out in rosso — uscita finanziaria reale
+          +'<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--danger);font-weight:500">'
+          +(cashout>0?'€ '+cashout.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">'+cashLabel+'</div>':'—')+'</td>'
           +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;color:'+mc+'">'
           +(marg!==null?marg+'%':'—')
-          +'<div style="font-size:10px;color:var(--muted)">€'+Math.round(va).toLocaleString('it-IT')+'/y</div></td>';
+          +'<div style="font-size:10px;color:var(--muted)">€'+Math.round(revenueAnnuo).toLocaleString('it-IT')+'/y</div></td>';
         detTb.appendChild(row);
       });
     }
