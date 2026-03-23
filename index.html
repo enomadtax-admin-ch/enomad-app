@@ -1745,8 +1745,8 @@ async function saveServizioCliente(){
   const reminder=document.getElementById('srv-cli-reminder').value||'15';
   const note=document.getElementById('srv-cli-note').value||'';
 
-  if(cash_out_frequency!=='monthly'&&!next_cash_out_date){
-    showToast(LANG==='en'?'⚠ Enter the payment date':'⚠ Inserisci la data di pagamento fornitore');return;
+  if(cash_out_frequency!=='monthly'&&!next_cash_out_date&&!document.getElementById('srv-cli-cashout-date').value){
+    // Data non obbligatoria — verrà generata automaticamente (+1 anno)
   }
 
   // Calcoli derivati
@@ -1754,31 +1754,26 @@ async function saveServizioCliente(){
   const cost_annual=annualizeAmount(supplier_cost_total, cost_allocation_period);
   const monthly_cost_calculated=supplier_cost_total/freqMonths(cost_allocation_period);
 
-  const obj={
-    cliente, tipo, note, supplier_name,
-    // Revenue
-    client_price, revenue_frequency,
-    prezzo:client_price, freq:revenue_frequency, // compatibilità vecchio codice
-    // Costo economico
-    supplier_cost_total, cost_allocation_period,
-    monthly_cost_calculated,
-    costo:monthly_cost_calculated, // compatibilità vecchio codice (costo mensile)
-    // Cash out
-    cash_out_amount, cash_out_frequency, next_cash_out_date:effectiveCashoutDate, reminder,
-    dataScadenza:effectiveCashoutDate,
-  };
-
-  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
-
-  // Gestione scadenza in DB per cash out non mensile
-  // needsScadenza = true per qualsiasi cash_out non mensile
-  // Se la data manca ma la frequenza è annuale, imposta una data di default (+1 anno)
+  // effectiveCashoutDate: usa la data inserita o genera +1 anno se mancante
   let effectiveCashoutDate=next_cash_out_date;
   if(cash_out_frequency!=='monthly'&&!effectiveCashoutDate){
     const d=new Date();d.setFullYear(d.getFullYear()+1);
     effectiveCashoutDate=d.toISOString().split('T')[0];
   }
   const needsScadenza=cash_out_frequency!=='monthly';
+
+  const obj={
+    cliente, tipo, note, supplier_name,
+    client_price, revenue_frequency,
+    prezzo:client_price, freq:revenue_frequency,
+    supplier_cost_total, cost_allocation_period,
+    monthly_cost_calculated,
+    costo:monthly_cost_calculated,
+    cash_out_amount, cash_out_frequency, next_cash_out_date:effectiveCashoutDate, reminder,
+    dataScadenza:effectiveCashoutDate,
+  };
+
+  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
 
   if(editIdx>=0){
     const old=APP.servizi_ricorrenti[editIdx];
