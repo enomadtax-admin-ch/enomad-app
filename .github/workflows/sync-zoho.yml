@@ -11,6 +11,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Non girare se il push è stato fatto dal bot stesso
+    if: github.actor != 'github-actions[bot]'
 
     steps:
       - name: Checkout repo
@@ -273,8 +275,4 @@ jobs:
           git config --local user.name "Finance Sync Bot"
           git add finance-data.json
           git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — dati puliti"
-          git fetch origin main
-          git checkout origin/main -- .
-          git add finance-data.json
-          git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — dati puliti"
-          git push origin HEAD:main
+          git push origin HEAD:main --force-with-lease || git push origin HEAD:main --force
