@@ -1609,8 +1609,12 @@ async function saveServizioCliente(){
         data:dataScadenza,stato:'pending',
         prezzo,costo,note,reminder,ricorrenza:'annual'
       };
-      const saved=await saveScadenzaToDB(nuovaScad);
-      if(saved)nuovaScad.id=saved.id;
+      try{
+        const saved=await saveScadenzaToDB(nuovaScad);
+        if(saved)nuovaScad.id=saved.id;
+      }catch(e){
+        console.error('Errore salvataggio scadenza da servizio:', e);
+      }
       APP.scadenze.push(nuovaScad);
       APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
       obj.scadenzaId=nuovaScad.id;
