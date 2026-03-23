@@ -17,7 +17,7 @@ let currentUser=null;
 /* ══ I18N ══ */
 const T={
   it:{
-    dashboard:'Dashboard',scadenze:'Scadenze',entita:'Entità',finance:'Finance',
+    dashboard:'Dashboard',scadenze:'Scadenze',entita:'Clienti',finance:'Finance',
     zoho:'Zoho Invoice',dati:'Dati & Backup',impostazioni:'Impostazioni',
     nuovaScadenza:'+ Scadenza',syncZoho:'↻ Sync Zoho',exportJson:'⬇ Export JSON',
     temaScuro:'Tema scuro',temaChiaro:'Tema chiaro',
@@ -25,18 +25,18 @@ const T={
     scadenzeAttive:'Scadenze attive',timeline:'Timeline 60gg',
     tutte:'Tutte',critiche:'Critiche',prossime:'Prossime',completate:'Completate',
     urgente:'Urgente',prossima:'Prossima',ok:'OK',completata:'Completata',
-    scadenzeCritiche:'Scadenze critiche',cashInAttesa:'Cash in attesa',entitaAttive:'Entità attive',
+    scadenzeCritiche:'Scadenze critiche',cashInAttesa:'Cash in attesa',entitaAttive:'Clienti attivi',
     incassatoMese:'Incassato mese',speseMese:'Spese mese',scadenzeTotali:'Scadenze totali',
     costiCompliance:'Costi compliance 30gg',
     tipo:'Tipo',data:'Data',giorni:'Giorni',stato:'Stato',costo:'Costo',
-    nomeScadenza:'Nome scadenza',reminderTelegram:'Reminder Telegram',note:'Note',
+    nomeScadenza:'Tipo scadenza',reminderTelegram:'Reminder Telegram',note:'Note',
     salva:'Salva',annulla:'Annulla',
-    fatturatoPrevisto:'Fatturato previsto',margine:'Margine %',proiezioneQ:'Proiezione Q',
-    storFatturato:'Fatturato storico',topClienti:'Top clienti',
+    fatturatoPrevisto:'Fatturato previsto',margine:'Margine %',proiezioneQ:'Proiezione',
+    storFatturato:'Fatturato per anno',topClienti:'Top clienti',
     fattureMese:'Fatture per mese',costiCompliance90:'Costi compliance 90gg',
     movimentiRecenti:'Fatture recenti',cashflow:'Cashflow mensile',
-    gestioneEntita:'Gestione entità',gestioneTipi:'Gestione tipi',
-    aggiungiEntita:'+ Entità',aggiungiTipo:'+ Tipo',
+    gestioneEntita:'Gestione clienti',gestioneTipi:'Tipi scadenza',
+    aggiungiEntita:'+ Cliente',aggiungiTipo:'+ Tipo',
     prezzo:'Prezzo cliente',costoMio:'Costo mio',
     sicurezza:'Sicurezza — 2FA',account:'Account',
     configAuth:'⚙ Configura Google Authenticator',rimuovi2fa:'Rimuovi 2FA',
@@ -46,12 +46,25 @@ const T={
     accedi:'Accedi',codiceOtp:'Codice OTP',verifica:'Verifica',
     areaRiservata:'Area riservata — accesso controllato',
     emailPassword:'Email',password:'Password',
-    filtroAnno:'Filtra per anno',tuttiGliAnni:'Tutti gli anni',
+    filtroAnno:'Anno:',tuttiGliAnni:'Tutti gli anni',
     generale:'Generale',finanziario:'Finanziario',sistema:'Sistema',
     connessioni:'Connessioni',
+    clienti:'Clienti',serviziRicorrenti:'Servizi ricorrenti',
+    listino:'Listino prezzi',movimentiUAE:'Movimenti UAE',
+    ricaviRicorrenti:'Ricavi ricorrenti',aiAssistant:'AI Assistant',
+    floorLordo:'Floor lordo annuo',costiVivi:'Costi vivi annui',
+    floorNetto:'Floor netto annuo',revenueAtRisk:'Revenue at Risk',
+    nuovoCliente:'Nuovo cliente',nuovoServizio:'Nuovo servizio ricorrente',
+    frequenza:'Frequenza',mensile:'Mensile',annuale:'Annuale',
+    dataScadenza:'Data scadenza',aggiungiScadenza:'+ Scadenza',
+    scaricaBackupCompleto:'⬇ Scarica backup completo',
+    soloScadenze:'Solo scadenze',importaJson:'⬆ Importa JSON',
+    anteprimaJson:'Anteprima JSON',ultimoSalvataggio:'Ultimo salvataggio',
+    ultimoExport:'Ultimo export',paese:'Paese',valuta:'Valuta',
+    tipiScadenza:'Tipi scadenza',riepilogoClienti:'Riepilogo clienti',
   },
   en:{
-    dashboard:'Dashboard',scadenze:'Deadlines',entita:'Entities',finance:'Finance',
+    dashboard:'Dashboard',scadenze:'Deadlines',entita:'Clients',finance:'Finance',
     zoho:'Zoho Invoice',dati:'Data & Backup',impostazioni:'Settings',
     nuovaScadenza:'+ Deadline',syncZoho:'↻ Sync Zoho',exportJson:'⬇ Export JSON',
     temaScuro:'Dark mode',temaChiaro:'Light mode',
@@ -59,18 +72,18 @@ const T={
     scadenzeAttive:'Active deadlines',timeline:'Timeline 60d',
     tutte:'All',critiche:'Critical',prossime:'Upcoming',completate:'Completed',
     urgente:'Urgent',prossima:'Upcoming',ok:'OK',completata:'Done',
-    scadenzeCritiche:'Critical deadlines',cashInAttesa:'Cash pending',entitaAttive:'Active entities',
+    scadenzeCritiche:'Critical deadlines',cashInAttesa:'Cash pending',entitaAttive:'Active clients',
     incassatoMese:'Collected this month',speseMese:'Expenses',scadenzeTotali:'Total deadlines',
     costiCompliance:'Compliance costs 30d',
     tipo:'Type',data:'Date',giorni:'Days',stato:'Status',costo:'Cost',
-    nomeScadenza:'Deadline name',reminderTelegram:'Telegram reminder',note:'Notes',
+    nomeScadenza:'Deadline type',reminderTelegram:'Telegram reminder',note:'Notes',
     salva:'Save',annulla:'Cancel',
-    fatturatoPrevisto:'Projected revenue',margine:'Margin %',proiezioneQ:'Q projection',
-    storFatturato:'Historical revenue',topClienti:'Top clients',
+    fatturatoPrevisto:'Projected revenue',margine:'Margin %',proiezioneQ:'Projection',
+    storFatturato:'Revenue by year',topClienti:'Top clients',
     fattureMese:'Monthly invoices',costiCompliance90:'Compliance costs 90d',
     movimentiRecenti:'Recent invoices',cashflow:'Monthly cashflow',
-    gestioneEntita:'Manage entities',gestioneTipi:'Manage types',
-    aggiungiEntita:'+ Entity',aggiungiTipo:'+ Type',
+    gestioneEntita:'Manage clients',gestioneTipi:'Deadline types',
+    aggiungiEntita:'+ Client',aggiungiTipo:'+ Type',
     prezzo:'Client price',costoMio:'My cost',
     sicurezza:'Security — 2FA',account:'Account',
     configAuth:'⚙ Setup Google Authenticator',rimuovi2fa:'Remove 2FA',
@@ -80,9 +93,22 @@ const T={
     accedi:'Sign in',codiceOtp:'OTP Code',verifica:'Verify',
     areaRiservata:'Restricted area — authorized access only',
     emailPassword:'Email',password:'Password',
-    filtroAnno:'Filter by year',tuttiGliAnni:'All years',
+    filtroAnno:'Year:',tuttiGliAnni:'All years',
     generale:'General',finanziario:'Financial',sistema:'System',
     connessioni:'Connections',
+    clienti:'Clients',serviziRicorrenti:'Recurring services',
+    listino:'Price list',movimentiUAE:'UAE Movements',
+    ricaviRicorrenti:'Recurring revenue',aiAssistant:'AI Assistant',
+    floorLordo:'Annual gross floor',costiVivi:'Annual direct costs',
+    floorNetto:'Annual net floor',revenueAtRisk:'Revenue at Risk',
+    nuovoCliente:'New client',nuovoServizio:'New recurring service',
+    frequenza:'Frequency',mensile:'Monthly',annuale:'Annual',
+    dataScadenza:'Deadline date',aggiungiScadenza:'+ Deadline',
+    scaricaBackupCompleto:'⬇ Download full backup',
+    soloScadenze:'Deadlines only',importaJson:'⬆ Import JSON',
+    anteprimaJson:'JSON Preview',ultimoSalvataggio:'Last saved',
+    ultimoExport:'Last export',paese:'Country',valuta:'Currency',
+    tipiScadenza:'Deadline types',riepilogoClienti:'Client summary',
   }
 };
 let LANG='it';
@@ -1024,25 +1050,35 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="modal-body">
       <input type="hidden" id="srv-cli-cliente">
       <input type="hidden" id="srv-cli-edit-idx" value="-1">
-      <div class="fg"><label class="fl">Tipo servizio</label><input type="text" class="fi" id="srv-cli-tipo" placeholder="es. Contabilità mensile, Consulenza fiscale..."></div>
       <div class="frow">
+        <div class="fg"><label class="fl">Tipo servizio</label><select class="fsel" id="srv-cli-tipo-sel"></select></div>
         <div class="fg"><label class="fl">Frequenza</label>
-          <select class="fsel" id="srv-cli-freq">
+          <select class="fsel" id="srv-cli-freq" onchange="onSrvFreqChange()">
             <option value="monthly">Mensile</option>
             <option value="annual">Annuale</option>
           </select>
         </div>
-        <div class="fg"><label class="fl">Valuta</label>
-          <select class="fsel" id="srv-cli-valuta">
-            <option>EUR</option><option>AED</option><option>USD</option><option>CHF</option>
-          </select>
-        </div>
       </div>
       <div class="frow">
-        <div class="fg"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-cli-prezzo" placeholder="0"></div>
-        <div class="fg"><label class="fl">Costo mio</label><input type="number" class="fi" id="srv-cli-costo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Prezzo cliente (€)</label><input type="number" class="fi" id="srv-cli-prezzo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Costo mio (€)</label><input type="number" class="fi" id="srv-cli-costo" placeholder="0"></div>
       </div>
-      <div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="srv-cli-note" placeholder="Facoltativo"></div>
+      <!-- Campi extra per annuale -->
+      <div id="srv-cli-annual-fields" style="display:none;">
+        <div class="frow">
+          <div class="fg"><label class="fl">Data scadenza</label><input type="date" class="fi" id="srv-cli-data"></div>
+          <div class="fg"><label class="fl">Reminder Telegram</label>
+            <select class="fsel" id="srv-cli-reminder">
+              <option value="7">7 giorni prima</option>
+              <option value="15" selected>15 giorni prima</option>
+              <option value="30">30 giorni prima</option>
+              <option value="7,15,30">7 + 15 + 30 giorni</option>
+            </select>
+          </div>
+        </div>
+        <div class="tg-hint">📅 Verrà aggiunto automaticamente in Scadenze come alert annuale.</div>
+      </div>
+      <div class="fg" style="margin-top:10px"><label class="fl">Note (facoltativo)</label><input type="text" class="fi" id="srv-cli-note" placeholder="Dettagli aggiuntivi..."></div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal('servizio-cliente')">Annulla</button><button class="btn btn-primary" onclick="saveServizioCliente()">Salva</button></div>
   </div>
@@ -1473,63 +1509,123 @@ function renderClienteDetail(nome){
   }
 }
 
+function onSrvFreqChange(){
+  const freq=document.getElementById('srv-cli-freq').value;
+  const annualFields=document.getElementById('srv-cli-annual-fields');
+  if(annualFields){
+    annualFields.style.display=freq==='annual'?'block':'none';
+    if(freq==='annual'&&!document.getElementById('srv-cli-data').value){
+      const d=new Date();d.setFullYear(d.getFullYear()+1);
+      document.getElementById('srv-cli-data').value=d.toISOString().split('T')[0];
+    }
+  }
+}
+
 function openAddServizioCliente(){
+  if(!APP.tipi||APP.tipi.length===0){
+    showToast('⚠ Aggiungi prima dei tipi scadenza nella sezione Clienti');return;
+  }
   document.getElementById('srv-cli-cliente').value=currentCliente||'';
   document.getElementById('srv-cli-edit-idx').value=-1;
-  document.getElementById('modal-srv-title').textContent='Nuovo servizio ricorrente';
-  ['srv-cli-tipo','srv-cli-prezzo','srv-cli-costo','srv-cli-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-srv-title').textContent=LANG==='en'?'New recurring service':'Nuovo servizio ricorrente';
+  // Popola select tipo dal listino tipi
+  const sel=document.getElementById('srv-cli-tipo-sel');
+  if(sel)sel.innerHTML=APP.tipi.map(t=>`<option>${t}</option>`).join('');
+  ['srv-cli-prezzo','srv-cli-costo','srv-cli-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('srv-cli-freq').value='monthly';
+  document.getElementById('srv-cli-annual-fields').style.display='none';
   openModal('servizio-cliente');
 }
 
 function editServizioCliente(nome,i){
   const all=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
   const s=all[i];if(!s)return;
-  // Trova indice globale
   const globalIdx=APP.servizi_ricorrenti.indexOf(s);
   document.getElementById('srv-cli-cliente').value=nome;
   document.getElementById('srv-cli-edit-idx').value=globalIdx;
-  document.getElementById('modal-srv-title').textContent='✎ Modifica servizio';
-  document.getElementById('srv-cli-tipo').value=s.tipo||'';
+  document.getElementById('modal-srv-title').textContent=LANG==='en'?'✎ Edit service':'✎ Modifica servizio';
+  const sel=document.getElementById('srv-cli-tipo-sel');
+  if(sel){
+    sel.innerHTML=APP.tipi.map(t=>`<option${t===s.tipo?' selected':''}>${t}</option>`).join('');
+  }
   document.getElementById('srv-cli-freq').value=s.freq||'monthly';
-  document.getElementById('srv-cli-valuta').value=s.valuta||'EUR';
   document.getElementById('srv-cli-prezzo').value=s.prezzo||0;
   document.getElementById('srv-cli-costo').value=s.costo||0;
   document.getElementById('srv-cli-note').value=s.note||'';
+  const annualFields=document.getElementById('srv-cli-annual-fields');
+  if(s.freq==='annual'){
+    annualFields.style.display='block';
+    document.getElementById('srv-cli-data').value=s.dataScadenza||'';
+    document.getElementById('srv-cli-reminder').value=s.reminder||'15';
+  }else{
+    annualFields.style.display='none';
+  }
   openModal('servizio-cliente');
 }
 
-function deleteServizioCliente(nome,i){
-  const all=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
-  const s=all[i];if(!s)return;
-  if(!confirm('Eliminare "'+s.tipo+'" per '+nome+'?'))return;
-  const globalIdx=APP.servizi_ricorrenti.indexOf(s);
-  APP.servizi_ricorrenti.splice(globalIdx,1);
-  saveLocalData();
-  renderClienteDetail(nome);
-  showToast('✓ Servizio eliminato');
-}
-
-function saveServizioCliente(){
-  const tipo=document.getElementById('srv-cli-tipo').value.trim();
-  if(!tipo){showToast('⚠ Inserisci il tipo di servizio');return;}
+async function saveServizioCliente(){
+  const tipoSel=document.getElementById('srv-cli-tipo-sel');
+  const tipo=tipoSel?tipoSel.value:'';
+  if(!tipo){showToast(LANG==='en'?'⚠ Select a service type':'⚠ Seleziona un tipo di servizio');return;}
   const cliente=document.getElementById('srv-cli-cliente').value;
   const editIdx=parseInt(document.getElementById('srv-cli-edit-idx').value);
-  const obj={
-    cliente,tipo,
-    freq:document.getElementById('srv-cli-freq').value,
-    valuta:document.getElementById('srv-cli-valuta').value,
-    prezzo:parseFloat(document.getElementById('srv-cli-prezzo').value)||0,
-    costo:parseFloat(document.getElementById('srv-cli-costo').value)||0,
-    note:document.getElementById('srv-cli-note').value||''
-  };
+  const freq=document.getElementById('srv-cli-freq').value;
+  const prezzo=parseFloat(document.getElementById('srv-cli-prezzo').value)||0;
+  const costo=parseFloat(document.getElementById('srv-cli-costo').value)||0;
+  const note=document.getElementById('srv-cli-note').value||'';
+  const dataScadenza=freq==='annual'?document.getElementById('srv-cli-data').value:'';
+  const reminder=freq==='annual'?document.getElementById('srv-cli-reminder').value:'15';
+
+  if(freq==='annual'&&!dataScadenza){
+    showToast(LANG==='en'?'⚠ Enter the deadline date':'⚠ Inserisci la data di scadenza');return;
+  }
+
+  const obj={cliente,tipo,freq,prezzo,costo,note,dataScadenza,reminder};
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
-  if(editIdx>=0){APP.servizi_ricorrenti[editIdx]=obj;}
-  else{APP.servizi_ricorrenti.push(obj);}
+
+  if(editIdx>=0){
+    const old=APP.servizi_ricorrenti[editIdx];
+    APP.servizi_ricorrenti[editIdx]=obj;
+    // Se era annuale e ha una scadenza collegata, aggiornala
+    if(freq==='annual'&&old.scadenzaId){
+      const s=APP.scadenze.find(x=>x.id===old.scadenzaId);
+      if(s){
+        s.tipo=tipo;s.data=dataScadenza;s.prezzo=prezzo;s.costo=costo;
+        s.nome=tipo;s.reminder=reminder;
+        const isUUID=typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
+        if(isUUID&&currentUser){
+          await supa.from('scadenze').update({tipo,nome:tipo,data:dataScadenza,prezzo,costo,reminder}).eq('id',s.id).eq('user_id',currentUser.id);
+        }
+      }
+      obj.scadenzaId=old.scadenzaId;
+      APP.servizi_ricorrenti[editIdx]=obj;
+    }
+  }else{
+    // Nuovo servizio
+    if(freq==='annual'){
+      // Crea automaticamente in Scadenze
+      const nuovaScad={
+        id:Date.now(),nome:tipo,entita:cliente,tipo,
+        data:dataScadenza,stato:'pending',
+        prezzo,costo,note,reminder,ricorrenza:'annual'
+      };
+      const saved=await saveScadenzaToDB(nuovaScad);
+      if(saved)nuovaScad.id=saved.id;
+      APP.scadenze.push(nuovaScad);
+      APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
+      obj.scadenzaId=nuovaScad.id;
+    }
+    APP.servizi_ricorrenti.push(obj);
+  }
+
   saveLocalData();
   closeModal('servizio-cliente');
   renderClienteDetail(cliente);
-  showToast('✓ Servizio salvato');
+  renderAll();
+  const msg=freq==='annual'
+    ?(LANG==='en'?'✓ Annual service saved + added to Deadlines':'✓ Servizio annuale salvato + aggiunto in Scadenze')
+    :(LANG==='en'?'✓ Monthly service saved':'✓ Servizio mensile salvato');
+  showToast(msg);
 }
 
 function openScadenzaForCliente(){
@@ -2108,7 +2204,35 @@ function openRicorrenteModal(tipo){
     :'♻ Servizio annuale — si rinnova automaticamente ogni anno quando lo completi';
 }
 
-/* ══ MODIFICA SCADENZA ══ */
+async function deleteServizioCliente(nome,i){
+  const all=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
+  const s=all[i];if(!s)return;
+  if(!confirm((LANG==='en'?'Delete "':'Eliminare "')+s.tipo+(LANG==='en'?'" for ':'" per ')+nome+'?'))return;
+  // Se annuale, elimina anche la scadenza collegata
+  if(s.freq==='annual'&&s.scadenzaId){
+    const isUUID=typeof s.scadenzaId==='string'&&s.scadenzaId.length===36&&s.scadenzaId.includes('-');
+    if(isUUID&&currentUser){
+      await supa.from('scadenze').delete().eq('id',s.scadenzaId).eq('user_id',currentUser.id);
+    }
+    APP.scadenze=APP.scadenze.filter(x=>x.id!==s.scadenzaId);
+  }
+  const globalIdx=APP.servizi_ricorrenti.indexOf(s);
+  APP.servizi_ricorrenti.splice(globalIdx,1);
+  saveLocalData();
+  renderClienteDetail(nome);
+  renderAll();
+  showToast(LANG==='en'?'✓ Service deleted':'✓ Servizio eliminato');
+}
+
+/* ══ NUMBER FORMATTING ══ */
+function fmtNum(n,decimals=0){
+  if(n===null||n===undefined||isNaN(n))return '—';
+  return Math.round(n).toLocaleString('it-IT');
+}
+function fmtEur(n){
+  if(!n&&n!==0)return '—';
+  return '€ '+fmtNum(n);
+}
 function editScadenza(id){
   const s=APP.scadenze.find(x=>x.id===id);
   if(!s)return;
