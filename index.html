@@ -2468,7 +2468,6 @@ function renderRicorrenti(){
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
   const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done');
   const scadMensili=APP.scadenze.filter(s=>s.ricorrenza==='monthly'&&s.stato!=='done');
-  // Aggiungi servizi ricorrenti da Clienti
   const srAnnuali=APP.servizi_ricorrenti.filter(s=>s.freq==='annual');
   const srMensili=APP.servizi_ricorrenti.filter(s=>s.freq==='monthly');
   const scadRicorrenti=[...scadAnnuali,...scadMensili];
@@ -2478,7 +2477,6 @@ function renderRicorrenti(){
   const floorSrAnnuali=srAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
   const floorSrMensili=srMensili.reduce((a,s)=>a+(s.prezzo||0),0)*12;
   const floor=floorAnnuali+floorMensili+floorSrAnnuali+floorSrMensili;
-  // Costi vivi annualizzati
   const costiAnnuali=scadAnnuali.reduce((a,s)=>a+(s.costo||0),0);
   const costiMensili=scadMensili.reduce((a,s)=>a+(s.costo||0),0)*12;
   const costiSrAnnuali=srAnnuali.reduce((a,s)=>a+(s.costo||0),0);
@@ -2494,55 +2492,154 @@ function renderRicorrenti(){
   el('rr-netto-sub','margine netto: '+margMed+'%');
   el('rr-margine',margMed+'%');
   el('rr-count-badge',scadRicorrenti.length);
-  const oggi=new Date();const fra30=new Date();fra30.setDate(oggi.getDate()+30);
+  const oggi=new Date();
+  const fra30=new Date();
+  fra30.setDate(oggi.getDate()+30);
   const prossime30=scadRicorrenti.filter(s=>{const d=new Date(s.data);return d>=oggi&&d<=fra30;});
   const val30=prossime30.reduce((a,s)=>a+(s.prezzo||0),0);
   el('rr-30','€ '+Math.round(val30).toLocaleString('it-IT'));
   el('rr-30-sub',prossime30.length+' rinnovi in scadenza');
+  // Revenue at Risk per entità
   const byEntita={};
-  scadAnnuali.forEach(s=>{if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};byEntita[s.entita].count++;byEntita[s.entita].valore+=s.prezzo||0;byEntita[s.entita].tipi.push('annuale');});
-  scadMensili.forEach(s=>{if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};byEntita[s.entita].count++;byEntita[s.entita].valore+=(s.prezzo||0)*12;byEntita[s.entita].tipi.push('mensile');});
+  scadAnnuali.forEach(s=>{
+    if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};
+    byEntita[s.entita].count++;
+    byEntita[s.entita].valore+=s.prezzo||0;
+    byEntita[s.entita].tipi.push('annuale');
+  });
+  scadMensili.forEach(s=>{
+    if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};
+    byEntita[s.entita].count++;
+    byEntita[s.entita].valore+=(s.prezzo||0)*12;
+    byEntita[s.entita].tipi.push('mensile');
+  });
+  APP.servizi_ricorrenti.forEach(s=>{
+    if(!byEntita[s.cliente])byEntita[s.cliente]={entita:s.cliente,count:0,valore:0,tipi:[]};
+    byEntita[s.cliente].count++;
+    byEntita[s.cliente].valore+=s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0);
+    byEntita[s.cliente].tipi.push(s.freq==='monthly'?'mensile':'annuale');
+  });
   const entitaList=Object.values(byEntita).sort((a,b)=>b.valore-a.valore);
   el('rr-clienti',entitaList.length);
-  // Revenue at Risk = cliente con % concentrazione più alta
   if(entitaList.length>0){
     const top=entitaList[0];
     const pctTop=floor>0?Math.round((top.valore/floor)*100):0;
     el('rr-risk',pctTop+'%');
     el('rr-risk-sub',top.entita+' (€'+Math.round(top.valore).toLocaleString('it-IT')+'/y)');
-  }else{el('rr-risk','0%');el('rr-risk-sub','nessun cliente ricorrente');}
+  }else{
+    el('rr-risk','0%');
+    el('rr-risk-sub','nessun cliente ricorrente');
+  }
+  // Tabella risk per entità
   const riskTb=document.getElementById('rr-risk-tbody');
-  if(riskTb){riskTb.innerHTML='';
-    if(entitaList.length===0){riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente</td></tr>';}
-    else{entitaList.forEach(e=>{
-      const pct=floor>0?Math.round((e.valore/floor)*100):0;
-      const rc=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--accent)';
-      const tipiU=[...new Set(e.tipi)].join(', ');
-      const riskLabel=pct>=40?'🔴 Critico':pct>=20?'🟡 Medio':'🟢 Basso';
-      riskTb.innerHTML+=`<tr>
-        <td><div style="font-weight:500">${e.entita}</div><div style="font-size:10px;color:var(--muted)">${tipiU}</div></td>
-        <td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/anno</div></td>
-        <td><div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${rc};border-radius:4px"></div>
-          </div>
-          <span style="font-family:'DM Mono',monospace;font-size:12px;color:${rc};font-weight:700;min-width:36px">${pct}%</span>
-        </div></td>
-        <td style="font-size:12px">${riskLabel}</td>
-      </tr>`;});}
+  if(riskTb){
+    riskTb.innerHTML='';
+    if(entitaList.length===0){
+      riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente</td></tr>';
+    }else{
+      entitaList.forEach(e=>{
+        const pct=floor>0?Math.round((e.valore/floor)*100):0;
+        const rc=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--accent)';
+        const tipiU=[...new Set(e.tipi)].join(', ');
+        const riskLabel=pct>=40?'🔴 Critico':pct>=20?'🟡 Medio':'🟢 Basso';
+        const row=document.createElement('tr');
+        row.innerHTML='<td><div style="font-weight:500">'+e.entita+'</div>'
+          +'<div style="font-size:10px;color:var(--muted)">'+tipiU+'</div></td>'
+          +'<td class="amt-in">€ '+Math.round(e.valore).toLocaleString('it-IT')
+          +'<div style="font-size:10px;color:var(--muted)">/anno</div></td>'
+          +'<td><div style="display:flex;align-items:center;gap:8px;">'
+          +'<div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden">'
+          +'<div style="width:'+pct+'%;height:100%;background:'+rc+';border-radius:4px"></div></div>'
+          +'<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:'+rc+';font-weight:700;min-width:36px">'+pct+'%</span>'
+          +'</div></td>'
+          +'<td style="font-size:12px">'+riskLabel+'</td>';
+        riskTb.appendChild(row);
+      });
+    }
+  }
+  // Proiezione prossimi 12 mesi
   const proj=document.getElementById('rr-projection');
-  if(proj){proj.innerHTML='';const mN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];const pro={};
-    for(let i=0;i<12;i++){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+i);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');pro[k]={label:mN[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};}
-    scadAnnuali.forEach(s=>{const d=new Date(s.data);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(pro[k]){pro[k].valore+=s.prezzo||0;pro[k].count++;}});
-    Object.keys(pro).forEach(k=>{scadMensili.forEach(s=>{pro[k].valore+=s.prezzo||0;pro[k].count++;});});
+  if(proj){
+    proj.innerHTML='';
+    const mN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const pro={};
+    for(let i=0;i<12;i++){
+      const d=new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth()+i);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      pro[k]={label:mN[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};
+    }
+    scadAnnuali.forEach(s=>{
+      const d=new Date(s.data);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      if(pro[k]){pro[k].valore+=s.prezzo||0;pro[k].count++;}
+    });
+    Object.keys(pro).forEach(k=>{
+      scadMensili.forEach(s=>{pro[k].valore+=s.prezzo||0;pro[k].count++;});
+      APP.servizi_ricorrenti.filter(s=>s.freq==='monthly').forEach(s=>{
+        pro[k].valore+=s.prezzo||0;pro[k].count++;
+      });
+    });
+    APP.servizi_ricorrenti.filter(s=>s.freq==='annual').forEach(s=>{
+      const d=new Date();
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      if(pro[k]){pro[k].valore+=s.prezzo||0;pro[k].count++;}
+    });
     const mx=Math.max(...Object.values(pro).map(p=>p.valore),1);
-    Object.entries(pro).forEach(([k,p])=>{const pct=Math.round((p.valore/mx)*100);proj.innerHTML+=`<div class="cf-month"><div class="cf-top"><span class="cf-lbl">${p.label}</span><span class="cf-val" style="color:${p.valore>0?'var(--accent)':'var(--muted)'}">${p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—'}</span></div>${p.valore>0?`<div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div><div class="cf-sub"><span style="color:var(--text2)">${p.count} servizi</span></div>`:''}</div>`;});}
+    Object.entries(pro).forEach(([k,p])=>{
+      const pct=Math.round((p.valore/mx)*100);
+      const div=document.createElement('div');
+      div.className='cf-month';
+      div.innerHTML='<div class="cf-top"><span class="cf-lbl">'+p.label+'</span>'
+        +'<span class="cf-val" style="color:'+(p.valore>0?'var(--accent)':'var(--muted)')+'">'+
+        (p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—')+'</span></div>'
+        +(p.valore>0?'<div class="cf-track"><div class="cf-fill" style="width:'+pct+'%;background:var(--accent)"></div></div>'
+        +'<div class="cf-sub"><span style="color:var(--text2)">'+p.count+' servizi</span></div>':'');
+      proj.appendChild(div);
+    });
+  }
+  // Dettaglio tutte le scadenze ricorrenti
   const detTb=document.getElementById('rr-detail-tbody');
-  if(detTb){detTb.innerHTML='';
-    if(scadRicorrenti.length===0){detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente attiva</td></tr>';}
-    else{scadRicorrenti.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(s=>{const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';const d=daysTo(s.data);const dc=d<=30?'var(--warn)':'var(--text2)';const fb=s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">mensile</span>':'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">annuale</span>';const va=s.ricorrenza==='monthly'?(s.prezzo||0)*12:(s.prezzo||0);detTb.innerHTML+=`<tr><td style="font-weight:500">${s.nome}${fb}</td><td><span class="etag">${s.entita}</span></td><td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td><td style="font-family:'DM Mono',monospace;font-size:11px;color:${dc}">${s.data?.split('-').reverse().join('/')||'—'}<div style="font-size:10px;color:var(--muted)">${d}gg</div></td><td class="amt-in">${s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT')+(s.ricorrenza==='monthly'?'/mese':'/anno'):'—'}</td><td class="amt-out">${s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—'}</td><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${mc}">${marg!==null?marg+'%':'—'}<div style="font-size:10px;color:var(--muted)">€${Math.round(va).toLocaleString('it-IT')}/y</div></td></tr>`;});}
+  if(detTb){
+    detTb.innerHTML='';
+    const combined=[...scadRicorrenti,...APP.servizi_ricorrenti.map(s=>({
+      nome:s.tipo,entita:s.cliente,tipo:s.tipo,
+      data:new Date().toISOString().split('T')[0],
+      prezzo:s.prezzo||0,costo:s.costo||0,
+      ricorrenza:s.freq,_isSr:true
+    }))];
+    if(combined.length===0){
+      detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente attiva</td></tr>';
+    }else{
+      combined.forEach(s=>{
+        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+        const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+        const d=s._isSr?0:daysTo(s.data);
+        const dc=d<=30?'var(--warn)':'var(--text2)';
+        const fb=s.ricorrenza==='monthly'
+          ?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">mensile</span>'
+          :'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">annuale</span>';
+        const va=s.ricorrenza==='monthly'?(s.prezzo||0)*12:(s.prezzo||0);
+        const dataStr=s._isSr?'—':s.data?.split('-').reverse().join('/')||'—';
+        const dStr=s._isSr?'—':d+'gg';
+        const row=document.createElement('tr');
+        row.innerHTML='<td style="font-weight:500">'+s.nome+fb+'</td>'
+          +'<td><span class="etag">'+s.entita+'</span></td>'
+          +'<td style="color:var(--text2);font-size:12px">'+ticoIcon(s.tipo)+' '+s.tipo+'</td>'
+          +'<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:'+dc+'">'+dataStr
+          +'<div style="font-size:10px;color:var(--muted)">'+dStr+'</div></td>'
+          +'<td class="amt-in">'+(s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT')+(s.ricorrenza==='monthly'?'/mese':'/anno'):'—')+'</td>'
+          +'<td class="amt-out">'+(s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—')+'</td>'
+          +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;color:'+mc+'">'
+          +(marg!==null?marg+'%':'—')
+          +'<div style="font-size:10px;color:var(--muted)">€'+Math.round(va).toLocaleString('it-IT')+'/y</div></td>';
+        detTb.appendChild(row);
+      });
+    }
   }
 }
+
 /* ══ MOVIMENTI UAE ══ */
 async function loadMovimentiFromDB(){
   if(!currentUser)return;
