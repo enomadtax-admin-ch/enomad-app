@@ -273,4 +273,5 @@ jobs:
           git config --local user.name "Finance Sync Bot"
           git add finance-data.json
           git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — dati puliti"
+          git pull --rebase origin main
           git push
