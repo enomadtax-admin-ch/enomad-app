@@ -121,15 +121,25 @@ function setLang(l){
   refreshAllText();
 }
 function refreshAllText(){
-  // Aggiorna tutti gli elementi con data-t
   document.querySelectorAll('[data-t]').forEach(el=>{
     const k=el.getAttribute('data-t');
     el.textContent=t(k);
   });
-  // Aggiorna placeholder
   document.querySelectorAll('[data-tp]').forEach(el=>{
     el.placeholder=t(el.getAttribute('data-tp'));
   });
+  // Update dynamic text elements
+  const scadTitle=document.getElementById('scad-area-title');
+  if(scadTitle)scadTitle.textContent=LANG==='en'?'Alert Area — Read only':'Area Alert — Solo lettura';
+  const scadInfo=document.getElementById('scad-info-txt');
+  if(scadInfo)scadInfo.textContent=LANG==='en'
+    ?'Deadlines are created automatically when you add an annual service to a client. Here you can complete, edit or delete them.'
+    :'Le scadenze vengono create automaticamente quando aggiungi un servizio annuale nella scheda cliente. Qui puoi completarle, modificarle o eliminarle.';
+  const backBtn=document.getElementById('btn-back-clienti');
+  if(backBtn)backBtn.textContent=LANG==='en'?'← All clients':'← Tutti i clienti';
+  // Re-render if in clienti view
+  const active=document.querySelector('.view.active');
+  if(active?.id==='view-entita'){renderClienti();if(currentCliente)renderClienteDetail(currentCliente);}
 }
 </script>
 <style>
@@ -415,7 +425,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="topbar-right">
       <button class="btn btn-info" onclick="exportJSON()">⬇ <span data-t="exportJson">Export JSON</span></button>
       <button class="btn" onclick="syncZoho()">↻ Sync Zoho</button>
-      <button class="btn btn-primary" onclick="openModal('scadenza')">+ <span data-t="scadenze">Scadenza</span></button>
       <div class="user-badge" onclick="doLogout()" title="Sign out">
         <span id="user-name">—</span><span style="font-size:10px;opacity:.6">↩</span>
       </div>
@@ -512,6 +521,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
     <!-- SCADENZE -->
     <div class="view" id="view-scadenze">
+      <div class="cfg-hint" style="margin-bottom:14px;border-left:3px solid var(--info);padding-left:13px;">
+        <strong style="color:var(--info)">📅 <span id="scad-area-title">Area Alert — Solo lettura</span></strong><br>
+        <span id="scad-info-txt">Le scadenze vengono create automaticamente quando aggiungi un servizio annuale nella scheda cliente. Qui puoi completarle, modificarle o eliminarle.</span>
+      </div>
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title" data-t="scadenze">Scadenze</div>
@@ -588,16 +601,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             </tr></thead>
             <tbody id="cd-servizi-tbody"></tbody></table>
           </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">📋 Scadenze compliance</div>
-            <button class="btn btn-primary" onclick="openScadenzaForCliente()" style="font-size:11px">+ Scadenza</button>
-          </div>
-          <table class="scad-table"><thead><tr>
-            <th>Tipo</th><th>Data</th><th>Giorni</th><th>Ricorrenza</th><th>Prezzo</th><th>Stato</th><th></th>
-          </tr></thead>
-          <tbody id="cd-scadenze-tbody"></tbody></table>
         </div>
       </div>
     </div>
@@ -1469,9 +1472,9 @@ function renderClienteDetail(nome){
         const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
         srTb.innerHTML+=`<tr>
           <td style="font-weight:500">${s.tipo}</td>
-          <td><span class="badge ${s.freq==='monthly'?'bw':'bi'}" style="font-size:10px">${s.freq==='monthly'?'mensile':'annuale'}</span></td>
-          <td class="amt-in">€${(s.prezzo||0).toLocaleString('it-IT')}</td>
-          <td class="amt-out">${s.costo>0?'€'+(s.costo||0).toLocaleString('it-IT'):'—'}</td>
+          <td><span class="badge ${s.freq==='monthly'?'bw':'bi'}" style="font-size:10px">${s.freq==='monthly'?t('mensile'):t('annuale')}</span></td>
+          <td class="amt-in">€ ${(s.prezzo||0).toLocaleString('it-IT')}</td>
+          <td class="amt-out">${s.costo>0?'€ '+(s.costo||0).toLocaleString('it-IT'):'—'}</td>
           <td style="white-space:nowrap">
             <button onclick="editServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px">✎</button>
             <button onclick="deleteServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
@@ -1624,10 +1627,18 @@ async function saveServizioCliente(){
 
   saveLocalData();
   closeModal('servizio-cliente');
+  // Ricarica scadenze dal DB per assicurarsi che siano aggiornate
+  if(freq==='annual'){
+    await loadScadenzeFromDB();
+  }
   renderClienteDetail(cliente);
-  renderAll();
+  renderTable('all','sb1');
+  renderTable('all','sb2');
+  renderTimeline();
+  updateKPIs();
+  renderClienti();
   const msg=freq==='annual'
-    ?(LANG==='en'?'✓ Annual service saved + added to Deadlines':'✓ Servizio annuale salvato + aggiunto in Scadenze')
+    ?(LANG==='en'?'✓ Annual service saved + alert added to Deadlines':'✓ Servizio annuale salvato + alert aggiunto in Scadenze')
     :(LANG==='en'?'✓ Monthly service saved':'✓ Servizio mensile salvato');
   showToast(msg);
 }
@@ -2958,7 +2969,7 @@ async function checkMFAStatus(){
 }
 
 /* ══ NAVIGATION ══ */
-function showView(v,navEl){
+async function showView(v,navEl){
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
   document.getElementById('view-'+v)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
@@ -2970,21 +2981,25 @@ function showView(v,navEl){
   const fixedTitles=['AI Assistant','Movimenti UAE','Ricavi ricorrenti','Listino prezzi','Clienti'];
   document.getElementById('topbar-title').textContent=(fixedTitles.includes(titleKey)?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
+  // Ricarica dati freschi da Supabase ad ogni cambio sezione
+  if(currentUser){
+    await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB()]);
+  }
   if(v==='finance'){renderFinance();}
   if(v==='ricorrenti'){renderRicorrenti();}
   if(v==='listino'){renderListino();}
   if(v==='ai'){updateAIContextSummary();}
   if(v==='movimenti'){
     renderMovimenti();
-    // Aggiorna select entità nel modal movimento
     const sel=document.getElementById('mov-entita');
     if(sel)sel.innerHTML=APP.entita.map(e=>`<option>${e.nome}</option>`).join('');
     const d=new Date();document.getElementById('mov-data').value=d.toISOString().split('T')[0];
   }
-  if(v==='entita'){renderEntita();renderTipi();}
+  if(v==='entita'){renderClienti();renderTipi();}
   if(v==='dati')updateDataStats();
   if(v==='settings'){checkMFAStatus();const e=document.getElementById('settings-email');if(e&&currentUser)e.textContent=currentUser.email;}
   renderTable('all','sb1');renderTable('all','sb2');renderTimeline();updateKPIs();
+  renderClienti();
 }
 
 function renderAll(){
