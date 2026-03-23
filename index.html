@@ -643,24 +643,47 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <!-- KPI Strip -->
       <div class="fin-hero" style="margin-bottom:16px;">
         <div class="fin-kpi fin-kpi-a">
-          <div class="fin-kpi-lbl">Floor annuale garantito</div>
+          <div class="fin-kpi-lbl">Floor lordo annuo</div>
           <div class="fin-kpi-val" style="color:var(--accent)" id="rr-floor">—</div>
-          <div class="fin-kpi-trend" id="rr-floor-sub">scadenze annuali attive</div>
+          <div class="fin-kpi-trend" id="rr-floor-sub">ricavi ricorrenti totali</div>
         </div>
         <div class="fin-kpi fin-kpi-d">
-          <div class="fin-kpi-lbl">Revenue at Risk</div>
-          <div class="fin-kpi-val" style="color:var(--danger)" id="rr-risk">—</div>
-          <div class="fin-kpi-trend" id="rr-risk-sub">se perdi il cliente più grande</div>
+          <div class="fin-kpi-lbl">Costi vivi annui</div>
+          <div class="fin-kpi-val" style="color:var(--danger)" id="rr-costi">—</div>
+          <div class="fin-kpi-trend" id="rr-costi-sub">costi operativi ricorrenti</div>
         </div>
         <div class="fin-kpi fin-kpi-i">
-          <div class="fin-kpi-lbl">Prossimi 30gg</div>
-          <div class="fin-kpi-val" style="color:var(--info)" id="rr-30">—</div>
-          <div class="fin-kpi-trend" id="rr-30-sub">rinnovi in scadenza</div>
+          <div class="fin-kpi-lbl">Floor netto annuo</div>
+          <div class="fin-kpi-val" style="color:var(--info)" id="rr-netto">—</div>
+          <div class="fin-kpi-trend" id="rr-netto-sub">lordo - costi vivi</div>
         </div>
         <div class="fin-kpi fin-kpi-w">
-          <div class="fin-kpi-lbl">Clienti ricorrenti</div>
-          <div class="fin-kpi-val" style="color:var(--warn)" id="rr-clienti">—</div>
-          <div class="fin-kpi-trend">entità con rinnovi attivi</div>
+          <div class="fin-kpi-lbl">Revenue at Risk</div>
+          <div class="fin-kpi-val" style="color:var(--warn)" id="rr-risk">—</div>
+          <div class="fin-kpi-trend" id="rr-risk-sub">se perdi il cliente più grande</div>
+        </div>
+      </div>
+      <!-- Seconda riga KPI -->
+      <div class="kpi-row" style="margin-bottom:16px;">
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Prossimi 30gg</span><span class="kpi-card-ico">📅</span></div>
+          <div class="kpi-card-val" style="color:var(--accent)" id="rr-30">—</div>
+          <div class="kpi-card-sub" id="rr-30-sub">rinnovi in scadenza</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Margine medio %</span><span class="kpi-card-ico">📊</span></div>
+          <div class="kpi-card-val" style="color:var(--accent)" id="rr-margine">—</div>
+          <div class="kpi-card-sub">su tutti i servizi ricorrenti</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Clienti ricorrenti</span><span class="kpi-card-ico">👥</span></div>
+          <div class="kpi-card-val" id="rr-clienti">—</div>
+          <div class="kpi-card-sub">entità con rinnovi attivi</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top"><span class="kpi-card-lbl">Servizi attivi</span><span class="kpi-card-ico">♻</span></div>
+          <div class="kpi-card-val" id="rr-count-badge">—</div>
+          <div class="kpi-card-sub">annuali + mensili</div>
         </div>
       </div>
 
@@ -854,7 +877,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="fg"><label class="fl">Ricorrenza</label>
           <select class="fsel" id="f-ricorrenza">
             <option value="once">Una tantum</option>
-            <option value="annual">Annuale — si rinnova automaticamente</option>
+            <option value="monthly">Mensile — si rinnova ogni mese</option>
+            <option value="annual">Annuale — si rinnova ogni anno</option>
           </select>
         </div>
       </div>
@@ -984,7 +1008,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="fg"><label class="fl">Ricorrenza</label>
           <select class="fsel" id="edit-ricorrenza">
             <option value="once">Una tantum</option>
-            <option value="annual">Annuale — si rinnova automaticamente</option>
+            <option value="monthly">Mensile — si rinnova ogni mese</option>
+            <option value="annual">Annuale — si rinnova ogni anno</option>
           </select>
         </div>
       </div>
@@ -1423,24 +1448,26 @@ async function markDone(id){
   s.stato='done';
   saveLocalData();
   await updateScadenzaStatoDB(id,'done');
-  // Se ricorrente annuale — crea automaticamente la prossima
-  if(s.ricorrenza==='annual'){
+  // Se ricorrente — crea automaticamente la prossima
+  if(s.ricorrenza==='annual'||s.ricorrenza==='monthly'){
     const dataAttuale=new Date(s.data);
-    dataAttuale.setFullYear(dataAttuale.getFullYear()+1);
+    if(s.ricorrenza==='annual') dataAttuale.setFullYear(dataAttuale.getFullYear()+1);
+    if(s.ricorrenza==='monthly') dataAttuale.setMonth(dataAttuale.getMonth()+1);
     const nuovaData=dataAttuale.toISOString().split('T')[0];
     const nuova={
       id:Date.now(),nome:s.nome,entita:s.entita,tipo:s.tipo,
       data:nuovaData,stato:'pending',
       costo:s.costo||0,prezzo:s.prezzo||0,
       note:s.note||'',reminder:s.reminder||'15',
-      ricorrenza:'annual'
+      ricorrenza:s.ricorrenza
     };
     const saved=await saveScadenzaToDB(nuova);
     if(saved)nuova.id=saved.id;
     APP.scadenze.push(nuova);
     APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
     saveLocalData();
-    showToast('✓ Completata + prossima scadenza annuale creata per '+nuovaData.split('-').reverse().join('/'));
+    const freq=s.ricorrenza==='annual'?'annuale':'mensile';
+    showToast('✓ Completata + prossima scadenza '+freq+' creata per '+nuovaData.split('-').reverse().join('/'));
   }else{
     showToast('✓ Completata: '+s.nome);
   }
@@ -1918,14 +1945,39 @@ function addServizio(){
 function editServizio(i){
   const s=APP.servizi[i];
   if(!s)return;
-  const nuovoNome=prompt('Nome servizio:',s.nome);
-  if(!nuovoNome)return;
-  const nuovoPrezzo=prompt('Prezzo cliente ('+s.valuta+'):',s.prezzo);
-  const nuovoCosto=prompt('Costo mio ('+s.valuta+'):',s.costo||0);
-  s.nome=nuovoNome.trim();
-  s.prezzo=parseFloat(nuovoPrezzo)||0;
-  s.costo=parseFloat(nuovoCosto)||0;
+  // Riusa il modal add-servizio pre-compilato
+  document.getElementById('srv-nome').value=s.nome||'';
+  document.getElementById('srv-categoria').value=s.categoria||'Compliance';
+  document.getElementById('srv-valuta').value=s.valuta||'EUR';
+  document.getElementById('srv-prezzo').value=s.prezzo||0;
+  document.getElementById('srv-costo').value=s.costo||0;
+  document.getElementById('srv-note').value=s.note||'';
+  // Cambia titolo e bottone salva
+  document.querySelector('#modal-add-servizio .modal-title').textContent='✎ Modifica servizio';
+  const saveBtn=document.querySelector('#modal-add-servizio .btn-primary');
+  saveBtn.textContent='✓ Salva modifiche';
+  saveBtn.onclick=()=>saveEditServizio(i);
+  openModal('add-servizio');
+}
+
+function saveEditServizio(i){
+  const s=APP.servizi[i];
+  if(!s)return;
+  const nome=document.getElementById('srv-nome').value.trim();
+  if(!nome){showToast('⚠ Inserisci il nome');return;}
+  s.nome=nome;
+  s.categoria=document.getElementById('srv-categoria').value;
+  s.valuta=document.getElementById('srv-valuta').value;
+  s.prezzo=parseFloat(document.getElementById('srv-prezzo').value)||0;
+  s.costo=parseFloat(document.getElementById('srv-costo').value)||0;
+  s.note=document.getElementById('srv-note').value||'';
   saveLocalData();
+  closeModal('add-servizio');
+  // Ripristina modal in modalità aggiunta
+  document.querySelector('#modal-add-servizio .modal-title').textContent='Nuovo servizio';
+  const saveBtn=document.querySelector('#modal-add-servizio .btn-primary');
+  saveBtn.textContent='Salva';
+  saveBtn.onclick=()=>addServizio();
   renderListino();
   showToast('✓ Servizio aggiornato');
 }
@@ -2127,133 +2179,55 @@ function clearAIChat(){
 /* ══ RICAVI RICORRENTI ══ */
 function renderRicorrenti(){
   const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done');
+  const scadMensili=APP.scadenze.filter(s=>s.ricorrenza==='monthly'&&s.stato!=='done');
+  const scadRicorrenti=[...scadAnnuali,...scadMensili];
   const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-
-  // Floor annuale
-  const floor=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
+  const floorAnnuali=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
+  const floorMensili=scadMensili.reduce((a,s)=>a+(s.prezzo||0),0)*12;
+  const floor=floorAnnuali+floorMensili;
+  // Costi vivi annualizzati
+  const costiAnnuali=scadAnnuali.reduce((a,s)=>a+(s.costo||0),0);
+  const costiMensili=scadMensili.reduce((a,s)=>a+(s.costo||0),0)*12;
+  const costiTot=costiAnnuali+costiMensili;
+  const netto=floor-costiTot;
+  const margMed=floor>0?Math.round((netto/floor)*100):0;
   el('rr-floor','€ '+Math.round(floor).toLocaleString('it-IT'));
-  el('rr-floor-sub',scadAnnuali.length+' scadenze annuali attive');
-  el('rr-count-badge',scadAnnuali.length+' attive');
-
-  // Prossimi 30gg
-  const oggi=new Date();
-  const fra30=new Date();fra30.setDate(oggi.getDate()+30);
-  const prossime30=scadAnnuali.filter(s=>{const d=new Date(s.data);return d>=oggi&&d<=fra30;});
+  el('rr-floor-sub',scadAnnuali.length+' annuali + '+scadMensili.length+' mensili (×12)');
+  el('rr-costi','€ '+Math.round(costiTot).toLocaleString('it-IT'));
+  el('rr-costi-sub','margine lordo: '+margMed+'%');
+  el('rr-netto','€ '+Math.round(netto).toLocaleString('it-IT'));
+  el('rr-netto-sub','margine netto: '+margMed+'%');
+  el('rr-margine',margMed+'%');
+  el('rr-count-badge',scadRicorrenti.length);
+  const oggi=new Date();const fra30=new Date();fra30.setDate(oggi.getDate()+30);
+  const prossime30=scadRicorrenti.filter(s=>{const d=new Date(s.data);return d>=oggi&&d<=fra30;});
   const val30=prossime30.reduce((a,s)=>a+(s.prezzo||0),0);
   el('rr-30','€ '+Math.round(val30).toLocaleString('it-IT'));
   el('rr-30-sub',prossime30.length+' rinnovi in scadenza');
-
-  // Revenue at Risk per entità
   const byEntita={};
-  scadAnnuali.forEach(s=>{
-    if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0};
-    byEntita[s.entita].count++;
-    byEntita[s.entita].valore+=s.prezzo||0;
-  });
+  scadAnnuali.forEach(s=>{if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};byEntita[s.entita].count++;byEntita[s.entita].valore+=s.prezzo||0;byEntita[s.entita].tipi.push('annuale');});
+  scadMensili.forEach(s=>{if(!byEntita[s.entita])byEntita[s.entita]={entita:s.entita,count:0,valore:0,tipi:[]};byEntita[s.entita].count++;byEntita[s.entita].valore+=(s.prezzo||0)*12;byEntita[s.entita].tipi.push('mensile');});
   const entitaList=Object.values(byEntita).sort((a,b)=>b.valore-a.valore);
   el('rr-clienti',entitaList.length);
-
-  // Biggest risk
-  if(entitaList.length>0){
-    el('rr-risk','€ '+Math.round(entitaList[0].valore).toLocaleString('it-IT'));
-    el('rr-risk-sub','se perdi '+entitaList[0].entita);
-  }else{
-    el('rr-risk','€ 0');
-    el('rr-risk-sub','nessun cliente ricorrente');
-  }
-
-  // Tabella risk per entità
+  if(entitaList.length>0){el('rr-risk','€ '+Math.round(entitaList[0].valore).toLocaleString('it-IT'));el('rr-risk-sub','se perdi '+entitaList[0].entita);}
+  else{el('rr-risk','€ 0');el('rr-risk-sub','nessun cliente ricorrente');}
   const riskTb=document.getElementById('rr-risk-tbody');
-  if(riskTb){
-    riskTb.innerHTML='';
-    if(entitaList.length===0){
-      riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza annuale — aggiungile con ricorrenza "Annuale"</td></tr>';
-    }else{
-      entitaList.forEach(e=>{
-        const pct=floor>0?Math.round((e.valore/floor)*100):0;
-        const riskColor=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--text2)';
-        riskTb.innerHTML+=`<tr>
-          <td style="font-weight:500">${e.entita}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:12px">${e.count}</td>
-          <td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}</td>
-          <td><div style="display:flex;align-items:center;gap:8px;">
-            <div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:${riskColor};border-radius:3px"></div>
-            </div>
-            <span style="font-family:'DM Mono',monospace;font-size:11px;color:${riskColor};min-width:32px">${pct}%</span>
-          </div></td>
-        </tr>`;
-      });
-    }
-  }
-
-  // Proiezione prossimi 12 mesi
+  if(riskTb){riskTb.innerHTML='';
+    if(entitaList.length===0){riskTb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente</td></tr>';}
+    else{entitaList.forEach(e=>{const pct=floor>0?Math.round((e.valore/floor)*100):0;const rc=pct>=40?'var(--danger)':pct>=20?'var(--warn)':'var(--text2)';const tipiU=[...new Set(e.tipi)].join(', ');riskTb.innerHTML+=`<tr><td><div style="font-weight:500">${e.entita}</div><div style="font-size:10px;color:var(--muted)">${tipiU}</div></td><td style="font-family:'DM Mono',monospace;font-size:12px">${e.count}</td><td class="amt-in">€ ${Math.round(e.valore).toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/anno</div></td><td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${rc};border-radius:3px"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:${rc};min-width:32px">${pct}%</span></div></td></tr>`;});}}
   const proj=document.getElementById('rr-projection');
-  if(proj){
-    proj.innerHTML='';
-    const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-    const proiezione={};
-    // Calcola per ogni mese nei prossimi 12
-    for(let i=0;i<12;i++){
-      const d=new Date();
-      d.setDate(1);
-      d.setMonth(d.getMonth()+i);
-      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      proiezione[key]={label:mesiNomi[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};
-    }
-    scadAnnuali.forEach(s=>{
-      const d=new Date(s.data);
-      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      if(proiezione[key]){
-        proiezione[key].valore+=s.prezzo||0;
-        proiezione[key].count++;
-      }
-    });
-    const maxVal=Math.max(...Object.values(proiezione).map(p=>p.valore),1);
-    Object.entries(proiezione).forEach(([k,p])=>{
-      const pct=Math.round((p.valore/maxVal)*100);
-      proj.innerHTML+=`<div class="cf-month">
-        <div class="cf-top">
-          <span class="cf-lbl">${p.label}</span>
-          <span class="cf-val" style="color:${p.valore>0?'var(--accent)':'var(--muted)'}">
-            ${p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—'}
-          </span>
-        </div>
-        ${p.valore>0?`<div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-        <div class="cf-sub"><span style="color:var(--text2)">${p.count} rinnov${p.count===1?'o':'i'}</span></div>`:''}
-      </div>`;
-    });
-  }
-
-  // Dettaglio scadenze ricorrenti
+  if(proj){proj.innerHTML='';const mN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];const pro={};
+    for(let i=0;i<12;i++){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+i);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');pro[k]={label:mN[d.getMonth()]+' '+d.getFullYear(),valore:0,count:0};}
+    scadAnnuali.forEach(s=>{const d=new Date(s.data);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(pro[k]){pro[k].valore+=s.prezzo||0;pro[k].count++;}});
+    Object.keys(pro).forEach(k=>{scadMensili.forEach(s=>{pro[k].valore+=s.prezzo||0;pro[k].count++;});});
+    const mx=Math.max(...Object.values(pro).map(p=>p.valore),1);
+    Object.entries(pro).forEach(([k,p])=>{const pct=Math.round((p.valore/mx)*100);proj.innerHTML+=`<div class="cf-month"><div class="cf-top"><span class="cf-lbl">${p.label}</span><span class="cf-val" style="color:${p.valore>0?'var(--accent)':'var(--muted)'}">${p.valore>0?'€ '+Math.round(p.valore).toLocaleString('it-IT'):'—'}</span></div>${p.valore>0?`<div class="cf-track"><div class="cf-fill" style="width:${pct}%;background:var(--accent)"></div></div><div class="cf-sub"><span style="color:var(--text2)">${p.count} servizi</span></div>`:''}</div>`;});}
   const detTb=document.getElementById('rr-detail-tbody');
-  if(detTb){
-    detTb.innerHTML='';
-    if(scadAnnuali.length===0){
-      detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza annuale attiva</td></tr>';
-    }else{
-      scadAnnuali.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(s=>{
-        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
-        const margColor=marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
-        const d=daysTo(s.data);
-        const dColor=d<=30?'var(--warn)':'var(--text2)';
-        detTb.innerHTML+=`<tr>
-          <td style="font-weight:500">${s.nome}</td>
-          <td><span class="etag">${s.entita}</span></td>
-          <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:11px;color:${dColor}">
-            ${s.data?.split('-').reverse().join('/')||'—'}
-            <div style="font-size:10px;color:var(--muted)">${d}gg</div>
-          </td>
-          <td class="amt-in">${s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT'):'—'}</td>
-          <td class="amt-out">${s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—'}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${margColor}">${marg!==null?marg+'%':'—'}</td>
-        </tr>`;
-      });
-    }
+  if(detTb){detTb.innerHTML='';
+    if(scadRicorrenti.length===0){detTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nessuna scadenza ricorrente attiva</td></tr>';}
+    else{scadRicorrenti.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(s=>{const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';const d=daysTo(s.data);const dc=d<=30?'var(--warn)':'var(--text2)';const fb=s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">mensile</span>':'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">annuale</span>';const va=s.ricorrenza==='monthly'?(s.prezzo||0)*12:(s.prezzo||0);detTb.innerHTML+=`<tr><td style="font-weight:500">${s.nome}${fb}</td><td><span class="etag">${s.entita}</span></td><td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}</td><td style="font-family:'DM Mono',monospace;font-size:11px;color:${dc}">${s.data?.split('-').reverse().join('/')||'—'}<div style="font-size:10px;color:var(--muted)">${d}gg</div></td><td class="amt-in">${s.prezzo>0?'€ '+s.prezzo.toLocaleString('it-IT')+(s.ricorrenza==='monthly'?'/mese':'/anno'):'—'}</td><td class="amt-out">${s.costo>0?'€ '+s.costo.toLocaleString('it-IT'):'—'}</td><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${mc}">${marg!==null?marg+'%':'—'}<div style="font-size:10px;color:var(--muted)">€${Math.round(va).toLocaleString('it-IT')}/y</div></td></tr>`;});}
   }
 }
-
 /* ══ MOVIMENTI UAE ══ */
 async function loadMovimentiFromDB(){
   if(!currentUser)return;
