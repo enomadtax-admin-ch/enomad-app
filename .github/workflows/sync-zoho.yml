@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '*/30 * * * *'  # Ogni 30 minuti
   workflow_dispatch:       # Puoi lanciarlo manualmente quando vuoi
+  push:
+    branches:
+      - main               # Si attiva ad ogni push su main
 
 jobs:
   sync:
