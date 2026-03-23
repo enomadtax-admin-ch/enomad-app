@@ -352,7 +352,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="nav-sec" data-t="generale">Generale</div>
     <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span><span data-t="dashboard">Dashboard</span></div>
     <div class="nav-item" onclick="showView('scadenze',this)"><span class="nav-icon">◷</span><span data-t="scadenze">Scadenze</span></div>
-    <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span data-t="entita">Entità</span></div>
+    <div class="nav-item" onclick="showView('entita',this)"><span class="nav-icon">◻</span><span>Clienti</span></div>
     <div class="nav-item" onclick="showView('ai',this)"><span class="nav-icon">✦</span><span>AI Assistant</span></div>
     <div class="nav-sec" data-t="finanziario">Finanziario</div>
     <div class="nav-item" onclick="showView('finance',this)"><span class="nav-icon">◑</span><span data-t="finance">Finance</span></div>
@@ -502,22 +502,76 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
     </div>
 
-    <!-- ENTITÀ -->
+    <!-- CLIENTI -->
     <div class="view" id="view-entita">
-      <div class="grid-2eq">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div id="clienti-header-main">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">👥 Clienti</div>
+          <div style="font-size:11px;color:var(--muted)" id="clienti-count-sub">—</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="showClienteDetail(null)" id="btn-back-clienti" style="display:none">← Tutti i clienti</button>
+          <button class="btn btn-primary" onclick="openModal('add-entita')" id="btn-add-cliente">+ Cliente</button>
+        </div>
+      </div>
+
+      <!-- Lista clienti -->
+      <div id="clienti-list-view">
         <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title" data-t="gestioneEntita">Gestione entità</div>
-            <button class="btn btn-primary" onclick="openModal('add-entita')" data-t="aggiungiEntita">+ Entità</button>
+          <table class="fin-table"><thead><tr>
+            <th>Cliente</th><th>Paese</th><th>Scadenze</th><th>Servizi ricorrenti</th><th>Valore annuo</th><th></th>
+          </tr></thead>
+          <tbody id="clienti-tbody"></tbody></table>
+        </div>
+        <!-- Tipi scadenza -->
+        <div class="grid-2eq" style="margin-top:16px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Tipi scadenza</div>
+              <button class="btn btn-primary" onclick="openModal('add-tipo')" style="font-size:11px">+ Tipo</button>
+            </div>
+            <div class="tag-list" id="tipi-list"></div>
           </div>
-          <div class="tag-list" id="entita-list"></div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">📊 Riepilogo clienti</div></div>
+            <div style="padding:16px 18px;" id="clienti-summary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dettaglio singolo cliente -->
+      <div id="cliente-detail-view" style="display:none;">
+        <div class="grid-2eq" style="margin-bottom:16px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title" id="cd-nome">—</div>
+              <span class="badge bo" id="cd-paese">—</span>
+            </div>
+            <div style="padding:16px 18px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="cd-kpi"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">⚙ Servizi ricorrenti</div>
+              <button class="btn btn-primary" onclick="openAddServizioCliente()" style="font-size:11px">+ Servizio</button>
+            </div>
+            <table class="fin-table"><thead><tr>
+              <th>Servizio</th><th>Freq.</th><th>Prezzo</th><th>Costo</th><th></th>
+            </tr></thead>
+            <tbody id="cd-servizi-tbody"></tbody></table>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title" data-t="gestioneTipi">Gestione tipi scadenza</div>
-            <button class="btn btn-primary" onclick="openModal('add-tipo')" data-t="aggiungiTipo">+ Tipo</button>
+            <div class="panel-title">📋 Scadenze compliance</div>
+            <button class="btn btn-primary" onclick="openScadenzaForCliente()" style="font-size:11px">+ Scadenza</button>
           </div>
-          <div class="tag-list" id="tipi-list"></div>
+          <table class="scad-table"><thead><tr>
+            <th>Tipo</th><th>Data</th><th>Giorni</th><th>Ricorrenza</th><th>Prezzo</th><th>Stato</th><th></th>
+          </tr></thead>
+          <tbody id="cd-scadenze-tbody"></tbody></table>
         </div>
       </div>
     </div>
@@ -717,7 +771,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title">♻ Scadenze ricorrenti attive</div>
-          <span class="badge bi" id="rr-count-badge">0 attive</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn" onclick="openRicorrenteModal('monthly')" style="font-size:11px">+ Mensile</button>
+            <button class="btn btn-primary" onclick="openRicorrenteModal('annual')" style="font-size:11px">+ Annuale</button>
+          </div>
         </div>
         <table class="fin-table"><thead><tr>
           <th>Scadenza</th>
@@ -960,6 +1017,37 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
 </div>
 
+<!-- MODAL SERVIZIO CLIENTE -->
+<div class="modal-overlay" id="modal-servizio-cliente">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="modal-srv-title">Nuovo servizio ricorrente</div><button class="modal-close" onclick="closeModal('servizio-cliente')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="srv-cli-cliente">
+      <input type="hidden" id="srv-cli-edit-idx" value="-1">
+      <div class="fg"><label class="fl">Tipo servizio</label><input type="text" class="fi" id="srv-cli-tipo" placeholder="es. Contabilità mensile, Consulenza fiscale..."></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Frequenza</label>
+          <select class="fsel" id="srv-cli-freq">
+            <option value="monthly">Mensile</option>
+            <option value="annual">Annuale</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Valuta</label>
+          <select class="fsel" id="srv-cli-valuta">
+            <option>EUR</option><option>AED</option><option>USD</option><option>CHF</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-cli-prezzo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Costo mio</label><input type="number" class="fi" id="srv-cli-costo" placeholder="0"></div>
+      </div>
+      <div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="srv-cli-note" placeholder="Facoltativo"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('servizio-cliente')">Annulla</button><button class="btn btn-primary" onclick="saveServizioCliente()">Salva</button></div>
+  </div>
+</div>
+
 <!-- MODAL AGGIUNGI SERVIZIO -->
 <div class="modal-overlay" id="modal-add-servizio">
   <div class="modal">
@@ -1149,6 +1237,7 @@ let APP={
   entita:[],
   tipi:[],
   servizi:[],
+  servizi_ricorrenti:[],
   meta:{lastSaved:null,lastExport:null,lastZohoSync:null}
 };
 let ZOHO=null;
@@ -1239,33 +1328,219 @@ async function updateScadenzaStatoDB(id,stato){
 }
 
 /* ══ ENTITÀ & TIPI ══ */
-function renderEntita(){
-  const el=document.getElementById('entita-list');
-  if(!el)return;
-  el.innerHTML='';
+/* ══ CLIENTI ══ */
+let currentCliente=null;
+
+function renderEntita(){renderClienti();}
+
+function renderClienti(){
+  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
+  const tbody=document.getElementById('clienti-tbody');
+  const subEl=document.getElementById('clienti-count-sub');
+  if(subEl)subEl.textContent=APP.entita.length+' clienti registrati';
+  if(!tbody)return;
+  tbody.innerHTML='';
   if(APP.entita.length===0){
-    el.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px;">Nessuna entità — aggiungine una</div>';
-    return;
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nessun cliente — aggiungine uno</td></tr>';
+  }else{
+    APP.entita.forEach((e,i)=>{
+      const scadAttive=APP.scadenze.filter(s=>s.entita===e.nome&&s.stato!=='done').length;
+      const srClienti=APP.servizi_ricorrenti.filter(s=>s.cliente===e.nome);
+      const valoreAnnuo=srClienti.reduce((a,s)=>a+(s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0)),0);
+      tbody.innerHTML+=`<tr style="cursor:pointer" onclick="showClienteDetail('${e.nome}')">
+        <td><div style="font-weight:500">${e.nome}</div></td>
+        <td style="font-size:12px;color:var(--muted)">${e.paese||'—'}</td>
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px">${scadAttive}</span></td>
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px">${srClienti.length}</span></td>
+        <td class="amt-in">${valoreAnnuo>0?'€ '+Math.round(valoreAnnuo).toLocaleString('it-IT'):' —'}</td>
+        <td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();deleteEntita(${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
+        </td>
+      </tr>`;
+    });
   }
-  APP.entita.forEach((e,i)=>{
-    const nScad=APP.scadenze.filter(s=>s.entita===e.nome&&s.stato!=='done').length;
-    el.innerHTML+=`<div class="tag-item" style="flex-direction:column;align-items:flex-start;gap:8px;width:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-        <div>
-          <span style="font-weight:500">${e.nome}</span>
-          <span style="font-size:10px;color:var(--muted);margin-left:6px">${e.paese||''} ${e.valuta||''}</span>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${nScad>0?`<span style="font-size:10px;color:var(--warn);background:var(--wdim);padding:2px 7px;border-radius:5px">${nScad} scadenze</span>`:''}
-          <button class="tag-del" onclick="deleteEntita(${i})" title="Elimina entità">✕</button>
-        </div>
-      </div>
-      ${nScad>0?`<button onclick="deleteScadenzeByEntita('${e.nome}')" style="background:var(--ddim);border:1px solid var(--danger);border-radius:6px;padding:4px 10px;color:var(--danger);cursor:pointer;font-size:11px;width:100%">🗑 Elimina tutte le scadenze di ${e.nome}</button>`:''}
-    </div>`;
-  });
+  // Summary
+  const sumEl=document.getElementById('clienti-summary');
+  if(sumEl){
+    const totValore=APP.entita.reduce((a,e)=>{
+      const sr=APP.servizi_ricorrenti.filter(s=>s.cliente===e.nome);
+      return a+sr.reduce((b,s)=>b+(s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0)),0);
+    },0);
+    sumEl.innerHTML=`
+      <div style="margin-bottom:10px"><span style="font-size:11px;color:var(--muted)">Clienti totali</span><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent)">${APP.entita.length}</div></div>
+      <div style="margin-bottom:10px"><span style="font-size:11px;color:var(--muted)">Valore servizi ricorrenti/anno</span><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--info)">€ ${Math.round(totValore).toLocaleString('it-IT')}</div></div>
+      <div style="font-size:11px;color:var(--muted)">Clicca su un cliente per vedere dettagli e aggiungere servizi</div>`;
+  }
   // Aggiorna select nel modal scadenza
   const sel=document.getElementById('f-entita');
-  if(sel){sel.innerHTML=APP.entita.map(e=>`<option>${e.nome}</option>`).join('');}
+  if(sel)sel.innerHTML=APP.entita.map(e=>`<option>${e.nome}</option>`).join('');
+}
+
+function showClienteDetail(nome){
+  const listView=document.getElementById('clienti-list-view');
+  const detView=document.getElementById('cliente-detail-view');
+  const backBtn=document.getElementById('btn-back-clienti');
+  const addBtn=document.getElementById('btn-add-cliente');
+  const headerMain=document.getElementById('clienti-header-main');
+  if(!nome){
+    // Torna alla lista
+    currentCliente=null;
+    listView.style.display='block';
+    detView.style.display='none';
+    backBtn.style.display='none';
+    addBtn.style.display='flex';
+    headerMain.innerHTML='<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">👥 Clienti</div><div style="font-size:11px;color:var(--muted)" id="clienti-count-sub">'+APP.entita.length+' clienti registrati</div>';
+    renderClienti();
+    return;
+  }
+  const e=APP.entita.find(x=>x.nome===nome);
+  if(!e)return;
+  currentCliente=nome;
+  listView.style.display='none';
+  detView.style.display='block';
+  backBtn.style.display='flex';
+  addBtn.style.display='none';
+  headerMain.innerHTML='<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">👥 '+nome+'</div><div style="font-size:11px;color:var(--muted)">'+e.paese+' · '+e.valuta+'</div>';
+  document.getElementById('cd-nome').textContent=nome;
+  document.getElementById('cd-paese').textContent=(e.paese||'—')+' · '+(e.valuta||'EUR');
+  renderClienteDetail(nome);
+}
+
+function renderClienteDetail(nome){
+  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
+  const scad=APP.scadenze.filter(s=>s.entita===nome&&s.stato!=='done').sort((a,b)=>new Date(a.data)-new Date(b.data));
+  const srList=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
+  const valoreAnnuo=srList.reduce((a,s)=>a+(s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0)),0);
+  const costiAnnuo=srList.reduce((a,s)=>a+(s.freq==='monthly'?(s.costo||0)*12:(s.costo||0)),0);
+  const nettoAnnuo=valoreAnnuo-costiAnnuo;
+
+  // KPI cliente
+  const kpiEl=document.getElementById('cd-kpi');
+  if(kpiEl)kpiEl.innerHTML=`
+    <div style="background:var(--adim);border-radius:8px;padding:10px;border:1px solid rgba(79,255,176,.15)"><div style="font-size:10px;color:var(--muted)">Scadenze attive</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--accent)">${scad.length}</div></div>
+    <div style="background:var(--idim);border-radius:8px;padding:10px;border:1px solid rgba(124,131,253,.15)"><div style="font-size:10px;color:var(--muted)">Valore annuo</div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--info)">€${Math.round(valoreAnnuo).toLocaleString('it-IT')}</div></div>
+    <div style="background:var(--adim);border-radius:8px;padding:10px;border:1px solid rgba(79,255,176,.15)"><div style="font-size:10px;color:var(--muted)">Netto annuo</div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--accent)">€${Math.round(nettoAnnuo).toLocaleString('it-IT')}</div></div>`;
+
+  // Servizi ricorrenti
+  const srTb=document.getElementById('cd-servizi-tbody');
+  if(srTb){
+    srTb.innerHTML='';
+    if(srList.length===0){
+      srTb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Nessun servizio — aggiungi contabilità o altri servizi</td></tr>';
+    }else{
+      srList.forEach((s,i)=>{
+        const marg=s.prezzo>0?Math.round(((s.prezzo-(s.costo||0))/s.prezzo)*100):null;
+        const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
+        srTb.innerHTML+=`<tr>
+          <td style="font-weight:500">${s.tipo}</td>
+          <td><span class="badge ${s.freq==='monthly'?'bw':'bi'}" style="font-size:10px">${s.freq==='monthly'?'mensile':'annuale'}</span></td>
+          <td class="amt-in">€${(s.prezzo||0).toLocaleString('it-IT')}</td>
+          <td class="amt-out">${s.costo>0?'€'+(s.costo||0).toLocaleString('it-IT'):'—'}</td>
+          <td style="white-space:nowrap">
+            <button onclick="editServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px">✎</button>
+            <button onclick="deleteServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
+          </td>
+        </tr>`;
+      });
+    }
+  }
+
+  // Scadenze compliance
+  const scTb=document.getElementById('cd-scadenze-tbody');
+  if(scTb){
+    scTb.innerHTML='';
+    if(scad.length===0){
+      scTb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Nessuna scadenza attiva per questo cliente</td></tr>';
+    }else{
+      scad.forEach(s=>{
+        const d=daysTo(s.data);
+        const cls=dcc(d);const col=dcColor(d);
+        const freqB=s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 4px;border-radius:3px">♻ annuale</span>':s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 4px;border-radius:3px">♻ mensile</span>':'';
+        scTb.innerHTML+=`<tr>
+          <td style="font-weight:500">${s.tipo}${freqB?'<br>'+freqB:''}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
+          <td><span class="dbadge ${cls}">${d}gg</span></td>
+          <td>${freqB||'<span style="font-size:11px;color:var(--muted)">una tantum</span>'}</td>
+          <td class="amt-in">${s.prezzo>0?'€'+s.prezzo.toLocaleString('it-IT'):'—'}</td>
+          <td><span class="sdot2" style="background:${col}"></span>${d<=7?'Urgente':d<=30?'Prossima':'OK'}</td>
+          <td style="white-space:nowrap">
+            <button onclick="markDone('${s.id}')" style="background:var(--adim);border:1px solid var(--accent);border-radius:6px;padding:3px 7px;color:var(--accent);cursor:pointer;font-size:11px;margin-right:4px">✓</button>
+            <button onclick="deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
+          </td>
+        </tr>`;
+      });
+    }
+  }
+}
+
+function openAddServizioCliente(){
+  document.getElementById('srv-cli-cliente').value=currentCliente||'';
+  document.getElementById('srv-cli-edit-idx').value=-1;
+  document.getElementById('modal-srv-title').textContent='Nuovo servizio ricorrente';
+  ['srv-cli-tipo','srv-cli-prezzo','srv-cli-costo','srv-cli-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('srv-cli-freq').value='monthly';
+  openModal('servizio-cliente');
+}
+
+function editServizioCliente(nome,i){
+  const all=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
+  const s=all[i];if(!s)return;
+  // Trova indice globale
+  const globalIdx=APP.servizi_ricorrenti.indexOf(s);
+  document.getElementById('srv-cli-cliente').value=nome;
+  document.getElementById('srv-cli-edit-idx').value=globalIdx;
+  document.getElementById('modal-srv-title').textContent='✎ Modifica servizio';
+  document.getElementById('srv-cli-tipo').value=s.tipo||'';
+  document.getElementById('srv-cli-freq').value=s.freq||'monthly';
+  document.getElementById('srv-cli-valuta').value=s.valuta||'EUR';
+  document.getElementById('srv-cli-prezzo').value=s.prezzo||0;
+  document.getElementById('srv-cli-costo').value=s.costo||0;
+  document.getElementById('srv-cli-note').value=s.note||'';
+  openModal('servizio-cliente');
+}
+
+function deleteServizioCliente(nome,i){
+  const all=APP.servizi_ricorrenti.filter(s=>s.cliente===nome);
+  const s=all[i];if(!s)return;
+  if(!confirm('Eliminare "'+s.tipo+'" per '+nome+'?'))return;
+  const globalIdx=APP.servizi_ricorrenti.indexOf(s);
+  APP.servizi_ricorrenti.splice(globalIdx,1);
+  saveLocalData();
+  renderClienteDetail(nome);
+  showToast('✓ Servizio eliminato');
+}
+
+function saveServizioCliente(){
+  const tipo=document.getElementById('srv-cli-tipo').value.trim();
+  if(!tipo){showToast('⚠ Inserisci il tipo di servizio');return;}
+  const cliente=document.getElementById('srv-cli-cliente').value;
+  const editIdx=parseInt(document.getElementById('srv-cli-edit-idx').value);
+  const obj={
+    cliente,tipo,
+    freq:document.getElementById('srv-cli-freq').value,
+    valuta:document.getElementById('srv-cli-valuta').value,
+    prezzo:parseFloat(document.getElementById('srv-cli-prezzo').value)||0,
+    costo:parseFloat(document.getElementById('srv-cli-costo').value)||0,
+    note:document.getElementById('srv-cli-note').value||''
+  };
+  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
+  if(editIdx>=0){APP.servizi_ricorrenti[editIdx]=obj;}
+  else{APP.servizi_ricorrenti.push(obj);}
+  saveLocalData();
+  closeModal('servizio-cliente');
+  renderClienteDetail(cliente);
+  showToast('✓ Servizio salvato');
+}
+
+function openScadenzaForCliente(){
+  openModal('scadenza');
+  const sel=document.getElementById('f-entita');
+  if(sel&&currentCliente){
+    // Seleziona il cliente corrente
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].value===currentCliente){sel.selectedIndex=i;break;}
+    }
+  }
 }
 
 function renderTipi(){
@@ -1821,6 +2096,18 @@ function renderTopCountries(z){
     </div>`).join('');
 }
 
+function openRicorrenteModal(tipo){
+  // Apre il modal scadenza pre-impostato con la ricorrenza scelta
+  openModal('scadenza');
+  const sel=document.getElementById('f-ricorrenza');
+  if(sel)sel.value=tipo;
+  // Aggiorna hint
+  const hint=document.getElementById('ricorrenza-hint');
+  if(hint)hint.textContent=tipo==='monthly'
+    ?'♻ Servizio mensile — si rinnova automaticamente ogni mese quando lo completi'
+    :'♻ Servizio annuale — si rinnova automaticamente ogni anno quando lo completi';
+}
+
 /* ══ MODIFICA SCADENZA ══ */
 function editScadenza(id){
   const s=APP.scadenze.find(x=>x.id===id);
@@ -2178,17 +2465,25 @@ function clearAIChat(){
 
 /* ══ RICAVI RICORRENTI ══ */
 function renderRicorrenti(){
+  if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
   const scadAnnuali=APP.scadenze.filter(s=>s.ricorrenza==='annual'&&s.stato!=='done');
   const scadMensili=APP.scadenze.filter(s=>s.ricorrenza==='monthly'&&s.stato!=='done');
+  // Aggiungi servizi ricorrenti da Clienti
+  const srAnnuali=APP.servizi_ricorrenti.filter(s=>s.freq==='annual');
+  const srMensili=APP.servizi_ricorrenti.filter(s=>s.freq==='monthly');
   const scadRicorrenti=[...scadAnnuali,...scadMensili];
   const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   const floorAnnuali=scadAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
   const floorMensili=scadMensili.reduce((a,s)=>a+(s.prezzo||0),0)*12;
-  const floor=floorAnnuali+floorMensili;
+  const floorSrAnnuali=srAnnuali.reduce((a,s)=>a+(s.prezzo||0),0);
+  const floorSrMensili=srMensili.reduce((a,s)=>a+(s.prezzo||0),0)*12;
+  const floor=floorAnnuali+floorMensili+floorSrAnnuali+floorSrMensili;
   // Costi vivi annualizzati
   const costiAnnuali=scadAnnuali.reduce((a,s)=>a+(s.costo||0),0);
   const costiMensili=scadMensili.reduce((a,s)=>a+(s.costo||0),0)*12;
-  const costiTot=costiAnnuali+costiMensili;
+  const costiSrAnnuali=srAnnuali.reduce((a,s)=>a+(s.costo||0),0);
+  const costiSrMensili=srMensili.reduce((a,s)=>a+(s.costo||0),0)*12;
+  const costiTot=costiAnnuali+costiMensili+costiSrAnnuali+costiSrMensili;
   const netto=floor-costiTot;
   const margMed=floor>0?Math.round((netto/floor)*100):0;
   el('rr-floor','€ '+Math.round(floor).toLocaleString('it-IT'));
@@ -2423,11 +2718,11 @@ function showView(v,navEl){
   document.getElementById('view-'+v)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
-  const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'entita',
+  const titles={dashboard:'dashboard',scadenze:'scadenze',entita:'Clienti',
     ai:'AI Assistant',finance:'finance',ricorrenti:'Ricavi ricorrenti',
     listino:'Listino prezzi',movimenti:'Movimenti UAE',zohoview:'zoho',dati:'dati',settings:'impostazioni'};
   const titleKey=titles[v]||v;
-  const fixedTitles=['AI Assistant','Movimenti UAE','Ricavi ricorrenti','Listino prezzi'];
+  const fixedTitles=['AI Assistant','Movimenti UAE','Ricavi ricorrenti','Listino prezzi','Clienti'];
   document.getElementById('topbar-title').textContent=(fixedTitles.includes(titleKey)?titleKey:t(titleKey));
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   if(v==='finance'){renderFinance();}
@@ -2449,7 +2744,9 @@ function showView(v,navEl){
 
 function renderAll(){
   renderTable('all','sb1');renderTable('all','sb2');
-  renderTimeline();updateKPIs();renderEntita();renderTipi();
+  renderTimeline();updateKPIs();renderClienti();renderTipi();
+  // Se siamo nel dettaglio cliente, aggiorna anche quello
+  if(currentCliente)renderClienteDetail(currentCliente);
 }
 
 /* ══ THEME ══ */
