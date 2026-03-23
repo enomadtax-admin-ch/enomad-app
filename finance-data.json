@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-03-23T08:39:24.225Z",
+  "lastSync": "2026-03-23T10:50:48.903Z",
   "summary": {
-    "fatturato": 1027891.85,
-    "incassato": 961556.85,
+    "fatturato": 1028011.85,
+    "incassato": 961676.85,
     "inAttesa": 58915,
-    "numFatture": 683,
+    "numFatture": 684,
     "numClienti": 111,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 135014.09,
-      "incassato": 114379.09,
+      "fatturato": 135134.09,
+      "incassato": 114499.09,
       "inAttesa": 17475,
-      "count": 61
+      "count": 62
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 33082.85,
-      "incassato": 16642.85,
+      "fatturato": 33202.85,
+      "incassato": 16762.85,
       "inAttesa": 13280,
-      "count": 22
+      "count": 23
     },
     "2026-02": {
       "fatturato": 64356.66,
@@ -350,6 +350,17 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000847031",
+      "numero": "INV-2026070",
+      "cliente": "P&P Market LLC",
+      "data": "2026-03-23",
+      "totale": 120,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-23"
+    },
     {
       "id": "403724000000844163",
       "numero": "INV-2026069",
