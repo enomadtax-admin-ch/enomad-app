@@ -2765,13 +2765,15 @@ function renderRicorrenti(){
         pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:s.prezzo||0});
       });
     });
-    // Annuali — solo nel mese della loro scadenza nell'anno selezionato
-    scadAnnuali.forEach(s=>{
-      const d=new Date(s.data);
-      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    // Annuali — proietto nel mese corrispondente dell'anno selezionato
+  // Uso servizi_ricorrenti come fonte perpetua (non dipende da scadenze nel DB)
+  APP.servizi_ricorrenti.filter(s=>s.freq==='annual'&&s.dataScadenza).forEach(s=>{
+      const d=new Date(s.dataScadenza);
+      // Usa il mese/giorno della scadenza originale ma nell'anno selezionato
+      const k=annoSel+'-'+String(d.getMonth()+1).padStart(2,'0');
       if(pro[k]){
         pro[k].valore+=s.prezzo||0;
-        pro[k].items.push({nome:s.nome||s.tipo,cliente:s.entita,prezzo:s.prezzo||0});
+        pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:s.prezzo||0});
       }
     });
     const mx=Math.max(...Object.values(pro).map(p=>p.valore),1);
