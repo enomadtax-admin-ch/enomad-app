@@ -2290,23 +2290,26 @@ function setFinPeriodo(periodo, btn){
 function getFinMesiKeys(allKeys){
   const oggi=new Date();
   const p=_finPeriodo||'3m';
+  const meseCorrente=oggi.getFullYear()+'-'+String(oggi.getMonth()+1).padStart(2,'0');
+
   if(p==='custom'){
     const from=document.getElementById('fin-custom-from')?.value;
     const to=document.getElementById('fin-custom-to')?.value;
     if(from&&to)return allKeys.filter(m=>m>=from.substring(0,7)&&m<=to.substring(0,7));
+    return allKeys;
   }
   if(p==='1m'){
-    const cutoff=new Date(oggi.getFullYear(),oggi.getMonth()-1,1);
-    const key=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0');
-    return allKeys.filter(m=>m>=key);
+    // Solo il mese corrente
+    return allKeys.filter(m=>m===meseCorrente);
   }
   if(p==='3m'){
-    const cutoff=new Date(oggi.getFullYear(),oggi.getMonth()-3,1);
+    // Ultimi 3 mesi incluso corrente
+    const cutoff=new Date(oggi.getFullYear(),oggi.getMonth()-2,1);
     const key=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0');
-    return allKeys.filter(m=>m>=key);
+    return allKeys.filter(m=>m>=key&&m<=meseCorrente);
   }
   if(p==='ytd'){
-    return allKeys.filter(m=>m.startsWith(oggi.getFullYear().toString()));
+    return allKeys.filter(m=>m.startsWith(oggi.getFullYear().toString())&&m<=meseCorrente);
   }
   return allKeys; // all
 }
@@ -2330,25 +2333,25 @@ function renderFinance(){
   const allMesiKeys=Object.keys(ZOHO.perMese||{}).sort();
   const mesiKeys=getFinMesiKeys(allMesiKeys);
 
-  // ── FATTURATO = Zoho + manual revenue movements ──
-  const zohoFatt=annoSel==='all'
-    ?ZOHO.summary.fatturato
-    :(ZOHO.perAnno?.[annoSel]?.fatturato||0);
+  // ── ALL KPIs strictly use mesiKeys (period-filtered) — no global totals ──
+
+  // FATTURATO = Zoho fatturato per mese (period) + manual revenue
+  const zohoFatt=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.fatturato||0),0);
   const manualRevenue=mesiKeys.reduce((a,k)=>
     a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in'&&m.categoria==='revenue').reduce((s,m)=>s+m.importo,0)
   ,0);
   const fatturato=zohoFatt+manualRevenue;
 
-  // ── CASH IN = Zoho incassato + ALL manual in ──
+  // CASH IN = Zoho incassato (period) + ALL manual in
   const zohoCashIn=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.incassato||0),0);
   const manualCashIn=mesiKeys.reduce((a,k)=>
     a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
   ,0);
   const cashIn=zohoCashIn+manualCashIn;
 
-  // ── IN ATTESA = Zoho summary (always current) ──
-  const inAttesa=ZOHO.summary?.inAttesa||0;
-  const numFatture=annoSel==='all'?ZOHO.summary.numFatture:(ZOHO.perAnno?.[annoSel]?.count||0);
+  // IN ATTESA = Zoho inAttesa filtered by period (sum of open invoices in period)
+  const inAttesa=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.inAttesa||0),0);
+  const numFatture=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.count||0),0);
 
   const margine=fatturato>0?Math.round((cashIn/fatturato)*100):0;
   el('fin-fatturato','€ '+Math.round(fatturato).toLocaleString('it-IT'));
@@ -3336,11 +3339,26 @@ async function loadMovimentiFromDB(){
   try{
     const{data,error}=await supa.from('movimenti_manuali').select('*').order('data',{ascending:false});
     if(error)throw error;
-    if(data)APP.movimenti=data.map(r=>({
-      id:r.id,descrizione:r.descrizione,entita:r.entita,
-      importo:parseFloat(r.importo)||0,valuta:r.valuta||'AED',
-      tipo:r.tipo,data:r.data,note:r.note||''
-    }));
+    if(data){
+      // Map DB rows preserving all fields
+      const fromDB=data.map(r=>({
+        id:r.id,
+        descrizione:r.descrizione||'',
+        entita:r.entita||'',
+        counterparty_name:r.counterparty_name||r.entita||'',
+        importo:parseFloat(r.importo)||0,
+        valuta:r.valuta||'EUR',
+        tipo:r.tipo||'out',
+        data:r.data,
+        note:r.note||'',
+        categoria:r.categoria||'other'
+      }));
+      // Merge: keep local-only records (id = number, not UUID) + overwrite with DB records
+      const localOnly=(APP.movimenti||[]).filter(m=>typeof m.id==='number');
+      // DB records are authoritative for UUID records
+      APP.movimenti=[...fromDB,...localOnly];
+      saveLocalData();
+    }
   }catch(e){console.error('loadMovimenti:',e);}
 }
 
