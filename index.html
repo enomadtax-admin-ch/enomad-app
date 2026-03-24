@@ -3354,7 +3354,8 @@ function onMovTipoChange(){
 
 async function addMovimento(){
   const desc=(document.getElementById('mov-desc')?.value||'').trim();
-  const importo=parseFloat(document.getElementById('mov-importo')?.value||0);
+  const importoRaw=document.getElementById('mov-importo')?.value||'';
+  const importo=parseFloat(importoRaw);
   const data=document.getElementById('mov-data')?.value||'';
   const tipo=document.getElementById('mov-tipo')?.value||'out';
   const categoria=document.getElementById('mov-categoria')?.value||'other';
@@ -3362,44 +3363,63 @@ async function addMovimento(){
   const note=(document.getElementById('mov-note')?.value||'').trim();
   const editIdx=parseInt(document.getElementById('mov-desc')?.dataset?.editIdx??'-1');
 
+  // Validazione separata con messaggi chiari
   if(!desc){showToast('⚠ Inserisci una descrizione');return;}
-  if(!importo||importo<=0){showToast('⚠ Inserisci un importo valido (> 0)');return;}
+  if(isNaN(importo)||importo<=0){showToast('⚠ Importo non valido — inserisci un numero maggiore di 0');return;}
   if(!data){showToast('⚠ Seleziona la data');return;}
 
-  const mov={descrizione:desc,tipo,importo,categoria,data,counterparty_name:counterparty,note,valuta:'EUR'};
+  const mov={
+    id: Date.now(), // id locale temporaneo
+    descrizione:desc, tipo, importo, categoria, data,
+    counterparty_name:counterparty, note, valuta:'EUR'
+  };
+
   if(!APP.movimenti)APP.movimenti=[];
 
+  // Prima salva localmente — SEMPRE, indipendente da Supabase
   if(editIdx>=0&&editIdx<APP.movimenti.length){
-    const old=APP.movimenti[editIdx];
-    mov.id=old.id;
-    const isUUID=typeof old.id==='string'&&old.id.length===36&&old.id.includes('-');
-    if(isUUID&&currentUser){
-      try{await supa.from('movimenti_manuali').update(mov).eq('id',old.id).eq('user_id',currentUser.id);}
-      catch(e){console.warn('update mov:',e);}
-    }
-    APP.movimenti[editIdx]=mov;
-    showToast('✓ Movimento aggiornato');
+    APP.movimenti[editIdx]={...APP.movimenti[editIdx],...mov,id:APP.movimenti[editIdx].id};
   }else{
-    if(currentUser){
-      try{
-        const{data:saved,error}=await supa.from('movimenti_manuali').insert({user_id:currentUser.id,...mov}).select().single();
-        if(error)console.warn('insert mov:',error);
-        else if(saved)mov.id=saved.id;
-      }catch(e){console.warn('insert mov:',e);}
-    }
     APP.movimenti.unshift(mov);
-    showToast('✓ Movimento salvato');
   }
   saveLocalData();
   closeModal('movimento');
-  // Reset modal
-  if(document.getElementById('mov-desc'))document.getElementById('mov-desc').dataset.editIdx='-1';
-  if(document.getElementById('mov-modal-title'))document.getElementById('mov-modal-title').textContent='Nuovo movimento manuale';
+  document.getElementById('mov-desc').dataset.editIdx='-1';
+  document.getElementById('mov-modal-title').textContent='Nuovo movimento manuale';
   ['mov-desc','mov-importo','mov-counterparty','mov-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   renderMovimenti();
   updateKPIs();
   const activeView=document.querySelector('.view.active');
   if(activeView?.id==='view-finance')renderFinance();
+  showToast(editIdx>=0?'✓ Movimento aggiornato':'✓ Movimento salvato');
+
+  // Poi prova a sincronizzare su Supabase in background (non bloccante)
+  if(currentUser){
+    try{
+      // Usa solo colonne sicure che esistono certamente nella tabella
+      const supaRow={
+        user_id:currentUser.id,
+        descrizione:desc,
+        tipo,
+        importo,
+        categoria,
+        data,
+        note: counterparty?(counterparty+(note?' — '+note:'')):note,
+        valuta:'EUR'
+      };
+      if(editIdx>=0&&APP.movimenti[editIdx]?.id){
+        const old=APP.movimenti[editIdx];
+        const isUUID=typeof old.id==='string'&&old.id.length===36&&old.id.includes('-');
+        if(isUUID)await supa.from('movimenti_manuali').update(supaRow).eq('id',old.id).eq('user_id',currentUser.id);
+      }else{
+        const{data:saved}=await supa.from('movimenti_manuali').insert(supaRow).select().single();
+        if(saved?.id&&APP.movimenti[0]?.id===mov.id)APP.movimenti[0].id=saved.id;
+        saveLocalData();
+      }
+    }catch(e){
+      console.warn('Supabase sync mov (non bloccante):', e.message);
+    }
+  }
 }
 
 const MOV_CAT_LABELS={marketing:'📢 Marketing',software:'💻 Software',supplier:'🏭 Fornitore',payroll:'👥 Payroll',revenue:'💰 Ricavo extra',other:'📎 Altro'};
