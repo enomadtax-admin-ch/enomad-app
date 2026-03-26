@@ -1,11 +1,11 @@
 {
-  "lastSync": "2026-03-26T11:37:09.091Z",
+  "lastSync": "2026-03-26T15:58:11.047Z",
   "summary": {
-    "fatturato": 1028011.85,
-    "incassato": 961676.85,
+    "fatturato": 1030511.85,
+    "incassato": 964176.85,
     "inAttesa": 58115,
-    "numFatture": 684,
-    "numClienti": 111,
+    "numFatture": 685,
+    "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
   },
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 135134.09,
-      "incassato": 114499.09,
+      "fatturato": 137634.09,
+      "incassato": 116999.09,
       "inAttesa": 16675,
-      "count": 62
+      "count": 63
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 33202.85,
-      "incassato": 16762.85,
+      "fatturato": 35702.85,
+      "incassato": 19262.85,
       "inAttesa": 12480,
-      "count": 23
+      "count": 24
     },
     "2026-02": {
       "fatturato": 64356.66,
@@ -350,6 +350,17 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000857018",
+      "numero": "INV-2026071",
+      "cliente": "BitGears Solution LLC",
+      "data": "2026-03-26",
+      "totale": 2500,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-26"
+    },
     {
       "id": "403724000000847031",
       "numero": "INV-2026070",
@@ -7979,6 +7990,12 @@
       "tipo": "customer"
     },
     {
+      "id": "403724000000857004",
+      "nome": "BitGears Solution LLC",
+      "email": "",
+      "tipo": "customer"
+    },
+    {
       "id": "403724000000657013",
       "nome": "BIZZER LLC",
       "email": "",
@@ -8167,12 +8184,6 @@
     {
       "id": "403724000000134133",
       "nome": "IDON SRLS",
-      "email": "",
-      "tipo": "customer"
-    },
-    {
-      "id": "403724000000362001",
-      "nome": "Industex SL",
       "email": "",
       "tipo": "customer"
     }
