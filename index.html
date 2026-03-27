@@ -1147,6 +1147,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <option value="software">💻 Software / SaaS</option>
             <option value="supplier">🏭 Fornitore</option>
             <option value="payroll">👥 Payroll</option>
+            <option value="bank_fee">🏦 Bank Fee</option>
             <option value="revenue">💰 Ricavo extra (→ fatturato)</option>
             <option value="other">📎 Altro</option>
           </select>
@@ -3699,7 +3700,9 @@ function onMovTipoChange(){
   const tipo=document.getElementById('mov-tipo')?.value;
   const cat=document.getElementById('mov-categoria');
   if(!cat)return;
-  if(tipo==='in'&&cat.value!=='revenue')cat.value='revenue';
+  // Auto-default: in → revenue, out → other (solo se è ancora su default generico)
+  const neutralCats=['other','marketing','software','supplier','payroll','bank_fee'];
+  if(tipo==='in'&&neutralCats.includes(cat.value))cat.value='revenue';
   if(tipo==='out'&&cat.value==='revenue')cat.value='other';
 }
 
@@ -3776,7 +3779,7 @@ async function addMovimento(){
   }
 }
 
-const MOV_CAT_LABELS={marketing:'📢 Marketing',software:'💻 Software',supplier:'🏭 Fornitore',payroll:'👥 Payroll',revenue:'💰 Ricavo extra',other:'📎 Altro'};
+const MOV_CAT_LABELS={marketing:'📢 Marketing',software:'💻 Software',supplier:'🏭 Fornitore',payroll:'👥 Payroll',bank_fee:'🏦 Bank Fee',revenue:'💰 Ricavo extra',other:'📎 Altro'};
 
 function renderMovimenti(append){
   const tb=document.getElementById('mov-tbody');
