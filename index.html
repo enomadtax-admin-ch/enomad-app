@@ -1748,13 +1748,13 @@ function renderClienteDetail(nome){
   const valoreAnnuo=srList.reduce((a,s)=>{
     const price=s.client_price||s.prezzo||0;
     const freq=s.revenue_frequency||s.freq||'monthly';
-    return a+(freq==='monthly'?price*12:freq==='quarterly'?price*4:price);
+    return a+(freq==='biannual'?price/2:freq==='monthly'?price*12:freq==='quarterly'?price*4:price);
   },0);
   // Costo economico annualizzato (competenza, NON cash out)
   const costiAnnuo=srList.reduce((a,s)=>{
     const cost=s.supplier_cost_total||0;
     const period=s.cost_allocation_period||'annual';
-    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:period==='biannual'?cost/2:cost);
   },0);
   const nettoAnnuo=valoreAnnuo-costiAnnuo;
 
@@ -1779,12 +1779,12 @@ function renderClienteDetail(nome){
         const freq=s.revenue_frequency||s.freq||'monthly';
         const cashout=s.cash_out_amount||s.costo||0;
         const cashoutFreq=s.cash_out_frequency||freq;
-        const freqLabel=freq==='monthly'?t('mensile'):freq==='quarterly'?'trim.':t('annuale');
-        const cashoutLabel=cashoutFreq==='monthly'?t('mensile'):cashoutFreq==='quarterly'?'trim.':t('annuale');
+        const freqLabel=freq==='monthly'?t('mensile'):freq==='quarterly'?'trim.':freq==='biannual'?'biennale':t('annuale');
+        const cashoutLabel=cashoutFreq==='monthly'?t('mensile'):cashoutFreq==='quarterly'?'trim.':cashoutFreq==='biannual'?'biennale':t('annuale');
         srTb.innerHTML+=`<tr>
           <td style="font-weight:500">${s.tipo}${s.supplier_name?`<div style="font-size:10px;color:var(--muted)">${s.supplier_name}</div>`:''}</td>
           <td><span class="badge ${freq==='monthly'?'bw':'bi'}" style="font-size:10px">${freqLabel}</span></td>
-          <td class="amt-in">€ ${price.toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/${freq==='monthly'?'mese':freq==='quarterly'?'trim':'anno'}</div></td>
+          <td class="amt-in">€ ${price.toLocaleString('it-IT')}<div style="font-size:10px;color:var(--muted)">/${freq==='monthly'?'mese':freq==='quarterly'?'trim':freq==='biannual'?'2y':'anno'}</div></td>
           <td class="amt-out">${cashout>0?'€ '+cashout.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">'+cashoutLabel+'</div>':'—'}</td>
           <td style="white-space:nowrap">
             <button onclick="editServizioCliente('${nome}',${i})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px">✎</button>
@@ -2213,7 +2213,8 @@ function renderTable(filter,tbid){
       ${s.prezzo>0?`<div class="amt-out" style="font-size:11px;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
       ${s.note&&s.note.includes('fornitore')?`<div style="font-size:9px;color:var(--muted)">${s.note.replace('💸 Uscita fornitore: ','')}</div>`:''}
     </td>`:'';
-    const hasNote=s.note&&!s.note.includes('💸 Uscita fornitore');
+    const servizioCollegato=(APP.servizi_ricorrenti||[]).find(sr=>String(sr.scadenzaId)===String(s.id));
+    const hasNote=servizioCollegato?.note||(s.note&&!s.note.includes('💸 Uscita fornitore'));
     const noteIcon=hasNote?'📝':'';
     const actionBtns=done
       ?`<td style="white-space:nowrap">
@@ -2251,21 +2252,35 @@ function toggleScadenzaNote(tr, s, tbid){
   }
   // Remove any other open note rows in same table
   document.querySelectorAll(`#${tbid} .note-row`).forEach(r=>r.remove());
+
+  // Trova la nota dal servizio ricorrente collegato via scadenzaId
+  const servizio=(APP.servizi_ricorrenti||[]).find(sr=>String(sr.scadenzaId)===String(s.id));
+  const nota=servizio?.note||(s.note&&!s.note.includes('💸 Uscita fornitore')?s.note:null);
+
   const cols=tbid==='sb2'?7:6;
   const noteRow=document.createElement('tr');
   noteRow.className='note-row';
-  noteRow.innerHTML=`<td colspan="${cols}" style="padding:0;background:var(--surface2);border-bottom:2px solid var(--border);">
-    <div style="padding:12px 16px;display:flex;align-items:flex-start;gap:10px;">
-      <span style="font-size:14px;margin-top:2px">📝</span>
-      <div style="flex:1">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">NOTA INTERNA — ${s.nome} (${s.entita})</div>
-        <textarea id="note-input-${s.id}" style="width:100%;min-height:60px;padding:8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;resize:vertical;font-family:inherit" placeholder="Aggiungi una nota interna su questa scadenza...">${(s.note&&!s.note.includes('💸 Uscita fornitore'))?s.note:''}</textarea>
+
+  if(nota){
+    noteRow.innerHTML=`<td colspan="${cols}" style="padding:0;background:var(--surface2);border-bottom:2px solid var(--border);">
+      <div style="padding:10px 16px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:14px;margin-top:2px">📝</span>
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px">NOTA — ${s.nome} (${s.entita})</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap">${nota}</div>
+          ${servizio?'<div style="font-size:10px;color:var(--muted);margin-top:6px">Nota dal servizio ricorrente. Modificabile dalla scheda cliente.</div>':''}
+        </div>
       </div>
-      <button onclick="saveScadenzaNote('${s.id}','${tbid}')" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-top:18px">Salva nota</button>
-    </div>
-  </td>`;
+    </td>`;
+  }else{
+    noteRow.innerHTML=`<td colspan="${cols}" style="padding:0;background:var(--surface2);border-bottom:2px solid var(--border);">
+      <div style="padding:10px 16px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;">
+        <span>📝</span>
+        <span>Nessuna nota per questa scadenza. Aggiungila dalla scheda cliente → servizio ricorrente.</span>
+      </div>
+    </td>`;
+  }
   tr.insertAdjacentElement('afterend', noteRow);
-  document.getElementById('note-input-'+s.id)?.focus();
 }
 
 async function saveScadenzaNote(id, tbid){
@@ -2328,7 +2343,7 @@ function updateKPIs(){
   const costiAnnui=sr.reduce((a,s)=>{
     const cost=s.supplier_cost_total||0;
     const period=s.cost_allocation_period||'annual';
-    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:period==='biannual'?cost/2:cost);
   },0);
   const nettoAnnuo=revenueAnnuo-costiAnnui;
   const margine=revenueAnnuo>0?Math.round((nettoAnnuo/revenueAnnuo)*100):0;
@@ -3380,6 +3395,10 @@ function renderRicorrenti(){
     const freq=s.revenue_frequency||s.freq||'monthly';
     return freq==='annual';
   });
+  const srBiannuali=APP.servizi_ricorrenti.filter(s=>{
+    const freq=s.revenue_frequency||s.freq||'monthly';
+    return freq==='biannual';
+  });
   const srMensili=APP.servizi_ricorrenti.filter(s=>{
     const freq=s.revenue_frequency||s.freq||'monthly';
     return freq==='monthly'||freq==='quarterly';
@@ -3387,30 +3406,36 @@ function renderRicorrenti(){
 
   // Floor lordo — revenue annualizzata per frequenza fatturazione cliente
   const floorAnnuali=srAnnuali.reduce((a,s)=>a+(s.client_price||s.prezzo||0),0);
+  const floorBiannuali=srBiannuali.reduce((a,s)=>a+(s.client_price||s.prezzo||0)/2,0); // competenza = metà/anno
   const floorMensili=srMensili.reduce((a,s)=>{
     const price=s.client_price||s.prezzo||0;
     const freq=s.revenue_frequency||s.freq||'monthly';
     return a+(freq==='quarterly'?price*4:price*12);
   },0);
-  const floor=floorAnnuali+floorMensili;
+  const floor=floorAnnuali+floorBiannuali+floorMensili;
 
   // Costi economici — supplier_cost_total annualizzato (competenza, NON cash)
   const costiAnnuali=srAnnuali.reduce((a,s)=>{
     const cost=s.supplier_cost_total||0;
     const period=s.cost_allocation_period||'annual';
-    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:period==='biannual'?cost/2:cost);
+  },0);
+  const costiBiannuali=srBiannuali.reduce((a,s)=>{
+    const cost=s.supplier_cost_total||0;
+    const period=s.cost_allocation_period||'annual';
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:period==='biannual'?cost/2:cost);
   },0);
   const costiMensili=srMensili.reduce((a,s)=>{
     const cost=s.supplier_cost_total||0;
     const period=s.cost_allocation_period||'annual';
-    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:cost);
+    return a+(period==='monthly'?cost*12:period==='quarterly'?cost*4:period==='biannual'?cost/2:cost);
   },0);
-  const costiTot=costiAnnuali+costiMensili;
+  const costiTot=costiAnnuali+costiBiannuali+costiMensili;
   const netto=floor-costiTot;
   const margMed=floor>0?Math.round((netto/floor)*100):0;
 
   el('rr-floor','€ '+Math.round(floor).toLocaleString('it-IT'));
-  el('rr-floor-sub',srAnnuali.length+' annuali + '+srMensili.length+' mensili (×12)');
+  el('rr-floor-sub',srAnnuali.length+' annuali + '+srBiannuali.length+' biennali + '+srMensili.length+' mensili');
   el('rr-costi','€ '+Math.round(costiTot).toLocaleString('it-IT'));
   el('rr-costi-sub','margine lordo: '+margMed+'%');
   el('rr-netto','€ '+Math.round(netto).toLocaleString('it-IT'));
@@ -3502,7 +3527,7 @@ function renderRicorrenti(){
         }
       });
     });
-    // Annuali — revenue nel mese della data scadenza, cash out nel mese del pagamento
+    // Annuali — revenue nel mese della data scadenza
     srAnnuali.forEach(s=>{
       const price=s.client_price||s.prezzo||0;
       const dataScad=s.next_cash_out_date||s.dataScadenza||'';
@@ -3513,6 +3538,28 @@ function renderRicorrenti(){
           pro[k].revenue+=price;
           pro[k].cashout+=s.cash_out_amount||0;
           pro[k].items.push({nome:s.tipo,cliente:s.cliente,prezzo:price,tipo:'annual'});
+        }
+      }
+    });
+    // Biennali — revenue (competenza annuale = price/2) nel mese della scadenza
+    // Solo se la scadenza cade nell'anno selezionato
+    srBiannuali.forEach(s=>{
+      const price=s.client_price||s.prezzo||0;
+      const dataScad=s.next_cash_out_date||s.dataScadenza||'';
+      const competenzaMensile=price/24; // competenza mensile biennale
+      // Aggiungi competenza mensile a tutti i mesi (come ammortizzato)
+      Object.keys(pro).forEach(k=>{
+        pro[k].revenue+=competenzaMensile;
+      });
+      // Cash out reale solo nel mese in cui cade la scadenza nell'anno selezionato
+      if(dataScad){
+        const d=new Date(dataScad);
+        if(d.getFullYear()===annoSel){
+          const k=annoSel+'-'+String(d.getMonth()+1).padStart(2,'0');
+          if(pro[k]){
+            pro[k].cashout+=s.cash_out_amount||0;
+            pro[k].items.push({nome:s.tipo+' (biennale)',cliente:s.cliente,prezzo:price,tipo:'biannual'});
+          }
         }
       }
     });
@@ -3553,16 +3600,16 @@ function renderRicorrenti(){
         const revenueAnnuo=freq==='biannual'?price/2:freq==='annual'?price:freq==='quarterly'?price*4:price*12;
         const marg=revenueAnnuo>0?Math.round(((revenueAnnuo-costAnnuo)/revenueAnnuo)*100):null;
         const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
-        const freqLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
+        const freqLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':freq==='biannual'?'biennale':(LANG==='en'?'annual':'annuale');
         const cashout=s.cash_out_amount||0;
         const cashFreq=s.cash_out_frequency||'annual';
-        const cashLabel=cashFreq==='monthly'?(LANG==='en'?'monthly':'mensile'):cashFreq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
+        const cashLabel=cashFreq==='monthly'?(LANG==='en'?'monthly':'mensile'):cashFreq==='quarterly'?'trim.':cashFreq==='biannual'?'biennale':(LANG==='en'?'annual':'annuale');
         const row=document.createElement('tr');
         row.innerHTML='<td style="font-weight:500">'+s.tipo
           +(s.supplier_name?'<div style="font-size:10px;color:var(--muted)">'+s.supplier_name+'</div>':'')+'</td>'
           +'<td><span class="etag">'+s.cliente+'</span></td>'
           +'<td><span class="badge '+(freq==='monthly'?'bw':'bi')+'" style="font-size:10px">'+freqLabel+'</span></td>'
-          +'<td class="amt-in">€ '+price.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">/'+(freq==='monthly'?'mese':freq==='quarterly'?'trim':'anno')+'</div></td>'
+          +'<td class="amt-in">€ '+price.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">/'+(freq==='monthly'?'mese':freq==='quarterly'?'trim':freq==='biannual'?'2y':'anno')+'</div></td>'
           +'<td class="amt-out">€ '+costAnnuo.toLocaleString('it-IT')+'<div style="font-size:10px;color:var(--muted)">/anno</div></td>'
           // Cash out in rosso — uscita finanziaria reale
           +'<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--danger);font-weight:500">'
