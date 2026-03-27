@@ -1201,6 +1201,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
               <option value="monthly">Mensile</option>
               <option value="quarterly">Trimestrale</option>
               <option value="annual" selected>Annuale</option>
+              <option value="biannual">Biennale (ogni 2 anni)</option>
             </select>
           </div>
         </div>
@@ -1460,7 +1461,14 @@ function saveLocalData(){
 
 async function loadAllData(){
   loadLocalData();
-  await Promise.all([loadScadenzeFromDB(), loadEntitaFromDB(), loadTipiFromDB(), loadMovimentiFromDB()]);
+  await Promise.all([
+    loadScadenzeFromDB(),
+    loadEntitaFromDB(),
+    loadTipiFromDB(),
+    loadMovimentiFromDB(),
+    loadServiziRicorrentiFromDB(),
+    loadListinoFromDB()
+  ]);
   syncZoho();
   renderAll();
   updateDataStats();
@@ -1508,12 +1516,127 @@ async function loadEntitaFromDB(){
 async function loadTipiFromDB(){
   if(!currentUser)return;
   try{
-    // Tipi salvati in localStorage per semplicità
-    if(!APP.tipi||APP.tipi.length===0){
-      APP.tipi=['Licenza','Nominee','Sede legale','Dichiarazione fiscale','Bilancio','Rinnovo societario','Permesso','Altro'];
+    const{data,error}=await supa.from('tipi_scadenza').select('*').eq('user_id',currentUser.id).order('nome');
+    if(error)throw error;
+    if(data&&data.length>0){
+      APP.tipi=data.map(r=>r.nome);
+      saveLocalData();
+    }else if(!APP.tipi||APP.tipi.length===0){
+      // Popola defaults e salva su DB
+      const defaults=['Licenza','Nominee','Sede legale','Dichiarazione fiscale','Bilancio','Rinnovo societario','Permesso','Altro'];
+      APP.tipi=defaults;
+      const rows=defaults.map(nome=>({user_id:currentUser.id,nome}));
+      await supa.from('tipi_scadenza').insert(rows);
       saveLocalData();
     }
-  }catch(e){}
+  }catch(e){console.error('loadTipi:',e);}
+}
+
+async function loadServiziRicorrentiFromDB(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('servizi_ricorrenti').select('*').eq('user_id',currentUser.id).order('created_at');
+    if(error)throw error;
+    if(data&&data.length>0){
+      APP.servizi_ricorrenti=data.map(r=>({
+        id:r.id,
+        cliente:r.cliente,tipo:r.tipo||'',note:r.note||'',
+        client_price:parseFloat(r.client_price)||0,
+        revenue_frequency:r.revenue_frequency||'monthly',
+        supplier_cost_total:parseFloat(r.supplier_cost_total)||0,
+        cost_allocation_period:r.cost_allocation_period||'annual',
+        monthly_cost_calculated:parseFloat(r.monthly_cost_calculated)||0,
+        supplier_name:r.supplier_name||'',
+        cash_out_amount:parseFloat(r.cash_out_amount)||0,
+        cash_out_frequency:r.cash_out_frequency||'annual',
+        next_cash_out_date:r.next_cash_out_date||'',
+        reminder:r.reminder||'15',
+        scadenzaId:r.scadenza_id||null,
+        // legacy compat
+        prezzo:parseFloat(r.client_price)||parseFloat(r.prezzo)||0,
+        freq:r.revenue_frequency||r.freq||'monthly',
+        costo:parseFloat(r.monthly_cost_calculated)||parseFloat(r.costo)||0,
+        dataScadenza:r.next_cash_out_date||r.data_scadenza||''
+      }));
+      saveLocalData();
+    }
+  }catch(e){console.error('loadServiziRicorrenti:',e);}
+}
+
+async function saveServizioRicorrenteToDB(obj){
+  if(!currentUser)return null;
+  const row={
+    user_id:currentUser.id,
+    cliente:obj.cliente,tipo:obj.tipo||'',note:obj.note||'',
+    client_price:obj.client_price||0,
+    revenue_frequency:obj.revenue_frequency||'monthly',
+    supplier_cost_total:obj.supplier_cost_total||0,
+    cost_allocation_period:obj.cost_allocation_period||'annual',
+    monthly_cost_calculated:obj.monthly_cost_calculated||0,
+    supplier_name:obj.supplier_name||'',
+    cash_out_amount:obj.cash_out_amount||0,
+    cash_out_frequency:obj.cash_out_frequency||'annual',
+    next_cash_out_date:obj.next_cash_out_date||null,
+    reminder:obj.reminder||'15',
+    scadenza_id:obj.scadenzaId?String(obj.scadenzaId):null,
+    prezzo:obj.client_price||0,
+    freq:obj.revenue_frequency||'monthly',
+    costo:obj.monthly_cost_calculated||0,
+    data_scadenza:obj.next_cash_out_date||null
+  };
+  const isUUID=obj.id&&typeof obj.id==='string'&&obj.id.length===36&&obj.id.includes('-');
+  if(isUUID){
+    const{error}=await supa.from('servizi_ricorrenti').update(row).eq('id',obj.id).eq('user_id',currentUser.id);
+    if(error)console.error('updateServizio:',error);
+    return obj;
+  }else{
+    const{data,error}=await supa.from('servizi_ricorrenti').insert(row).select().single();
+    if(error){console.error('insertServizio:',error);return null;}
+    return data;
+  }
+}
+
+async function deleteServizioRicorrenteDalDB(id){
+  if(!currentUser||!id)return;
+  const isUUID=typeof id==='string'&&id.length===36&&id.includes('-');
+  if(isUUID)await supa.from('servizi_ricorrenti').delete().eq('id',id).eq('user_id',currentUser.id);
+}
+
+async function loadListinoFromDB(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('listino').select('*').eq('user_id',currentUser.id).order('nome');
+    if(error)throw error;
+    if(data&&data.length>0){
+      APP.servizi=data.map(r=>({
+        id:r.id,nome:r.nome,categoria:r.categoria||'Compliance',
+        valuta:r.valuta||'EUR',prezzo:parseFloat(r.prezzo)||0,
+        costo:parseFloat(r.costo)||0,note:r.note||''
+      }));
+      saveLocalData();
+    }
+  }catch(e){console.error('loadListino:',e);}
+}
+
+async function saveListinoItemToDB(obj){
+  if(!currentUser)return null;
+  const row={user_id:currentUser.id,nome:obj.nome,categoria:obj.categoria||'Compliance',
+    valuta:obj.valuta||'EUR',prezzo:obj.prezzo||0,costo:obj.costo||0,note:obj.note||''};
+  const isUUID=obj.id&&typeof obj.id==='string'&&obj.id.length===36&&obj.id.includes('-');
+  if(isUUID){
+    await supa.from('listino').update(row).eq('id',obj.id).eq('user_id',currentUser.id);
+    return obj;
+  }else{
+    const{data,error}=await supa.from('listino').insert(row).select().single();
+    if(error){console.error('insertListino:',error);return null;}
+    return data;
+  }
+}
+
+async function deleteListinoItemDalDB(id){
+  if(!currentUser||!id)return;
+  const isUUID=typeof id==='string'&&id.length===36&&id.includes('-');
+  if(isUUID)await supa.from('listino').delete().eq('id',id).eq('user_id',currentUser.id);
 }
 
 async function saveScadenzaToDB(s){
@@ -1889,6 +2012,8 @@ async function saveServizioCliente(){
       APP.scadenze=APP.scadenze.filter(x=>String(x.id)!==String(old.scadenzaId));
     }
     APP.servizi_ricorrenti[editIdx]=obj;
+    // Sync to DB
+    try{const saved=await saveServizioRicorrenteToDB(obj);if(saved?.id)obj.id=saved.id;}catch(e){console.warn('syncServizio:',e);}
   }else{
     // Nuovo servizio — crea scadenza per cash out non mensile
     if(needsScadenza){
@@ -1910,6 +2035,8 @@ async function saveServizioCliente(){
       obj.scadenzaId=nuovaScad.id;
     }
     APP.servizi_ricorrenti.push(obj);
+    // Sync to DB
+    try{const saved=await saveServizioRicorrenteToDB(obj);if(saved?.id){obj.id=saved.id;APP.servizi_ricorrenti[APP.servizi_ricorrenti.length-1].id=saved.id;}}catch(e){console.warn('syncServizio:',e);}
   }
 
   saveLocalData();
@@ -1956,7 +2083,10 @@ async function addEntita(){
   if(!nome){showToast('⚠ Inserisci il nome');return;}
   // Controllo duplicati
   const dup=APP.entita.find(e=>e.nome.toLowerCase()===nome.toLowerCase());
-  if(dup){showToast('⚠ Cliente "'+nome+'" già esistente');return;}
+  if(dup){
+    alert('⚠ Impossibile salvare\n\nIl cliente "'+nome+'" esiste già nel sistema.\n\nVerifica la lista clienti o usa un nome diverso.');
+    return;
+  }
   const paese=document.getElementById('new-entita-paese').value.trim();
   const valuta=document.getElementById('new-entita-valuta').value;
   let newEnt={nome,paese,valuta};
@@ -2006,12 +2136,16 @@ async function deleteEntita(i){
   showToast(`✓ Cliente "${nomeCliente}" eliminato con tutti i dati collegati`);
 }
 
-function addTipo(){
+async function addTipo(){
   const nome=document.getElementById('new-tipo-nome').value.trim();
   if(!nome){showToast('⚠ Inserisci il nome');return;}
   if(APP.tipi.includes(nome)){showToast('⚠ Tipo già esistente');return;}
   APP.tipi.push(nome);
   saveLocalData();
+  if(currentUser){
+    try{await supa.from('tipi_scadenza').insert({user_id:currentUser.id,nome});}
+    catch(e){console.warn('addTipo DB:',e);}
+  }
   closeModal('add-tipo');
   renderTipi();
   document.getElementById('new-tipo-nome').value='';
@@ -2027,10 +2161,15 @@ function editTipo(i){
   showToast('✓ Tipo aggiornato');
 }
 
-function deleteTipo(i){
+async function deleteTipo(i){
   if(!confirm('Eliminare "'+APP.tipi[i]+'"?'))return;
+  const nome=APP.tipi[i];
   APP.tipi.splice(i,1);
   saveLocalData();
+  if(currentUser){
+    try{await supa.from('tipi_scadenza').delete().eq('user_id',currentUser.id).eq('nome',nome);}
+    catch(e){console.warn('deleteTipo DB:',e);}
+  }
   renderTipi();
   showToast('✓ Tipo eliminato');
 }
@@ -2074,30 +2213,80 @@ function renderTable(filter,tbid){
       ${s.prezzo>0?`<div class="amt-out" style="font-size:11px;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
       ${s.note&&s.note.includes('fornitore')?`<div style="font-size:9px;color:var(--muted)">${s.note.replace('💸 Uscita fornitore: ','')}</div>`:''}
     </td>`:'';
-    // Bottoni azione — completare/ripristinare + eliminare
+    const hasNote=s.note&&!s.note.includes('💸 Uscita fornitore');
+    const noteIcon=hasNote?'📝':'';
     const actionBtns=done
       ?`<td style="white-space:nowrap">
           <button onclick="event.stopPropagation();markUndone('${s.id}')" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Ripristina">↩</button>
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`
       :`<td style="white-space:nowrap">
-          <button onclick="event.stopPropagation();editScadenza('${s.id}')" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Note / Modifica">✎</button>
           <button onclick="event.stopPropagation();markDone('${s.id}')" style="background:var(--adim);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--accent);cursor:pointer;font-size:11px;margin-right:4px" title="Completa">✓</button>
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`;
     const tr=document.createElement('tr');
     const annualBadge=s.ricorrenza==='annual'?'<span style="font-size:9px;color:var(--info);background:var(--idim);padding:1px 5px;border-radius:4px;margin-left:4px">♻</span>'
-      :s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">↺</span>':'';
+      :s.ricorrenza==='monthly'?'<span style="font-size:9px;color:var(--warn);background:var(--wdim);padding:1px 5px;border-radius:4px;margin-left:4px">↺</span>'
+      :s.ricorrenza==='biannual'?'<span style="font-size:9px;color:var(--purple);background:var(--pdim,var(--idim));padding:1px 5px;border-radius:4px;margin-left:4px">⟳2y</span>':'';
     const legacyBadge=s.is_legacy?'<span style="font-size:9px;color:var(--muted);background:var(--surface3);padding:1px 5px;border-radius:4px;margin-left:4px">legacy</span>':'';
-    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}${legacyBadge}</div><div class="etag">${s.nome}</div></td>
+    tr.style.cursor='pointer';
+    tr.title='Clicca per vedere/aggiungere nota';
+    tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}${legacyBadge}</div><div class="etag">${s.nome} ${noteIcon}</div></td>
       <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
       <td><span class="dbadge ${cls}">${dLabel}</span></td>
       ${costoCol}
       <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
       ${actionBtns}`;
+    // Click row → expand inline note
+    tr.addEventListener('click', ()=>toggleScadenzaNote(tr, s, tbid));
     tb.appendChild(tr);
   });
+}
+
+function toggleScadenzaNote(tr, s, tbid){
+  const existingRow=tr.nextSibling;
+  if(existingRow&&existingRow.classList?.contains('note-row')){
+    existingRow.remove(); return;
+  }
+  // Remove any other open note rows in same table
+  document.querySelectorAll(`#${tbid} .note-row`).forEach(r=>r.remove());
+  const cols=tbid==='sb2'?7:6;
+  const noteRow=document.createElement('tr');
+  noteRow.className='note-row';
+  noteRow.innerHTML=`<td colspan="${cols}" style="padding:0;background:var(--surface2);border-bottom:2px solid var(--border);">
+    <div style="padding:12px 16px;display:flex;align-items:flex-start;gap:10px;">
+      <span style="font-size:14px;margin-top:2px">📝</span>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">NOTA INTERNA — ${s.nome} (${s.entita})</div>
+        <textarea id="note-input-${s.id}" style="width:100%;min-height:60px;padding:8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;resize:vertical;font-family:inherit" placeholder="Aggiungi una nota interna su questa scadenza...">${(s.note&&!s.note.includes('💸 Uscita fornitore'))?s.note:''}</textarea>
+      </div>
+      <button onclick="saveScadenzaNote('${s.id}','${tbid}')" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-top:18px">Salva nota</button>
+    </div>
+  </td>`;
+  tr.insertAdjacentElement('afterend', noteRow);
+  document.getElementById('note-input-'+s.id)?.focus();
+}
+
+async function saveScadenzaNote(id, tbid){
+  const input=document.getElementById('note-input-'+id);
+  if(!input)return;
+  const nota=input.value.trim();
+  const s=APP.scadenze.find(x=>String(x.id)===String(id));
+  if(!s)return;
+  s.note=nota;
+  saveLocalData();
+  const isUUID=typeof s.id==='string'&&s.id.length===36&&s.id.includes('-');
+  if(isUUID&&currentUser){
+    try{await supa.from('scadenze').update({note:nota}).eq('id',s.id).eq('user_id',currentUser.id);}
+    catch(e){console.warn('saveNote:',e);}
+  }
+  showToast('✓ Nota salvata');
+  // Trova il filtro attivo del tab corrente
+  const panel=document.getElementById(tbid)?.closest('.panel');
+  const activeTab=panel?.querySelector('.ftab.active');
+  const activeFilter=activeTab?.getAttribute('onclick')?.match(/filterScad\('([^']+)'/)?.[1]||'all';
+  renderTable(activeFilter, tbid);
 }
 
 function renderTimeline(){
@@ -2794,8 +2983,11 @@ async function deleteServizioCliente(nome,i){
     APP.scadenze=APP.scadenze.filter(x=>x.id!==s.scadenzaId);
   }
   const globalIdx=APP.servizi_ricorrenti.indexOf(s);
+  const sId=s.id;
   APP.servizi_ricorrenti.splice(globalIdx,1);
   saveLocalData();
+  // Elimina da DB
+  try{await deleteServizioRicorrenteDalDB(sId);}catch(e){console.warn('deleteServizio DB:',e);}
   renderClienteDetail(nome);
   renderAll();
   showToast(LANG==='en'?'✓ Service deleted':'✓ Servizio eliminato');
@@ -2920,19 +3112,21 @@ function resetListinoModal(){
   if(btn)btn.textContent='Salva';
   ['srv-nome','srv-prezzo','srv-costo','srv-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
 }
-function addServizio(){
+async function addServizio(){
   const nome=document.getElementById('srv-nome').value.trim();
   if(!nome){showToast('⚠ Inserisci il nome del servizio');return;}
   if(!APP.servizi)APP.servizi=[];
-  APP.servizi.push({
+  const obj={
     nome,
     categoria:document.getElementById('srv-categoria').value,
     valuta:document.getElementById('srv-valuta').value,
     prezzo:parseFloat(document.getElementById('srv-prezzo').value)||0,
     costo:parseFloat(document.getElementById('srv-costo').value)||0,
     note:document.getElementById('srv-note').value||''
-  });
+  };
+  APP.servizi.push(obj);
   saveLocalData();
+  try{const saved=await saveListinoItemToDB(obj);if(saved?.id)obj.id=saved.id;}catch(e){console.warn('listino DB:',e);}
   closeModal('add-servizio');
   resetListinoModal();
   renderListino();
@@ -2954,10 +3148,11 @@ function editServizio(i){
   openModal('add-servizio');
 }
 
-function saveEditServizio(i){
+async function saveEditServizio(i){
   const nome=document.getElementById('srv-nome').value.trim();
   if(!nome){showToast('⚠ Inserisci il nome');return;}
-  APP.servizi[i]={
+  const obj={
+    ...APP.servizi[i],
     nome,
     categoria:document.getElementById('srv-categoria').value,
     valuta:document.getElementById('srv-valuta').value,
@@ -2965,17 +3160,21 @@ function saveEditServizio(i){
     costo:parseFloat(document.getElementById('srv-costo').value)||0,
     note:document.getElementById('srv-note').value||''
   };
+  APP.servizi[i]=obj;
   saveLocalData();
+  try{await saveListinoItemToDB(obj);}catch(e){console.warn('listino update DB:',e);}
   closeModal('add-servizio');
   resetListinoModal();
   renderListino();
   showToast('✓ Servizio aggiornato');
 }
 
-function deleteServizio(i){
+async function deleteServizio(i){
   if(!confirm('Eliminare "'+APP.servizi[i].nome+'"?'))return;
+  const obj=APP.servizi[i];
   APP.servizi.splice(i,1);
   saveLocalData();
+  try{await deleteListinoItemDalDB(obj.id);}catch(e){console.warn('listino delete DB:',e);}
   renderListino();
   showToast('✓ Servizio eliminato');
 }
