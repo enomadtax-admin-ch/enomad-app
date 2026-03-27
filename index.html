@@ -929,7 +929,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="fin-table"><thead><tr>
-          <th>Data</th><th>Descrizione</th><th>Categoria</th><th>Controparte</th><th>Importo</th><th>Tipo</th><th></th>
+          <th>Data</th><th>Descrizione</th><th>Categoria</th><th>Controparte</th><th>Banca</th><th>Importo</th><th>Tipo</th><th></th>
         </tr></thead><tbody id="mov-tbody"></tbody></table>
         <div id="mov-load-more" style="display:none;padding:12px;text-align:center;">
           <button class="btn" onclick="loadMoreMovimenti()">↓ Carica altri</button>
@@ -1155,6 +1155,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="fg"><label class="fl">Descrizione</label><input type="text" class="fi" id="mov-desc" placeholder="es. Campagna Meta Ads, Fattura fornitore..."></div>
       <div class="frow">
         <div class="fg"><label class="fl">Controparte (opzionale)</label><input type="text" class="fi" id="mov-counterparty" placeholder="es. Meta, AWS, Studio Rossi..."></div>
+        <div class="fg"><label class="fl">Banca / Conto (opzionale)</label><input type="text" class="fi" id="mov-banca" placeholder="es. Wise, HSBC, Revolut, Conto IT..."></div>
         <div class="fg"><label class="fl">Note (opzionale)</label><input type="text" class="fi" id="mov-note" placeholder="—"></div>
       </div>
       <div class="tg-hint" style="margin-top:8px;" id="mov-hint">💡 Uscita: aumenta cash out e burn rate. Entrata con categoria "Ricavo extra" aumenta anche il fatturato.</div>
@@ -3650,6 +3651,7 @@ async function loadMovimentiFromDB(periodo){
         descrizione:r.descrizione||'',
         entita:r.entita||'',
         counterparty_name:r.counterparty_name||r.entita||'',
+        banca:r.banca||'',
         importo:parseFloat(r.importo)||0,
         valuta:r.valuta||'EUR',
         tipo:r.tipo||'out',
@@ -3709,6 +3711,7 @@ async function addMovimento(){
   const tipo=document.getElementById('mov-tipo')?.value||'out';
   const categoria=document.getElementById('mov-categoria')?.value||'other';
   const counterparty=(document.getElementById('mov-counterparty')?.value||'').trim();
+  const banca=(document.getElementById('mov-banca')?.value||'').trim();
   const note=(document.getElementById('mov-note')?.value||'').trim();
   const editIdx=parseInt(document.getElementById('mov-desc')?.dataset?.editIdx??'-1');
 
@@ -3718,9 +3721,9 @@ async function addMovimento(){
   if(!data){showToast('⚠ Seleziona la data');return;}
 
   const mov={
-    id: Date.now(), // id locale temporaneo
+    id: Date.now(),
     descrizione:desc, tipo, importo, categoria, data,
-    counterparty_name:counterparty, note, valuta:'EUR'
+    counterparty_name:counterparty, banca, note, valuta:'EUR'
   };
 
   if(!APP.movimenti)APP.movimenti=[];
@@ -3735,7 +3738,7 @@ async function addMovimento(){
   closeModal('movimento');
   document.getElementById('mov-desc').dataset.editIdx='-1';
   document.getElementById('mov-modal-title').textContent='Nuovo movimento manuale';
-  ['mov-desc','mov-importo','mov-counterparty','mov-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['mov-desc','mov-importo','mov-counterparty','mov-banca','mov-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   renderMovimenti();
   updateKPIs();
   const activeView=document.querySelector('.view.active');
@@ -3753,7 +3756,9 @@ async function addMovimento(){
         importo,
         categoria,
         data,
-        note: counterparty?(counterparty+(note?' — '+note:'')):note,
+        counterparty_name:counterparty,
+        banca,
+        note,
         valuta:'EUR'
       };
       if(editIdx>=0&&APP.movimenti[editIdx]?.id){
@@ -3807,11 +3812,13 @@ function renderMovimenti(append){
       const isIn=m.tipo==='in';
       const catLabel=MOV_CAT_LABELS[m.categoria||'other']||'📎 Altro';
       const cp=m.counterparty_name||m.entita||'—';
+      const banca=m.banca||'—';
       tb.innerHTML+=`<tr>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${m.data?.split('-').reverse().join('/')||'—'}</td>
         <td style="font-size:13px;font-weight:500">${m.descrizione}</td>
         <td><span class="badge bi" style="font-size:10px">${catLabel}</span></td>
         <td style="font-size:11px;color:var(--muted)">${cp}</td>
+        <td style="font-size:11px;color:var(--muted)">${banca}</td>
         <td class="${isIn?'amt-in':'amt-out'}">${isIn?'↑ ':'↓ '}€ ${(m.importo||0).toLocaleString('it-IT')}</td>
         <td style="font-size:11px;color:${isIn?'var(--accent)':'var(--danger)'}">${isIn?'Cash in':'Cash out'}</td>
         <td style="white-space:nowrap">
@@ -3851,6 +3858,8 @@ function editMovimento(realIdx){
   document.getElementById('mov-data').value=m.data||'';
   const cp=document.getElementById('mov-counterparty');
   if(cp)cp.value=m.counterparty_name||m.entita||'';
+  const bancaEl=document.getElementById('mov-banca');
+  if(bancaEl)bancaEl.value=m.banca||'';
   const noteEl=document.getElementById('mov-note');
   if(noteEl)noteEl.value=m.note||'';
   document.getElementById('mov-desc').dataset.editIdx=realIdx;
