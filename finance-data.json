@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-03-27T12:24:54.876Z",
+  "lastSync": "2026-03-27T14:36:00.178Z",
   "summary": {
     "fatturato": 1033711.85,
-    "incassato": 965376.85,
-    "inAttesa": 60115,
+    "incassato": 967376.85,
+    "inAttesa": 58115,
     "numFatture": 687,
     "numClienti": 112,
     "valuta": "EUR",
@@ -30,16 +30,16 @@
     },
     "2026": {
       "fatturato": 140834.09,
-      "incassato": 118199.09,
-      "inAttesa": 18675,
+      "incassato": 120199.09,
+      "inAttesa": 16675,
       "count": 65
     }
   },
   "perMese": {
     "2026-03": {
       "fatturato": 38902.85,
-      "incassato": 20462.85,
-      "inAttesa": 14480,
+      "incassato": 22462.85,
+      "inAttesa": 12480,
       "count": 26
     },
     "2026-02": {
@@ -367,8 +367,8 @@
       "cliente": "P&P Market LLC",
       "data": "2026-03-26",
       "totale": 2000,
-      "balance": 2000,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-26"
     },
