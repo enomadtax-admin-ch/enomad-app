@@ -1184,6 +1184,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
               <option value="monthly">Mensile</option>
               <option value="quarterly">Trimestrale</option>
               <option value="annual">Annuale</option>
+              <option value="biannual">Biennale (ogni 2 anni)</option>
             </select>
           </div>
         </div>
@@ -1217,6 +1218,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
               <option value="monthly">Mensile</option>
               <option value="quarterly">Trimestrale</option>
               <option value="annual" selected>Annuale</option>
+              <option value="biannual">Biennale (ogni 2 anni)</option>
             </select>
           </div>
         </div>
@@ -1700,9 +1702,11 @@ function renderClienteDetail(nome){
 
 /* ══ FREQUENZA COSTO HELPERS ══ */
 function freqMonths(freq){
-  return freq==='monthly'?1:freq==='quarterly'?3:12;
+  return freq==='monthly'?1:freq==='quarterly'?3:freq==='biannual'?24:12;
 }
 function annualizeAmount(amount, freq){
+  // biannual = metà del valore ogni anno (competenza annuale)
+  if(freq==='biannual')return (amount||0)/2;
   return (amount||0) * (12/freqMonths(freq));
 }
 
@@ -1870,7 +1874,7 @@ async function saveServizioCliente(){
         data:effectiveCashoutDate,stato:'pending',
         prezzo:cash_out_amount,costo:0,
         note:'💸 Uscita fornitore: '+(supplier_name||tipo),
-        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':'once'
+        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':cash_out_frequency==='biannual'?'biannual':'once'
       };
       try{
         const saved=await saveScadenzaToDB(nuovaScad);
@@ -1895,7 +1899,7 @@ async function saveServizioCliente(){
         prezzo:cash_out_amount,
         costo:0,
         note:'💸 Uscita fornitore: '+(supplier_name||tipo),
-        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':'once'
+        reminder,ricorrenza:cash_out_frequency==='annual'?'annual':cash_out_frequency==='biannual'?'biannual':'once'
       };
       try{
         const saved=await saveScadenzaToDB(nuovaScad);
@@ -1950,6 +1954,9 @@ function renderTipi(){
 async function addEntita(){
   const nome=document.getElementById('new-entita-nome').value.trim();
   if(!nome){showToast('⚠ Inserisci il nome');return;}
+  // Controllo duplicati
+  const dup=APP.entita.find(e=>e.nome.toLowerCase()===nome.toLowerCase());
+  if(dup){showToast('⚠ Cliente "'+nome+'" già esistente');return;}
   const paese=document.getElementById('new-entita-paese').value.trim();
   const valuta=document.getElementById('new-entita-valuta').value;
   let newEnt={nome,paese,valuta};
@@ -1968,12 +1975,35 @@ async function addEntita(){
 
 async function deleteEntita(i){
   const e=APP.entita[i];
-  if(!confirm('Eliminare "'+e.nome+'"?'))return;
-  if(e.id&&currentUser)await supa.from('entita').delete().eq('id',e.id).eq('user_id',currentUser.id);
+  if(!e)return;
+  const nomeCliente=e.nome;
+  // Conta dati collegati
+  const scadenzeCollegate=APP.scadenze.filter(s=>s.entita===nomeCliente).length;
+  const serviziCollegati=(APP.servizi_ricorrenti||[]).filter(s=>s.cliente===nomeCliente).length;
+  let msg=`Eliminare il cliente "${nomeCliente}"?`;
+  if(scadenzeCollegate>0||serviziCollegati>0){
+    msg+=`\n\nSaranno eliminati anche:\n`;
+    if(scadenzeCollegate>0) msg+=`• ${scadenzeCollegate} scadenza/e collegate\n`;
+    if(serviziCollegati>0) msg+=`• ${serviziCollegati} servizio/i ricorrenti\n`;
+    msg+=`\nQuesta azione non è reversibile.`;
+  }
+  if(!confirm(msg))return;
+  // Elimina scadenze collegate dal DB
+  const scadIds=APP.scadenze.filter(s=>s.entita===nomeCliente&&typeof s.id==='string'&&s.id.length===36).map(s=>s.id);
+  if(scadIds.length>0&&currentUser){
+    await supa.from('scadenze').delete().in('id',scadIds).eq('user_id',currentUser.id);
+  }
+  APP.scadenze=APP.scadenze.filter(s=>s.entita!==nomeCliente);
+  // Elimina servizi ricorrenti collegati
+  APP.servizi_ricorrenti=(APP.servizi_ricorrenti||[]).filter(s=>s.cliente!==nomeCliente);
+  // Elimina entità dal DB
+  if(e.id&&currentUser){
+    await supa.from('entita').delete().eq('id',e.id).eq('user_id',currentUser.id);
+  }
   APP.entita.splice(i,1);
   saveLocalData();
-  renderEntita();
-  showToast('✓ Entità eliminata');
+  renderAll();
+  showToast(`✓ Cliente "${nomeCliente}" eliminato con tutti i dati collegati`);
 }
 
 function addTipo(){
@@ -2051,6 +2081,7 @@ function renderTable(filter,tbid){
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`
       :`<td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();editScadenza('${s.id}')" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px" title="Note / Modifica">✎</button>
           <button onclick="event.stopPropagation();markDone('${s.id}')" style="background:var(--adim);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--accent);cursor:pointer;font-size:11px;margin-right:4px" title="Completa">✓</button>
           <button onclick="event.stopPropagation();deleteScadenza('${s.id}')" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:4px 8px;color:var(--danger);cursor:pointer;font-size:11px" title="Elimina">🗑</button>
         </td>`;
@@ -2103,7 +2134,7 @@ function updateKPIs(){
   const revenueAnnuo=sr.reduce((a,s)=>{
     const price=s.client_price||s.prezzo||0;
     const freq=s.revenue_frequency||s.freq||'monthly';
-    return a+(freq==='annual'?price:freq==='quarterly'?price*4:price*12);
+    return a+(freq==='biannual'?price/2:freq==='annual'?price:freq==='quarterly'?price*4:price*12);
   },0);
   const costiAnnui=sr.reduce((a,s)=>{
     const cost=s.supplier_cost_total||0;
@@ -2188,9 +2219,10 @@ async function markDone(id){
   saveLocalData();
   await updateScadenzaStatoDB(id,'done');
   // Se ricorrente — crea automaticamente la prossima
-  if(s.ricorrenza==='annual'||s.ricorrenza==='monthly'){
+  if(s.ricorrenza==='annual'||s.ricorrenza==='monthly'||s.ricorrenza==='biannual'){
     const dataAttuale=new Date(s.data);
     if(s.ricorrenza==='annual') dataAttuale.setFullYear(dataAttuale.getFullYear()+1);
+    if(s.ricorrenza==='biannual') dataAttuale.setFullYear(dataAttuale.getFullYear()+2);
     if(s.ricorrenza==='monthly') dataAttuale.setMonth(dataAttuale.getMonth()+1);
     const nuovaData=dataAttuale.toISOString().split('T')[0];
     const nuova={
@@ -2205,8 +2237,8 @@ async function markDone(id){
     APP.scadenze.push(nuova);
     APP.scadenze.sort((a,b)=>new Date(a.data)-new Date(b.data));
     saveLocalData();
-    const freq=s.ricorrenza==='annual'?'annuale':'mensile';
-    showToast('✓ Completata + prossima scadenza '+freq+' creata per '+nuovaData.split('-').reverse().join('/'));
+    const freqLabel={annual:'annuale',monthly:'mensile',biannual:'biennale'}[s.ricorrenza]||'';
+    showToast('✓ Completata + prossima scadenza '+freqLabel+' creata per '+nuovaData.split('-').reverse().join('/'));
   }else{
     showToast('✓ Completata: '+s.nome);
   }
@@ -3200,7 +3232,7 @@ function renderRicorrenti(){
   APP.servizi_ricorrenti.forEach(s=>{
     const price=s.client_price||s.prezzo||0;
     const freq=s.revenue_frequency||s.freq||'monthly';
-    const valoreAnnuo=freq==='annual'?price:freq==='quarterly'?price*4:price*12;
+    const valoreAnnuo=freq==='biannual'?price/2:freq==='annual'?price:freq==='quarterly'?price*4:price*12;
     if(!byEntita[s.cliente])byEntita[s.cliente]={entita:s.cliente,valore:0,tipi:[]};
     byEntita[s.cliente].valore+=valoreAnnuo;
     const tipoLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
@@ -3319,7 +3351,7 @@ function renderRicorrenti(){
         const cost=s.supplier_cost_total||0;
         const period=s.cost_allocation_period||'annual';
         const costAnnuo=period==='monthly'?cost*12:period==='quarterly'?cost*4:cost;
-        const revenueAnnuo=freq==='annual'?price:freq==='quarterly'?price*4:price*12;
+        const revenueAnnuo=freq==='biannual'?price/2:freq==='annual'?price:freq==='quarterly'?price*4:price*12;
         const marg=revenueAnnuo>0?Math.round(((revenueAnnuo-costAnnuo)/revenueAnnuo)*100):null;
         const mc=marg===null?'var(--muted)':marg>=50?'var(--accent)':marg>=20?'var(--warn)':'var(--danger)';
         const freqLabel=freq==='monthly'?(LANG==='en'?'monthly':'mensile'):freq==='quarterly'?'trim.':(LANG==='en'?'annual':'annuale');
