@@ -683,7 +683,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
       <!-- KPI Zoho (contabili) -->
       <div class="fin-hero" style="margin-bottom:12px;">
-        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato (Zoho only)</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">—</div><div class="fin-kpi-trend" id="fin-yoy">—</div></div>
+        <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">—</div><div class="fin-kpi-trend" id="fin-yoy">—</div></div>
         <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl">Cash in reale</div><div class="fin-kpi-val" style="color:var(--info)" id="fin-incassato">—</div><div class="fin-kpi-trend">—</div></div>
         <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl" data-t="inAttesa">In attesa</div><div class="fin-kpi-val" style="color:var(--warn)" id="fin-attesa">—</div><div class="fin-kpi-trend">—</div></div>
         <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl">Margine cassa %</div><div class="fin-kpi-val" id="fin-margine">—</div><div class="fin-kpi-trend" id="fin-nfatt">—</div></div>
@@ -919,7 +919,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="panel-title">✦ Movimenti manuali</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <select class="fi" id="mov-periodo-filter" style="width:auto;padding:5px 10px;font-size:12px" onchange="onMovPeriodoChange()">
-              <option value="3m" selected>Ultimi 3 mesi</option>
+              <option value="1m" selected>Ultimo mese</option>
+              <option value="3m">Ultimi 3 mesi</option>
               <option value="6m">Ultimi 6 mesi</option>
               <option value="ytd">Anno corrente</option>
               <option value="all">Tutti</option>
@@ -1463,7 +1464,7 @@ function saveLocalData(){
 
 async function loadAllData(){
   loadLocalData();
-  await Promise.all([
+  const results=await Promise.allSettled([
     loadScadenzeFromDB(),
     loadEntitaFromDB(),
     loadTipiFromDB(),
@@ -1471,6 +1472,17 @@ async function loadAllData(){
     loadServiziRicorrentiFromDB(),
     loadListinoFromDB()
   ]);
+  // Check for table-missing errors (404/42P01)
+  const missing=[];
+  results.forEach((r,i)=>{
+    if(r.status==='rejected'){
+      const names=['scadenze','entita','tipi_scadenza','movimenti_manuali','servizi_ricorrenti','listino'];
+      missing.push(names[i]);
+    }
+  });
+  if(missing.length>0){
+    console.warn('Tabelle Supabase mancanti:', missing);
+  }
   syncZoho();
   renderAll();
   updateDataStats();
@@ -2623,22 +2635,22 @@ function renderFinance(){
   if(margineEl)margineEl.style.color=margineColor;
   el('fin-nfatt',numFatture+' fatture'+(manualRevenue>0?' + €'+Math.round(manualRevenue).toLocaleString('it-IT')+' manuali':''));
 
-  // YoY (Zoho only)
-  if(annoSel!=='all'&&ZOHO.perAnno){
-    const annoPre=(parseInt(annoSel)-1).toString();
-    const pre=ZOHO.perAnno[annoPre];
-    if(pre&&pre.fatturato>0){
-      const yoy=Math.round(((zohoFatt-pre.fatturato)/pre.fatturato)*100);
-      el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+annoPre);
-    }else el('fin-yoy','—');
+  // YoY — confronta stesso periodo dell'anno precedente
+  // Calcola fatturato anno precedente sugli stessi mesi (es. Jan-Mar 2025 se filtro è Jan-Mar 2026)
+  const prevYearMesiKeys=mesiKeys.map(k=>{
+    const [y,m]=k.split('-');
+    return (parseInt(y)-1)+'-'+m;
+  });
+  const prevFatt=prevYearMesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.fatturato||0),0);
+  if(prevFatt>0){
+    const yoy=Math.round(((fatturato-prevFatt)/prevFatt)*100);
+    const periodoLabel=_finPeriodo==='1m'?'mese prec.'
+      :_finPeriodo==='3m'?'3m prec.'
+      :_finPeriodo==='ytd'?String(new Date().getFullYear()-1)
+      :'anno prec.';
+    el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+periodoLabel);
   }else{
-    const anno=new Date().getFullYear().toString();
-    const pre=ZOHO.perAnno?.[(parseInt(anno)-1).toString()];
-    const curr=ZOHO.perAnno?.[anno];
-    if(pre&&curr&&pre.fatturato>0){
-      const yoy=Math.round(((curr.fatturato-pre.fatturato)/pre.fatturato)*100);
-      el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% YoY');
-    }
+    el('fin-yoy','—');
   }
 
   // Movimenti recenti Zoho
