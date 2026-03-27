@@ -1483,9 +1483,10 @@ async function loadAllData(){
   if(missing.length>0){
     console.warn('Tabelle Supabase mancanti:', missing);
   }
-  syncZoho();
   renderAll();
   updateDataStats();
+  // Sync Zoho in background — non bloccante
+  syncZoho().catch(e=>console.warn('syncZoho init:',e));
 }
 
 /* ══ SUPABASE DB ══ */
@@ -1493,7 +1494,7 @@ async function loadScadenzeFromDB(){
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('scadenze').select('*').order('data',{ascending:true});
-    if(error)throw error;
+    if(error){console.warn("loadScadenzeFromDB:",error.message);return;}
     if(data){
       // Get all scadenzaIds from servizi_ricorrenti to identify generated scadenze
       const generatedIds=new Set((APP.servizi_ricorrenti||[]).map(s=>String(s.scadenzaId)).filter(Boolean));
@@ -1518,7 +1519,7 @@ async function loadEntitaFromDB(){
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('entita').select('*').order('nome');
-    if(error)throw error;
+    if(error){console.warn("loadEntitaFromDB:",error.message);return;}
     if(data&&data.length>0){
       APP.entita=data.map(r=>({id:r.id,nome:r.nome,paese:r.paese||'',valuta:r.valuta||'EUR'}));
       saveLocalData();
@@ -1531,7 +1532,7 @@ async function loadTipiFromDB(){
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('tipi_scadenza').select('*').eq('user_id',currentUser.id).order('nome');
-    if(error)throw error;
+    if(error){console.warn("loadTipiFromDB:",error.code,error.message);return;}
     if(data&&data.length>0){
       APP.tipi=data.map(r=>r.nome);
       saveLocalData();
@@ -1550,7 +1551,7 @@ async function loadServiziRicorrentiFromDB(){
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('servizi_ricorrenti').select('*').eq('user_id',currentUser.id).order('created_at');
-    if(error)throw error;
+    if(error){console.warn('loadServiziRicorrenti:',error.message);return;}
     if(data&&data.length>0){
       APP.servizi_ricorrenti=data.map(r=>({
         id:r.id,
@@ -1620,7 +1621,7 @@ async function loadListinoFromDB(){
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('listino').select('*').eq('user_id',currentUser.id).order('nome');
-    if(error)throw error;
+    if(error){console.warn('loadListino:',error.message);return;}
     if(data&&data.length>0){
       APP.servizi=data.map(r=>({
         id:r.id,nome:r.nome,categoria:r.categoria||'Compliance',
@@ -2644,10 +2645,21 @@ function renderFinance(){
   const prevFatt=prevYearMesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.fatturato||0),0);
   if(prevFatt>0){
     const yoy=Math.round(((fatturato-prevFatt)/prevFatt)*100);
-    const periodoLabel=_finPeriodo==='1m'?'mese prec.'
-      :_finPeriodo==='3m'?'3m prec.'
-      :_finPeriodo==='ytd'?String(new Date().getFullYear()-1)
-      :'anno prec.';
+
+    const now=new Date();
+    const prevY=now.getFullYear()-1;
+    const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    let periodoLabel;
+    if(_finPeriodo==='1m'){
+      periodoLabel=mesiNomi[now.getMonth()]+' '+prevY;
+    }else if(_finPeriodo==='3m'){
+      const from=new Date(now.getFullYear(),now.getMonth()-2,1);
+      periodoLabel=mesiNomi[from.getMonth()]+'-'+mesiNomi[now.getMonth()]+' '+prevY;
+    }else if(_finPeriodo==='ytd'){
+      periodoLabel='YTD '+prevY;
+    }else{
+      periodoLabel=String(prevY);
+    }
     el('fin-yoy',(yoy>=0?'↑ +':'↓ ')+yoy+'% vs '+periodoLabel);
   }else{
     el('fin-yoy','—');
@@ -3656,6 +3668,8 @@ const MOV_PAGE_SIZE=50;
 
 function getMovCutoffDate(periodo){
   const oggi=new Date();
+  const meseCorrente=oggi.getFullYear()+'-'+String(oggi.getMonth()+1).padStart(2,'0')+'-01';
+  if(periodo==='1m') return meseCorrente; // solo mese corrente
   if(periodo==='3m'){const d=new Date(oggi.getFullYear(),oggi.getMonth()-2,1);return d.toISOString().split('T')[0].substring(0,7)+'-01';}
   if(periodo==='6m'){const d=new Date(oggi.getFullYear(),oggi.getMonth()-5,1);return d.toISOString().split('T')[0].substring(0,7)+'-01';}
   if(periodo==='ytd')return oggi.getFullYear()+'-01-01';
@@ -3670,7 +3684,7 @@ async function loadMovimentiFromDB(periodo){
     const cutoff=getMovCutoffDate(p);
     if(cutoff)q=q.gte('data',cutoff);
     const{data,error}=await q;
-    if(error)throw error;
+    if(error){console.warn("loadMovimentiFromDB:",error.code,error.message);return;}
     if(data){
       const fromDB=data.map(r=>({
         id:r.id,
@@ -3826,7 +3840,7 @@ function renderMovimenti(append){
   // Aggiorna label contatore
   const lbl=document.getElementById('mov-count-label');
   if(lbl)lbl.textContent=filtered.length+' movimenti'+( cutoff?' · '+({
-    '3m':'ultimi 3 mesi','6m':'ultimi 6 mesi','ytd':'anno corrente','all':'tutti'
+    '1m':'questo mese','3m':'ultimi 3 mesi','6m':'ultimi 6 mesi','ytd':'anno corrente','all':'tutti'
   }[periodo]||''):'');
 
   // Render righe
