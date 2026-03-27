@@ -615,6 +615,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <!-- Lista clienti -->
       <div id="clienti-list-view">
         <div class="panel">
+          <div class="panel-header" style="padding-bottom:10px;">
+            <div style="position:relative;flex:1;max-width:280px;">
+              <input type="text" id="clienti-search" class="fi" placeholder="🔍 Cerca cliente..." style="padding:7px 10px 7px 32px;font-size:12px;width:100%;" oninput="renderClienti()">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
+            </div>
+            <div id="clienti-count-badge" style="font-size:11px;color:var(--muted)"></div>
+          </div>
           <table class="fin-table"><thead><tr>
             <th id="th-cliente">Cliente</th><th id="th-paese">Paese</th><th id="th-scadenze">Scadenze</th><th id="th-servizi">Servizi ric.</th><th id="th-valore">Valore annuo</th><th></th>
           </tr></thead>
@@ -1531,7 +1538,7 @@ async function loadEntitaFromDB(){
 async function loadTipiFromDB(){
   if(!currentUser)return;
   try{
-    const{data,error}=await supa.from('tipi_scadenza').select('*').eq('user_id',currentUser.id).order('nome');
+    const{data,error}=await supa.from('tipi_scadenza').select('*').eq('user_id',currentUser.id);
     if(error){console.warn("loadTipiFromDB:",error.code,error.message);return;}
     if(data&&data.length>0){
       APP.tipi=data.map(r=>r.nome);
@@ -1550,7 +1557,7 @@ async function loadTipiFromDB(){
 async function loadServiziRicorrentiFromDB(){
   if(!currentUser)return;
   try{
-    const{data,error}=await supa.from('servizi_ricorrenti').select('*').eq('user_id',currentUser.id).order('created_at');
+    const{data,error}=await supa.from('servizi_ricorrenti').select('*').eq('user_id',currentUser.id);
     if(error){console.warn('loadServiziRicorrenti:',error.message);return;}
     if(data&&data.length>0){
       APP.servizi_ricorrenti=data.map(r=>({
@@ -1620,8 +1627,8 @@ async function deleteServizioRicorrenteDalDB(id){
 async function loadListinoFromDB(){
   if(!currentUser)return;
   try{
-    const{data,error}=await supa.from('listino').select('*').eq('user_id',currentUser.id).order('nome');
-    if(error){console.warn('loadListino:',error.message);return;}
+    const{data,error}=await supa.from('listino').select('*').eq('user_id',currentUser.id);
+    if(error){console.warn('loadListino:',error.code,error.message);return;}
     if(data&&data.length>0){
       APP.servizi=data.map(r=>({
         id:r.id,nome:r.nome,categoria:r.categoria||'Compliance',
@@ -1686,13 +1693,18 @@ function renderClienti(){
   if(!APP.servizi_ricorrenti)APP.servizi_ricorrenti=[];
   const tbody=document.getElementById('clienti-tbody');
   const subEl=document.getElementById('clienti-count-sub');
-  if(subEl)subEl.textContent=(LANG==='en'?APP.entita.length+' clients registered':APP.entita.length+' clienti registrati');
+  const q=(document.getElementById('clienti-search')?.value||'').toLowerCase().trim();
+  const lista=q?APP.entita.filter(e=>e.nome.toLowerCase().includes(q)||(e.paese||'').toLowerCase().includes(q)):APP.entita;
+  if(subEl)subEl.textContent=(LANG==='en'?lista.length+' clients':lista.length+' clienti')+(q?' trovati':'');
+  const badge=document.getElementById('clienti-count-badge');
+  if(badge)badge.textContent=q?lista.length+' di '+APP.entita.length+' clienti':'';
   if(!tbody)return;
   tbody.innerHTML='';
-  if(APP.entita.length===0){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">'+(LANG==='en'?'No clients — add one':'Nessun cliente — aggiungine uno')+'</td></tr>';
+  if(lista.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">'+(q?'Nessun cliente trovato per "'+q+'"':'Nessun cliente — aggiungine uno')+'</td></tr>';
   }else{
-    APP.entita.forEach((e,i)=>{
+    lista.forEach((e,i)=>{
+      const realIdx=APP.entita.indexOf(e);
       const scadAttive=APP.scadenze.filter(s=>s.entita===e.nome&&s.stato!=='done').length;
       const srClienti=APP.servizi_ricorrenti.filter(s=>s.cliente===e.nome);
       const valoreAnnuo=srClienti.reduce((a,s)=>a+(s.freq==='monthly'?(s.prezzo||0)*12:(s.prezzo||0)),0);
@@ -1703,7 +1715,7 @@ function renderClienti(){
         <td><span style="font-family:'DM Mono',monospace;font-size:12px">${srClienti.length}</span></td>
         <td class="amt-in">${valoreAnnuo>0?'€ '+Math.round(valoreAnnuo).toLocaleString('it-IT'):' —'}</td>
         <td style="white-space:nowrap">
-          <button onclick="event.stopPropagation();deleteEntita(${i})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
+          <button onclick="event.stopPropagation();deleteEntita(${realIdx})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
         </td>
       </tr>`;
     });
