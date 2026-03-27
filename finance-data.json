@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-03-27T11:35:42.220Z",
+  "lastSync": "2026-03-27T12:24:54.876Z",
   "summary": {
-    "fatturato": 1030511.85,
-    "incassato": 964176.85,
-    "inAttesa": 58115,
-    "numFatture": 685,
+    "fatturato": 1033711.85,
+    "incassato": 965376.85,
+    "inAttesa": 60115,
+    "numFatture": 687,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 137634.09,
-      "incassato": 116999.09,
-      "inAttesa": 16675,
-      "count": 63
+      "fatturato": 140834.09,
+      "incassato": 118199.09,
+      "inAttesa": 18675,
+      "count": 65
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 35702.85,
-      "incassato": 19262.85,
-      "inAttesa": 12480,
-      "count": 24
+      "fatturato": 38902.85,
+      "incassato": 20462.85,
+      "inAttesa": 14480,
+      "count": 26
     },
     "2026-02": {
       "fatturato": 64356.66,
@@ -350,6 +350,28 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000861001",
+      "numero": "INV-2026073",
+      "cliente": "BORA MEDIA LLC",
+      "data": "2026-03-26",
+      "totale": 1200,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-26"
+    },
+    {
+      "id": "403724000000859002",
+      "numero": "INV-2026072",
+      "cliente": "P&P Market LLC",
+      "data": "2026-03-26",
+      "totale": 2000,
+      "balance": 2000,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-03-26"
+    },
     {
       "id": "403724000000857018",
       "numero": "INV-2026071",
