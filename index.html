@@ -686,7 +686,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="fin-kpi fin-kpi-a"><div class="fin-kpi-lbl">Fatturato (Zoho only)</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-fatturato">—</div><div class="fin-kpi-trend" id="fin-yoy">—</div></div>
         <div class="fin-kpi fin-kpi-i"><div class="fin-kpi-lbl">Cash in reale</div><div class="fin-kpi-val" style="color:var(--info)" id="fin-incassato">—</div><div class="fin-kpi-trend">—</div></div>
         <div class="fin-kpi fin-kpi-w"><div class="fin-kpi-lbl" data-t="inAttesa">In attesa</div><div class="fin-kpi-val" style="color:var(--warn)" id="fin-attesa">—</div><div class="fin-kpi-trend">—</div></div>
-        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl" data-t="margine">Margine %</div><div class="fin-kpi-val" style="color:var(--accent)" id="fin-margine">—</div><div class="fin-kpi-trend" id="fin-nfatt">—</div></div>
+        <div class="fin-kpi fin-kpi-d"><div class="fin-kpi-lbl">Margine cassa %</div><div class="fin-kpi-val" id="fin-margine">—</div><div class="fin-kpi-trend" id="fin-nfatt">—</div></div>
       </div>
       <!-- KPI Decisionali (cassa) -->
       <div class="kpi-row" style="margin-bottom:16px;">
@@ -2603,11 +2603,24 @@ function renderFinance(){
   const inAttesa=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.inAttesa||0),0);
   const numFatture=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.count||0),0);
 
-  const margine=fatturato>0?Math.round((cashIn/fatturato)*100):0;
+  // Cash out del periodo (calcolato qui per il margine reale)
+  const cashOutPerMargine=mesiKeys.reduce((a,k)=>
+    a+APP.scadenze.filter(s=>s.data?.substring(0,7)===k&&s.prezzo>0).reduce((s,sc)=>s+(sc.prezzo||0),0)
+    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
+  ,0);
+
+  // Margine reale = (cash_in - cash_out) / cash_in
+  // Risponde a: "di quello che ho incassato, quanto mi è rimasto dopo le uscite?"
+  const margine=cashIn>0?Math.round(((cashIn-cashOutPerMargine)/cashIn)*100):0;
+  const margineColor=margine>=60?'var(--accent)':margine>=30?'var(--warn)':'var(--danger)';
+
   el('fin-fatturato','€ '+Math.round(fatturato).toLocaleString('it-IT'));
   el('fin-incassato','€ '+Math.round(cashIn).toLocaleString('it-IT'));
   el('fin-attesa','€ '+Math.round(inAttesa).toLocaleString('it-IT'));
   el('fin-margine',margine+'%');
+  // Aggiorna colore margine dinamicamente
+  const margineEl=document.getElementById('fin-margine');
+  if(margineEl)margineEl.style.color=margineColor;
   el('fin-nfatt',numFatture+' fatture'+(manualRevenue>0?' + €'+Math.round(manualRevenue).toLocaleString('it-IT')+' manuali':''));
 
   // YoY (Zoho only)
