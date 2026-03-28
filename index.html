@@ -1968,6 +1968,8 @@ async function saveServizioCliente(){
 
   if(editIdx>=0){
     const old=APP.servizi_ricorrenti[editIdx];
+    // Propaga l'id esistente nell'obj così saveServizioRicorrenteToDB fa update e non insert
+    if(old.id)obj.id=old.id;
     // Aggiorna scadenza collegata se esiste
     if(old.scadenzaId&&needsScadenza){
       const s=APP.scadenze.find(x=>String(x.id)===String(old.scadenzaId));
@@ -2188,11 +2190,16 @@ async function editTipo(i){
   const vecchioNome=APP.tipi[i];
   const nuovoNome=prompt('Nuovo nome per "'+vecchioNome+'":', vecchioNome);
   if(!nuovoNome||nuovoNome.trim()===vecchioNome)return;
-  APP.tipi[i]=nuovoNome.trim();
+  const trimmed=nuovoNome.trim();
+  APP.tipi[i]=trimmed;
   saveLocalData();
   if(currentUser){
-    try{await supa.from('tipi_scadenza').update({nome:nuovoNome.trim()}).eq('user_id',currentUser.id).eq('nome',vecchioNome);}
-    catch(e){console.warn('editTipo DB:',e);}
+    try{
+      await supa.from('tipi_scadenza').delete().eq('user_id',currentUser.id).eq('nome',vecchioNome);
+      await supa.from('tipi_scadenza').insert({user_id:currentUser.id,nome:trimmed});
+      // Reload dal DB per avere l’id aggiornato e sincronizzare APP.tipi
+      await loadTipiFromDB();
+    }catch(e){console.warn('editTipo DB:',e);}
   }
   renderTipi();
   showToast('✓ Tipo aggiornato');
