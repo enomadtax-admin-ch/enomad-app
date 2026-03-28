@@ -118,14 +118,16 @@ jobs:
               '✅ Backup completato — ' + total + ' record totali';
 
             // Invia messaggio testo
-            await telegramRequest('/sendMessage', {
+            const msgRes = await telegramRequest('/sendMessage', {
               chat_id: process.env.TELEGRAM_CHAT_ID,
               text: msg,
               parse_mode: 'Markdown'
             });
+            console.log('sendMessage response:', JSON.stringify(msgRes));
 
             // Invia file JSON
-            await sendFile(filename, '📦 Backup completo ' + dateStr);
+            const fileRes = await sendFile(filename, '📦 Backup completo ' + dateStr);
+            console.log('sendDocument response:', JSON.stringify(fileRes));
             console.log('✓ Backup inviato su Telegram');
           }
 
