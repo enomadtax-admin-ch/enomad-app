@@ -617,7 +617,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         <div class="panel">
           <div class="panel-header" style="padding-bottom:10px;">
             <div style="position:relative;flex:1;max-width:280px;">
-              <input type="text" id="clienti-search" class="fi" placeholder="🔍 Cerca cliente..." style="padding:7px 10px 7px 32px;font-size:12px;width:100%;" oninput="renderClienti()">
+              <input type="text" id="clienti-search" class="fi" placeholder="Cerca cliente..." style="padding:7px 10px 7px 32px;font-size:12px;width:100%;" oninput="renderClienti()">
               <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
             </div>
             <div id="clienti-count-badge" style="font-size:11px;color:var(--muted)"></div>
@@ -1715,6 +1715,7 @@ function renderClienti(){
         <td><span style="font-family:'DM Mono',monospace;font-size:12px">${srClienti.length}</span></td>
         <td class="amt-in">${valoreAnnuo>0?'€ '+Math.round(valoreAnnuo).toLocaleString('it-IT'):' —'}</td>
         <td style="white-space:nowrap">
+          <button onclick="event.stopPropagation();editEntita(${realIdx})" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;color:var(--text2);cursor:pointer;font-size:11px;margin-right:4px">✎</button>
           <button onclick="event.stopPropagation();deleteEntita(${realIdx})" style="background:none;border:1px solid var(--ddim);border-radius:6px;padding:3px 7px;color:var(--danger);cursor:pointer;font-size:11px">🗑</button>
         </td>
       </tr>`;
@@ -2128,6 +2129,42 @@ async function addEntita(){
   document.getElementById('new-entita-nome').value='';
   document.getElementById('new-entita-paese').value='';
   showToast('✓ Entità aggiunta');
+}
+
+function editEntita(i){
+  const e=APP.entita[i];if(!e)return;
+  document.getElementById('new-entita-nome').value=e.nome||'';
+  document.getElementById('new-entita-paese').value=e.paese||'';
+  document.getElementById('new-entita-valuta').value=e.valuta||'EUR';
+  document.querySelector('#modal-add-entita .modal-title').textContent='✎ Modifica cliente';
+  const saveBtn=document.querySelector('#modal-add-entita .btn-primary');
+  if(saveBtn){
+    saveBtn.textContent='✓ Salva modifiche';
+    saveBtn.onclick=()=>saveEditEntita(i);
+  }
+  openModal('add-entita');
+}
+
+async function saveEditEntita(i){
+  const e=APP.entita[i];if(!e)return;
+  const nome=document.getElementById('new-entita-nome').value.trim();
+  if(!nome){showToast('⚠ Inserisci il nome');return;}
+  const paese=document.getElementById('new-entita-paese').value.trim();
+  const valuta=document.getElementById('new-entita-valuta').value;
+  // Update DB
+  if(e.id&&currentUser){
+    const{error}=await supa.from('entita').update({nome,paese,valuta}).eq('id',e.id).eq('user_id',currentUser.id);
+    if(error)console.error('updateEntita:',error);
+  }
+  APP.entita[i]={...e,nome,paese,valuta};
+  saveLocalData();
+  closeModal('add-entita');
+  // Reset modal to add mode
+  document.querySelector('#modal-add-entita .modal-title').textContent='Nuovo cliente';
+  const saveBtn=document.querySelector('#modal-add-entita .btn-primary');
+  if(saveBtn){saveBtn.textContent='Aggiungi';saveBtn.onclick=null;}
+  renderEntita();
+  showToast('✓ Cliente aggiornato');
 }
 
 async function deleteEntita(i){
