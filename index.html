@@ -2184,11 +2184,16 @@ async function addTipo(){
   showToast('✓ Tipo aggiunto');
 }
 
-function editTipo(i){
-  const nuovoNome=prompt('Nuovo nome per "'+APP.tipi[i]+'":', APP.tipi[i]);
-  if(!nuovoNome||nuovoNome===APP.tipi[i])return;
+async function editTipo(i){
+  const vecchioNome=APP.tipi[i];
+  const nuovoNome=prompt('Nuovo nome per "'+vecchioNome+'":', vecchioNome);
+  if(!nuovoNome||nuovoNome.trim()===vecchioNome)return;
   APP.tipi[i]=nuovoNome.trim();
   saveLocalData();
+  if(currentUser){
+    try{await supa.from('tipi_scadenza').update({nome:nuovoNome.trim()}).eq('user_id',currentUser.id).eq('nome',vecchioNome);}
+    catch(e){console.warn('editTipo DB:',e);}
+  }
   renderTipi();
   showToast('✓ Tipo aggiornato');
 }
