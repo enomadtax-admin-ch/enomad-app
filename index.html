@@ -1258,38 +1258,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
 </div>
 
-<!-- MODAL AGGIUNGI SERVIZIO -->
-<div class="modal-overlay" id="modal-add-servizio">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title">Nuovo servizio</div><button class="modal-close" onclick="closeModal('add-servizio')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg"><label class="fl">Nome servizio</label><input type="text" class="fi" id="srv-nome" placeholder="es. Nominee Director UAE"></div>
-      <div class="frow">
-        <div class="fg"><label class="fl">Categoria</label>
-          <select class="fsel" id="srv-categoria">
-            <option>Compliance</option>
-            <option>Banking</option>
-            <option>Fiscale</option>
-            <option>Societario</option>
-            <option>Consulenza</option>
-            <option>Altro</option>
-          </select>
-        </div>
-        <div class="fg"><label class="fl">Valuta</label>
-          <select class="fsel" id="srv-valuta">
-            <option>EUR</option><option>AED</option><option>USD</option><option>CHF</option>
-          </select>
-        </div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-prezzo" placeholder="0"></div>
-        <div class="fg"><label class="fl">Costo mio</label><input type="number" class="fi" id="srv-costo" placeholder="0"></div>
-      </div>
-      <div class="fg"><label class="fl">Note / descrizione</label><input type="text" class="fi" id="srv-note" placeholder="es. Include registrazione, apostille..."></div>
-    </div>
-    <div class="modal-footer"><button class="btn" onclick="closeModal('add-servizio');resetListinoModal()">Annulla</button><button class="btn btn-primary" id="listino-save-btn" onclick="listinoBtnHandler()">Salva</button></div>
-  </div>
-</div>
 
 <!-- MODAL MODIFICA SCADENZA -->
 <div class="modal-overlay" id="modal-edit-scadenza">
@@ -4185,5 +4153,38 @@ document.addEventListener('DOMContentLoaded',()=>{
   initAuth();
 });
 </script>
+
+<!-- MODAL AGGIUNGI SERVIZIO -->
+<div class="modal-overlay" id="modal-add-servizio">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nuovo servizio</div><button class="modal-close" onclick="closeModal('add-servizio')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome servizio</label><input type="text" class="fi" id="srv-nome" placeholder="es. Nominee Director UAE"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Categoria</label>
+          <select class="fsel" id="srv-categoria">
+            <option>Compliance</option>
+            <option>Banking</option>
+            <option>Fiscale</option>
+            <option>Societario</option>
+            <option>Consulenza</option>
+            <option>Altro</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Valuta</label>
+          <select class="fsel" id="srv-valuta">
+            <option>EUR</option><option>AED</option><option>USD</option><option>CHF</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Prezzo cliente</label><input type="number" class="fi" id="srv-prezzo" placeholder="0"></div>
+        <div class="fg"><label class="fl">Costo mio</label><input type="number" class="fi" id="srv-costo" placeholder="0"></div>
+      </div>
+      <div class="fg"><label class="fl">Note / descrizione</label><input type="text" class="fi" id="srv-note" placeholder="es. Include registrazione, apostille..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('add-servizio');resetListinoModal()">Annulla</button><button class="btn btn-primary" id="listino-save-btn" onclick="listinoBtnHandler()">Salva</button></div>
+  </div>
+</div>
 </body>
 </html>
