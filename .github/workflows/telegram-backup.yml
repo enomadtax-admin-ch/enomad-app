@@ -2,9 +2,7 @@ name: Telegram Backup
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 08:00 CET (07:00 UTC)
-    - cron: '0 13 * * *'  # 14:00 CET (13:00 UTC)
-    - cron: '0 19 * * *'  # 20:00 CET (19:00 UTC)
+    - cron: '0 6,7,8,12,13,14,18,19,20 * * *'  # Copre UTC+1 e UTC+2 (ora solare e legale)
   workflow_dispatch:       # Manuale quando vuoi
 
 jobs:
@@ -31,6 +29,27 @@ jobs:
           const { createClient } = require('@supabase/supabase-js');
           const https = require('https');
           const fs = require('fs');
+
+          // ══ CONTROLLO ORA ITALIANA ══
+          // Calcola l'ora corrente nel fuso orario Europe/Rome (gestisce automaticamente
+          // ora solare CET=UTC+1 e ora legale CEST=UTC+2 senza intervento manuale)
+          const now = new Date();
+          const italianHour = parseInt(
+            new Intl.DateTimeFormat('it-IT', {
+              timeZone: 'Europe/Rome',
+              hour: 'numeric',
+              hour12: false
+            }).format(now)
+          );
+
+          const TARGET_HOURS = [8, 14, 20];
+
+          if (!TARGET_HOURS.includes(italianHour)) {
+            console.log('Ora italiana: ' + italianHour + ':xx — non è un orario di backup (' + TARGET_HOURS.join(', ') + 'h). Skip.');
+            process.exit(0);
+          }
+
+          console.log('Ora italiana: ' + italianHour + ':00 — avvio backup...');
 
           const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -83,8 +102,11 @@ jobs:
 
           async function main() {
             console.log('Esporto dati da Supabase...');
-            const now = new Date();
-            const timestamp = now.toISOString().replace('T', ' ').substring(0, 16);
+            const timestamp = new Intl.DateTimeFormat('it-IT', {
+              timeZone: 'Europe/Rome',
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            }).format(now);
             const dateStr = now.toISOString().split('T')[0];
 
             const tables = ['entita', 'scadenze', 'servizi_ricorrenti', 'movimenti_manuali', 'tipi_scadenza', 'listino'];
@@ -106,18 +128,16 @@ jobs:
             fs.writeFileSync(filename, JSON.stringify(backup, null, 2));
             console.log('File creato: ' + filename + ' (' + total + ' record totali)');
 
-            // Messaggio di riepilogo
-            const msg = '🗄 *Enomad Backup*\n' +
-              '📅 ' + timestamp + ' CET\n\n' +
-              '📊 *Riepilogo:*\n' +
-              '👥 Clienti: ' + (backup.tables.entita?.length || 0) + '\n' +
-              '📅 Scadenze: ' + (backup.tables.scadenze?.length || 0) + '\n' +
-              '♻ Servizi ricorrenti: ' + (backup.tables.servizi_ricorrenti?.length || 0) + '\n' +
-              '💸 Movimenti manuali: ' + (backup.tables.movimenti_manuali?.length || 0) + '\n' +
-              '📋 Listino: ' + (backup.tables.listino?.length || 0) + '\n\n' +
-              '✅ Backup completato — ' + total + ' record totali';
+            const msg = '\uD83D\uDDC4 *Enomad Backup*\n' +
+              '\uD83D\uDCC5 ' + timestamp + '\n\n' +
+              '\uD83D\uDCCA *Riepilogo:*\n' +
+              '\uD83D\uDC65 Clienti: ' + (backup.tables.entita?.length || 0) + '\n' +
+              '\uD83D\uDCC5 Scadenze: ' + (backup.tables.scadenze?.length || 0) + '\n' +
+              '\u267B Servizi ricorrenti: ' + (backup.tables.servizi_ricorrenti?.length || 0) + '\n' +
+              '\uD83D\uDCB8 Movimenti manuali: ' + (backup.tables.movimenti_manuali?.length || 0) + '\n' +
+              '\uD83D\uDCCB Listino: ' + (backup.tables.listino?.length || 0) + '\n\n' +
+              '\u2705 Backup completato \u2014 ' + total + ' record totali';
 
-            // Invia messaggio testo
             const msgRes = await telegramRequest('/sendMessage', {
               chat_id: process.env.TELEGRAM_CHAT_ID,
               text: msg,
@@ -125,10 +145,9 @@ jobs:
             });
             console.log('sendMessage response:', JSON.stringify(msgRes));
 
-            // Invia file JSON
-            const fileRes = await sendFile(filename, '📦 Backup completo ' + dateStr);
+            const fileRes = await sendFile(filename, '\uD83D\uDCE6 Backup completo ' + dateStr);
             console.log('sendDocument response:', JSON.stringify(fileRes));
-            console.log('✓ Backup inviato su Telegram');
+            console.log('\u2713 Backup inviato su Telegram');
           }
 
           main().catch(e => { console.error('ERRORE:', e); process.exit(1); });
