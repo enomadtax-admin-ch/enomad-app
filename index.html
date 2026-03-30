@@ -2736,22 +2736,22 @@ function renderFinance(){
   el('fin-runway',runway!==null?runway+' mesi':'—');
   el('fin-mktg-budget','€ '+mktgBudget.toLocaleString('it-IT'));
 
-  // Cashflow mensile con periodo filter + movimenti UAE
+  // Cashflow mensile — rispetta il filtro Finance ma usa movimenti_all (non dipende dal filtro sezione Movimenti)
   const cf=document.getElementById('cf-bars');
   if(cf&&ZOHO.perMese){
     cf.innerHTML='';
     const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
     const allKeys=Object.keys(ZOHO.perMese).sort();
-    // Il cashflow mensile usa SEMPRE tutti i mesi disponibili, indipendente dal filtro periodo
-    const cfMesiKeys=allKeys;
-    // Per i movimenti usa APP.movimenti_all (tutti, senza filtro periodo) se disponibile
-    const cfMovimenti=APP.movimenti_all||APP.movimenti||[];
-    const mx=Math.max(...cfMesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
+    // mesiKeys dal filtro Finance (1m / 3m / ytd / all) — corretto
+    const mesiKeys=getFinMesiKeys(allKeys);
+    // movimenti: usa movimenti_all (caricati senza filtro periodo) così non dipende dalla sezione Movimenti
+    const cfMov=APP.movimenti_all||APP.movimenti||[];
+    const mx=Math.max(...mesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
     let saldo=0;
-    cfMesiKeys.forEach(m=>{
+    mesiKeys.forEach(m=>{
       const d=ZOHO.perMese[m]||{};
-      const movIn=cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
-      const movOut=cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
+      const movIn=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
+      const movOut=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
       const cashOutScad=APP.scadenze.filter(s=>s.data?.substring(0,7)===m&&s.prezzo>0).reduce((a,s)=>a+(s.prezzo||0),0);
       const cashOutM=cashOutScad+movOut;
       const incM=(d.incassato||0)+movIn;
@@ -2940,9 +2940,7 @@ async function syncZoho(){
     const activeView=document.querySelector('.view.active');
     updateKPIs();
     renderTimeline();
-    // Aggiorna anche movimenti_all per il cashflow
-  loadAllMovimentiForCashflow().then(()=>{if(activeView?.id==='view-finance')renderFinance();});
-  if(activeView?.id!=='view-finance'){}
+    if(activeView?.id==='view-finance')renderFinance();
     if(activeView?.id==='view-ricorrenti')renderRicorrenti();
     if(activeView?.id==='view-dashboard')renderTopCountries(data);
   }catch(e){
@@ -3016,8 +3014,7 @@ function renderTopCountries(z){
     'US':'🇺🇸','UK':'🇬🇧','GB':'🇬🇧','DE':'🇩🇪','FR':'🇫🇷',
     'NL':'🇳🇱','SG':'🇸🇬','CY':'🇨🇾','HK':'🇭🇰','ES':'🇪🇸',
     'MT':'🇲🇹','LU':'🇱🇺','PT':'🇵🇹','AU':'🇦🇺','CA':'🇨🇦',
-    'BVI':'🇻🇬','KY':'🇰🇾','PA':'🇵🇦','MU':'🇲🇺','SC':'🇸🇨',
-    'RO':'🇷🇴'
+    'BVI':'🇻🇬','KY':'🇰🇾','PA':'🇵🇦','MU':'🇲🇺','SC':'🇸🇨'
   };
   const clientiLabel=LANG==='en'?'client':'cliente';
   const clientiLabelPl=LANG==='en'?'clients':'clienti';
@@ -3700,15 +3697,13 @@ function getMovCutoffDate(periodo){
 }
 
 async function loadAllMovimentiForCashflow(){
-  // Carica TUTTI i movimenti senza filtro periodo — usato solo dal cashflow mensile in Finance
   if(!currentUser)return;
   try{
     const{data,error}=await supa.from('movimenti_manuali').select('*').eq('user_id',currentUser.id).order('data',{ascending:false});
     if(error){console.warn('loadAllMovimenti:',error.message);return;}
     APP.movimenti_all=(data||[]).map(r=>({
       id:r.id,data:r.data,tipo:r.tipo,importo:parseFloat(r.importo)||0,
-      valuta:r.valuta||'EUR',categoria:r.categoria||'',note:r.note||'',
-      entita:r.entita||''
+      valuta:r.valuta||'EUR',categoria:r.categoria||'',note:r.note||'',entita:r.entita||''
     }));
   }catch(e){console.error('loadAllMovimenti:',e);}
 }
@@ -3821,9 +3816,7 @@ async function addMovimento(){
   renderMovimenti();
   updateKPIs();
   const activeView=document.querySelector('.view.active');
-  // Aggiorna anche movimenti_all per il cashflow
-  loadAllMovimentiForCashflow().then(()=>{if(activeView?.id==='view-finance')renderFinance();});
-  if(activeView?.id!=='view-finance'){}
+  if(activeView?.id==='view-finance')renderFinance();
   showToast(editIdx>=0?'✓ Movimento aggiornato':'✓ Movimento salvato');
 
   // Poi prova a sincronizzare su Supabase in background (non bloccante)
