@@ -2015,8 +2015,10 @@ async function saveServizioCliente(){
       if(isUUID&&currentUser)await supa.from('scadenze').delete().eq('id',old.scadenzaId).eq('user_id',currentUser.id);
       APP.scadenze=APP.scadenze.filter(x=>String(x.id)!==String(old.scadenzaId));
     }
+    // Propaga l'id esistente nell'obj PRIMA del salvataggio — altrimenti saveServizioRicorrenteToDB fa insert invece di update
+    if(old.id)obj.id=old.id;
     APP.servizi_ricorrenti[editIdx]=obj;
-    // Sync to DB
+    // Sync to DB — ora isUUID=true quindi fa update
     try{const saved=await saveServizioRicorrenteToDB(obj);if(saved?.id)obj.id=saved.id;}catch(e){console.warn('syncServizio:',e);}
   }else{
     // Nuovo servizio — crea scadenza per cash out non mensile
@@ -2192,11 +2194,20 @@ async function addTipo(){
   showToast('✓ Tipo aggiunto');
 }
 
-function editTipo(i){
-  const nuovoNome=prompt('Nuovo nome per "'+APP.tipi[i]+'":', APP.tipi[i]);
-  if(!nuovoNome||nuovoNome===APP.tipi[i])return;
-  APP.tipi[i]=nuovoNome.trim();
+async function editTipo(i){
+  const vecchioNome=APP.tipi[i];
+  const nuovoNome=prompt('Nuovo nome per "'+vecchioNome+'":', vecchioNome);
+  if(!nuovoNome||nuovoNome.trim()===vecchioNome)return;
+  const trimmed=nuovoNome.trim();
+  APP.tipi[i]=trimmed;
   saveLocalData();
+  if(currentUser){
+    try{
+      await supa.from('tipi_scadenza').delete().eq('user_id',currentUser.id).eq('nome',vecchioNome);
+      await supa.from('tipi_scadenza').insert({user_id:currentUser.id,nome:trimmed});
+      await loadTipiFromDB();
+    }catch(e){console.warn('editTipo DB:',e);}
+  }
   renderTipi();
   showToast('✓ Tipo aggiornato');
 }
@@ -2235,7 +2246,6 @@ function renderTable(filter,tbid){
     if(filter==='critical')list=list.filter(s=>daysTo(s.data)<=7);
     if(filter==='soon')list=list.filter(s=>daysTo(s.data)<=30&&daysTo(s.data)>7);
   }
-  // Applica filtro ricerca cliente se presente
   const searchEl=document.getElementById('scad-search-'+tbid);
   if(searchEl&&searchEl.value.trim()){
     const q=searchEl.value.trim().toLowerCase();
@@ -2462,11 +2472,9 @@ function filterScad(f,el,tbid){
 }
 
 function filterScadSearch(tbid){
-  // Rilancia renderTable con il filtro tab attivo corrente
-  const activeTab=document.querySelector(`#view-scadenze .ftab.active, #view-dashboard .ftab.active[onclick*="${tbid}"]`);
   const panel=document.getElementById('scad-search-'+tbid)?.closest('.panel');
-  const activeTabInPanel=panel?.querySelector('.ftab.active');
-  const f=activeTabInPanel?.getAttribute('onclick')?.match(/filterScad\('([^']+)'/)?.[1]||'all';
+  const activeTab=panel?.querySelector('.ftab.active');
+  const f=activeTab?.getAttribute('onclick')?.match(/filterScad\('([^']+)'/)?.[1]||'all';
   renderTable(f,tbid);
 }
 
