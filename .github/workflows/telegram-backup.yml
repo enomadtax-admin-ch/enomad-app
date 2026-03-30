@@ -2,7 +2,9 @@ name: Telegram Backup
 
 on:
   schedule:
-    - cron: '0 6,7,8,12,13,14,18,19,20 * * *'  # Copre UTC+1 e UTC+2 (ora solare e legale)
+    - cron: '0 6 * * *'   # 07:00 CET / 08:00 CEST
+    - cron: '0 13 * * *'  # 14:00 CET / 15:00 CEST
+    - cron: '0 20 * * *'  # 21:00 CET / 22:00 CEST
   workflow_dispatch:       # Manuale quando vuoi
 
 jobs:
@@ -30,37 +32,16 @@ jobs:
           const https = require('https');
           const fs = require('fs');
 
-          // ══ CONTROLLO ORA ITALIANA ══
-          // Calcola l'ora corrente nel fuso orario Europe/Rome (gestisce automaticamente
-          // ora solare CET=UTC+1 e ora legale CEST=UTC+2 senza intervento manuale)
-          const now = new Date();
-          const italianHour = parseInt(
-            new Intl.DateTimeFormat('it-IT', {
-              timeZone: 'Europe/Rome',
-              hour: 'numeric',
-              hour12: false
-            }).format(now)
-          );
-
-          const TARGET_HOURS = [8, 14, 20];
-
-          if (!TARGET_HOURS.includes(italianHour)) {
-            console.log('Ora italiana: ' + italianHour + ':xx — non è un orario di backup (' + TARGET_HOURS.join(', ') + 'h). Skip.');
-            process.exit(0);
-          }
-
-          console.log('Ora italiana: ' + italianHour + ':00 — avvio backup...');
-
           const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-          function telegramRequest(path, data, isFormData) {
+          function telegramRequest(path, data) {
             return new Promise((resolve, reject) => {
               const postData = JSON.stringify(data);
               const options = {
                 hostname: 'api.telegram.org',
                 path: '/bot' + process.env.TELEGRAM_BOT_TOKEN + path,
                 method: 'POST',
-                headers: isFormData ? data.getHeaders() : {
+                headers: {
                   'Content-Type': 'application/json',
                   'Content-Length': Buffer.byteLength(postData)
                 }
@@ -71,7 +52,7 @@ jobs:
                 res.on('end', () => resolve(JSON.parse(body)));
               });
               req.on('error', reject);
-              if (!isFormData) req.write(postData);
+              req.write(postData);
               req.end();
             });
           }
@@ -102,6 +83,7 @@ jobs:
 
           async function main() {
             console.log('Esporto dati da Supabase...');
+            const now = new Date();
             const timestamp = new Intl.DateTimeFormat('it-IT', {
               timeZone: 'Europe/Rome',
               year: 'numeric', month: '2-digit', day: '2-digit',
@@ -143,11 +125,11 @@ jobs:
               text: msg,
               parse_mode: 'Markdown'
             });
-            console.log('sendMessage response:', JSON.stringify(msgRes));
+            console.log('Messaggio inviato:', msgRes.ok);
 
             const fileRes = await sendFile(filename, '\uD83D\uDCE6 Backup completo ' + dateStr);
-            console.log('sendDocument response:', JSON.stringify(fileRes));
-            console.log('\u2713 Backup inviato su Telegram');
+            console.log('File inviato:', fileRes.ok);
+            console.log('\u2713 Backup completato');
           }
 
           main().catch(e => { console.error('ERRORE:', e); process.exit(1); });
