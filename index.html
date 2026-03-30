@@ -592,14 +592,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <button class="ftab" onclick="filterScad('done',this,'sb2')" data-t="completate">Completate</button>
           </div>
         </div>
-        <div style="padding:10px 18px;border-bottom:1px solid var(--border);">
-          <div style="position:relative;">
-            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
-            <input type="text" id="scad-search-sb2" placeholder="Cerca per cliente..." oninput="filterScadSearch('sb2')"
-              style="width:100%;padding:7px 10px 7px 32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;transition:border-color .15s;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          </div>
-        </div>
         <table class="scad-table"><thead><tr>
           <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
@@ -2015,10 +2007,8 @@ async function saveServizioCliente(){
       if(isUUID&&currentUser)await supa.from('scadenze').delete().eq('id',old.scadenzaId).eq('user_id',currentUser.id);
       APP.scadenze=APP.scadenze.filter(x=>String(x.id)!==String(old.scadenzaId));
     }
-    // Propaga l'id esistente nell'obj PRIMA del salvataggio — altrimenti saveServizioRicorrenteToDB fa insert invece di update
-    if(old.id)obj.id=old.id;
     APP.servizi_ricorrenti[editIdx]=obj;
-    // Sync to DB — ora isUUID=true quindi fa update
+    // Sync to DB
     try{const saved=await saveServizioRicorrenteToDB(obj);if(saved?.id)obj.id=saved.id;}catch(e){console.warn('syncServizio:',e);}
   }else{
     // Nuovo servizio — crea scadenza per cash out non mensile
@@ -2194,20 +2184,11 @@ async function addTipo(){
   showToast('✓ Tipo aggiunto');
 }
 
-async function editTipo(i){
-  const vecchioNome=APP.tipi[i];
-  const nuovoNome=prompt('Nuovo nome per "'+vecchioNome+'":', vecchioNome);
-  if(!nuovoNome||nuovoNome.trim()===vecchioNome)return;
-  const trimmed=nuovoNome.trim();
-  APP.tipi[i]=trimmed;
+function editTipo(i){
+  const nuovoNome=prompt('Nuovo nome per "'+APP.tipi[i]+'":', APP.tipi[i]);
+  if(!nuovoNome||nuovoNome===APP.tipi[i])return;
+  APP.tipi[i]=nuovoNome.trim();
   saveLocalData();
-  if(currentUser){
-    try{
-      await supa.from('tipi_scadenza').delete().eq('user_id',currentUser.id).eq('nome',vecchioNome);
-      await supa.from('tipi_scadenza').insert({user_id:currentUser.id,nome:trimmed});
-      await loadTipiFromDB();
-    }catch(e){console.warn('editTipo DB:',e);}
-  }
   renderTipi();
   showToast('✓ Tipo aggiornato');
 }
@@ -2245,11 +2226,6 @@ function renderTable(filter,tbid){
     list=list.filter(s=>s.stato!=='done');
     if(filter==='critical')list=list.filter(s=>daysTo(s.data)<=7);
     if(filter==='soon')list=list.filter(s=>daysTo(s.data)<=30&&daysTo(s.data)>7);
-  }
-  const searchEl=document.getElementById('scad-search-'+tbid);
-  if(searchEl&&searchEl.value.trim()){
-    const q=searchEl.value.trim().toLowerCase();
-    list=list.filter(s=>(s.entita||'').toLowerCase().includes(q)||(s.nome||'').toLowerCase().includes(q)||(s.tipo||'').toLowerCase().includes(q));
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
   const showCosto=tbid==='sb2';
@@ -2468,13 +2444,6 @@ function updateKPIs(){
 function filterScad(f,el,tbid){
   el.closest('.ftabs').querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  renderTable(f,tbid);
-}
-
-function filterScadSearch(tbid){
-  const panel=document.getElementById('scad-search-'+tbid)?.closest('.panel');
-  const activeTab=panel?.querySelector('.ftab.active');
-  const f=activeTab?.getAttribute('onclick')?.match(/filterScad\('([^']+)'/)?.[1]||'all';
   renderTable(f,tbid);
 }
 
@@ -2773,13 +2742,16 @@ function renderFinance(){
     cf.innerHTML='';
     const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
     const allKeys=Object.keys(ZOHO.perMese).sort();
-    const mesiKeys=getFinMesiKeys(allKeys);
-    const mx=Math.max(...mesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
+    // Il cashflow mensile usa SEMPRE tutti i mesi disponibili, indipendente dal filtro periodo
+    const cfMesiKeys=allKeys;
+    // Per i movimenti usa APP.movimenti_all (tutti, senza filtro periodo) se disponibile
+    const cfMovimenti=APP.movimenti_all||APP.movimenti||[];
+    const mx=Math.max(...cfMesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
     let saldo=0;
-    mesiKeys.forEach(m=>{
+    cfMesiKeys.forEach(m=>{
       const d=ZOHO.perMese[m]||{};
-      const movIn=(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
-      const movOut=(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
+      const movIn=cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
+      const movOut=cfMovimenti.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
       const cashOutScad=APP.scadenze.filter(s=>s.data?.substring(0,7)===m&&s.prezzo>0).reduce((a,s)=>a+(s.prezzo||0),0);
       const cashOutM=cashOutScad+movOut;
       const incM=(d.incassato||0)+movIn;
@@ -2968,7 +2940,9 @@ async function syncZoho(){
     const activeView=document.querySelector('.view.active');
     updateKPIs();
     renderTimeline();
-    if(activeView?.id==='view-finance')renderFinance();
+    // Aggiorna anche movimenti_all per il cashflow
+  loadAllMovimentiForCashflow().then(()=>{if(activeView?.id==='view-finance')renderFinance();});
+  if(activeView?.id!=='view-finance'){}
     if(activeView?.id==='view-ricorrenti')renderRicorrenti();
     if(activeView?.id==='view-dashboard')renderTopCountries(data);
   }catch(e){
@@ -3042,7 +3016,8 @@ function renderTopCountries(z){
     'US':'🇺🇸','UK':'🇬🇧','GB':'🇬🇧','DE':'🇩🇪','FR':'🇫🇷',
     'NL':'🇳🇱','SG':'🇸🇬','CY':'🇨🇾','HK':'🇭🇰','ES':'🇪🇸',
     'MT':'🇲🇹','LU':'🇱🇺','PT':'🇵🇹','AU':'🇦🇺','CA':'🇨🇦',
-    'BVI':'🇻🇬','KY':'🇰🇾','PA':'🇵🇦','MU':'🇲🇺','SC':'🇸🇨'
+    'BVI':'🇻🇬','KY':'🇰🇾','PA':'🇵🇦','MU':'🇲🇺','SC':'🇸🇨',
+    'RO':'🇷🇴'
   };
   const clientiLabel=LANG==='en'?'client':'cliente';
   const clientiLabelPl=LANG==='en'?'clients':'clienti';
@@ -3724,6 +3699,20 @@ function getMovCutoffDate(periodo){
   return null; // all
 }
 
+async function loadAllMovimentiForCashflow(){
+  // Carica TUTTI i movimenti senza filtro periodo — usato solo dal cashflow mensile in Finance
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('movimenti_manuali').select('*').eq('user_id',currentUser.id).order('data',{ascending:false});
+    if(error){console.warn('loadAllMovimenti:',error.message);return;}
+    APP.movimenti_all=(data||[]).map(r=>({
+      id:r.id,data:r.data,tipo:r.tipo,importo:parseFloat(r.importo)||0,
+      valuta:r.valuta||'EUR',categoria:r.categoria||'',note:r.note||'',
+      entita:r.entita||''
+    }));
+  }catch(e){console.error('loadAllMovimenti:',e);}
+}
+
 async function loadMovimentiFromDB(periodo){
   if(!currentUser)return;
   const p=periodo||document.getElementById('mov-periodo-filter')?.value||'3m';
@@ -3832,7 +3821,9 @@ async function addMovimento(){
   renderMovimenti();
   updateKPIs();
   const activeView=document.querySelector('.view.active');
-  if(activeView?.id==='view-finance')renderFinance();
+  // Aggiorna anche movimenti_all per il cashflow
+  loadAllMovimentiForCashflow().then(()=>{if(activeView?.id==='view-finance')renderFinance();});
+  if(activeView?.id!=='view-finance'){}
   showToast(editIdx>=0?'✓ Movimento aggiornato':'✓ Movimento salvato');
 
   // Poi prova a sincronizzare su Supabase in background (non bloccante)
@@ -4092,7 +4083,7 @@ async function showView(v,navEl){
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   // Ricarica dati freschi da Supabase ad ogni cambio sezione
   if(currentUser){
-    await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB()]);
+    await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB(),loadAllMovimentiForCashflow()]);
   }
   if(v==='finance'){renderFinance();}
   if(v==='ricorrenti'){
