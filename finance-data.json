@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-03-31T08:42:56.438Z",
+  "lastSync": "2026-03-31T11:37:37.552Z",
   "summary": {
-    "fatturato": 1040356.85,
+    "fatturato": 1052556.85,
     "incassato": 981166.85,
-    "inAttesa": 50970,
-    "numFatture": 689,
+    "inAttesa": 63170,
+    "numFatture": 691,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 147479.09,
+      "fatturato": 159679.09,
       "incassato": 133989.09,
-      "inAttesa": 9530,
-      "count": 67
+      "inAttesa": 21730,
+      "count": 69
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 44422.85,
+      "fatturato": 56622.85,
       "incassato": 33382.85,
-      "inAttesa": 7080,
-      "count": 27
+      "inAttesa": 19280,
+      "count": 29
     },
     "2026-02": {
       "fatturato": 65481.66,
@@ -255,8 +255,8 @@
     },
     {
       "nome": "ALL STAR PUZZLES LTD",
-      "fatturato": 70890,
-      "count": 26
+      "fatturato": 79090,
+      "count": 27
     },
     {
       "nome": "TOP SERVICE S.R.L.",
@@ -339,17 +339,39 @@
       "count": 30
     },
     {
+      "nome": "Lead Busters LLC",
+      "fatturato": 17050,
+      "count": 7
+    },
+    {
       "nome": "COD KINGDOM LLC",
       "fatturato": 16100,
       "count": 2
-    },
-    {
-      "nome": "MCOMPANY LTD",
-      "fatturato": 15850,
-      "count": 38
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000874012",
+      "numero": "INV-2026075",
+      "cliente": "ALL STAR PUZZLES LTD",
+      "data": "2026-03-30",
+      "totale": 8200,
+      "balance": 8200,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-03-30"
+    },
+    {
+      "id": "403724000000861013",
+      "numero": "INV-2026074",
+      "cliente": "Lead Busters LLC",
+      "data": "2026-03-26",
+      "totale": 3000,
+      "balance": 3000,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-03-26"
+    },
     {
       "id": "403724000000861001",
       "numero": "INV-2026073",
@@ -476,8 +498,8 @@
       "numero": "INV-2026061",
       "cliente": "Onorato Battello",
       "data": "2026-03-05",
-      "totale": 5900,
-      "balance": 3440,
+      "totale": 6900,
+      "balance": 4440,
       "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-03-05"
