@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-03-31T11:37:37.552Z",
+  "lastSync": "2026-03-31T15:53:54.200Z",
   "summary": {
-    "fatturato": 1052556.85,
-    "incassato": 981166.85,
+    "fatturato": 1053393.85,
+    "incassato": 982003.85,
     "inAttesa": 63170,
-    "numFatture": 691,
+    "numFatture": 692,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 159679.09,
-      "incassato": 133989.09,
+      "fatturato": 160516.09,
+      "incassato": 134826.09,
       "inAttesa": 21730,
-      "count": 69
+      "count": 70
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 56622.85,
-      "incassato": 33382.85,
+      "fatturato": 57459.85,
+      "incassato": 34219.85,
       "inAttesa": 19280,
-      "count": 29
+      "count": 30
     },
     "2026-02": {
       "fatturato": 65481.66,
@@ -250,8 +250,8 @@
   "topClienti": [
     {
       "nome": "Superbia Management SA",
-      "fatturato": 94621.79,
-      "count": 10
+      "fatturato": 95458.79,
+      "count": 11
     },
     {
       "nome": "ALL STAR PUZZLES LTD",
@@ -350,6 +350,17 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000876329",
+      "numero": "INV-2026077",
+      "cliente": "Superbia Management SA",
+      "data": "2026-03-31",
+      "totale": 837,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-31"
+    },
     {
       "id": "403724000000874012",
       "numero": "INV-2026075",
