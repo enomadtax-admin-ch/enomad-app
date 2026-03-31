@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-03-31T05:29:46.473Z",
+  "lastSync": "2026-03-31T08:42:56.438Z",
   "summary": {
-    "fatturato": 1033711.85,
-    "incassato": 967376.85,
-    "inAttesa": 58115,
-    "numFatture": 687,
+    "fatturato": 1040356.85,
+    "incassato": 981166.85,
+    "inAttesa": 50970,
+    "numFatture": 689,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,24 +29,24 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 140834.09,
-      "incassato": 120199.09,
-      "inAttesa": 16675,
-      "count": 65
+      "fatturato": 147479.09,
+      "incassato": 133989.09,
+      "inAttesa": 9530,
+      "count": 67
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 38902.85,
-      "incassato": 22462.85,
-      "inAttesa": 12480,
-      "count": 26
+      "fatturato": 44422.85,
+      "incassato": 33382.85,
+      "inAttesa": 7080,
+      "count": 27
     },
     "2026-02": {
-      "fatturato": 64356.66,
-      "incassato": 62011.66,
-      "inAttesa": 2345,
-      "count": 19
+      "fatturato": 65481.66,
+      "incassato": 64881.66,
+      "inAttesa": 600,
+      "count": 20
     },
     "2026-01": {
       "fatturato": 37574.58,
@@ -270,8 +270,8 @@
     },
     {
       "nome": "IPGEN INNOVATION LTD",
-      "fatturato": 45760,
-      "count": 21
+      "fatturato": 46885,
+      "count": 22
     },
     {
       "nome": "ISLAFFILIATES S.L.",
@@ -289,6 +289,11 @@
       "count": 1
     },
     {
+      "nome": "VYRA STUDIOS LTD",
+      "fatturato": 29020,
+      "count": 6
+    },
+    {
       "nome": "GOLDSEA MEDIA - FZCO",
       "fatturato": 28100,
       "count": 1
@@ -302,11 +307,6 @@
       "nome": "Gaia Bertolin",
       "fatturato": 23600,
       "count": 1
-    },
-    {
-      "nome": "VYRA STUDIOS LTD",
-      "fatturato": 23500,
-      "count": 5
     },
     {
       "nome": "LUAUR GROUP LTD",
@@ -505,13 +505,24 @@
       "scadenza": "2026-03-04"
     },
     {
+      "id": "403724000000810455",
+      "numero": "INV-2026058",
+      "cliente": "VYRA STUDIOS LTD",
+      "data": "2026-03-01",
+      "totale": 5520,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-01"
+    },
+    {
       "id": "403724000000810421",
       "numero": "INV-2026057",
       "cliente": "VYRA STUDIOS LTD",
       "data": "2026-03-01",
       "totale": 4700,
-      "balance": 4700,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
@@ -598,8 +609,8 @@
       "cliente": "OZZIBIG INTERNATIONAL FZCO",
       "data": "2026-03-01",
       "totale": 300,
-      "balance": 300,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
@@ -620,8 +631,8 @@
       "cliente": "HYBRID INTERNATIONAL GROUP LTD",
       "data": "2026-03-01",
       "totale": 400,
-      "balance": 400,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
@@ -679,6 +690,17 @@
       "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-02-18"
+    },
+    {
+      "id": "403724000000797001",
+      "numero": "INV-2026038",
+      "cliente": "IPGEN INNOVATION LTD",
+      "data": "2026-02-13",
+      "totale": 1125,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-02-13"
     },
     {
       "id": "403724000000791102",
@@ -774,8 +796,8 @@
       "cliente": "IPGEN INNOVATION LTD",
       "data": "2026-02-01",
       "totale": 1745,
-      "balance": 1745,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-02-01"
     },
