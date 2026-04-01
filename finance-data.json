@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-01T06:13:43.609Z",
+  "lastSync": "2026-04-01T10:16:04.425Z",
   "summary": {
     "fatturato": 1053393.85,
-    "incassato": 982003.85,
-    "inAttesa": 63170,
+    "incassato": 985003.85,
+    "inAttesa": 60170,
     "numFatture": 692,
     "numClienti": 112,
     "valuta": "EUR",
@@ -30,16 +30,16 @@
     },
     "2026": {
       "fatturato": 160516.09,
-      "incassato": 134826.09,
-      "inAttesa": 21730,
+      "incassato": 137826.09,
+      "inAttesa": 18730,
       "count": 70
     }
   },
   "perMese": {
     "2026-03": {
       "fatturato": 57459.85,
-      "incassato": 34219.85,
-      "inAttesa": 19280,
+      "incassato": 37219.85,
+      "inAttesa": 16280,
       "count": 30
     },
     "2026-02": {
@@ -378,8 +378,8 @@
       "cliente": "Lead Busters LLC",
       "data": "2026-03-26",
       "totale": 3000,
-      "balance": 3000,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-26"
     },
