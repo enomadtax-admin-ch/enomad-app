@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-01T14:51:48.052Z",
+  "lastSync": "2026-04-01T17:39:42.523Z",
   "summary": {
-    "fatturato": 1053393.85,
-    "incassato": 985003.85,
+    "fatturato": 1056593.85,
+    "incassato": 988203.85,
     "inAttesa": 60170,
-    "numFatture": 692,
+    "numFatture": 693,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 160516.09,
-      "incassato": 137826.09,
+      "fatturato": 163716.09,
+      "incassato": 141026.09,
       "inAttesa": 18730,
-      "count": 70
+      "count": 71
     }
   },
   "perMese": {
     "2026-03": {
-      "fatturato": 57459.85,
-      "incassato": 37219.85,
+      "fatturato": 60659.85,
+      "incassato": 40419.85,
       "inAttesa": 16280,
-      "count": 30
+      "count": 31
     },
     "2026-02": {
       "fatturato": 65481.66,
@@ -455,6 +455,17 @@
       "cliente": "Superbia Management SA",
       "data": "2026-03-17",
       "totale": 1050,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-17"
+    },
+    {
+      "id": "403724000000839046",
+      "numero": "INV-2026066",
+      "cliente": "ZENDI CONSULTING SRL",
+      "data": "2026-03-17",
+      "totale": 3200,
       "balance": 0,
       "stato": "paid",
       "valuta": "EUR",
