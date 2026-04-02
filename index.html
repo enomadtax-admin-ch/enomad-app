@@ -593,7 +593,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="scad-table"><thead><tr>
-          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th data-t="stato">Stato</th><th></th>
+          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th style="color:var(--accent)">Prezzo cliente</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
@@ -2229,7 +2229,7 @@ function renderTable(filter,tbid){
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
   const showCosto=tbid==='sb2';
-  const cols=showCosto?7:6;
+  const cols=showCosto?8:6;
   if(list.length===0){
     tb.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Nessuna scadenza</td></tr>`;
     return;
@@ -2241,11 +2241,17 @@ function renderTable(filter,tbid){
     const col=done?'var(--accent)':dcColor(d);
     const dLabel=done?'✓':d+'gg';
     const statusTxt=done?t('completata'):d<=7?t('urgente'):d<=30?t('prossima'):t('ok');
-    const costoCol=showCosto?`<td>
-      ${s.prezzo>0?`<div class="amt-out" style="font-size:11px;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
-      ${s.note&&s.note.includes('fornitore')?`<div style="font-size:9px;color:var(--muted)">${s.note.replace('💸 Uscita fornitore: ','')}</div>`:''}
-    </td>`:'';
     const servizioCollegato=(APP.servizi_ricorrenti||[]).find(sr=>String(sr.scadenzaId)===String(s.id));
+    const clientPrice=servizioCollegato?.client_price||servizioCollegato?.prezzo||0;
+    const fornitore=s.note?.replace('💸 Uscita fornitore: ','')||servizioCollegato?.supplier_name||'';
+    const costoCol=showCosto?`<td>
+      ${s.prezzo>0?`<div class="amt-out" style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'<span style="color:var(--muted)">—</span>'}
+      ${fornitore?`<div style="font-size:9px;color:var(--muted);margin-top:2px">${fornitore}</div>`:''}
+    </td>
+    <td>
+      ${clientPrice>0?`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--accent)">€${clientPrice.toLocaleString('it-IT')}</div>
+      ${s.prezzo>0?`<div style="font-size:9px;color:var(--muted);margin-top:2px">margine: €${(clientPrice-s.prezzo).toLocaleString('it-IT')}</div>`:''}`:'<span style="color:var(--muted)">—</span>'}
+    </td>`:'';
     const hasNote=servizioCollegato?.note||(s.note&&!s.note.includes('💸 Uscita fornitore'));
     const noteIcon=hasNote?'📝':'';
     const actionBtns=done
@@ -2616,18 +2622,16 @@ function renderFinance(){
   // ── ALL KPIs strictly use mesiKeys (period-filtered) — no global totals ──
 
   // FATTURATO = Zoho fatturato per mese (period) + manual revenue
-  // Usa movimenti_all per non dipendere dal filtro sezione Movimenti manuali
-  const _allMov=APP.movimenti_all||APP.movimenti||[];
   const zohoFatt=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.fatturato||0),0);
   const manualRevenue=mesiKeys.reduce((a,k)=>
-    a+_allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in'&&m.categoria==='revenue').reduce((s,m)=>s+m.importo,0)
+    a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in'&&m.categoria==='revenue').reduce((s,m)=>s+m.importo,0)
   ,0);
   const fatturato=zohoFatt+manualRevenue;
 
   // CASH IN = Zoho incassato (period) + ALL manual in
   const zohoCashIn=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.incassato||0),0);
   const manualCashIn=mesiKeys.reduce((a,k)=>
-    a+_allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
+    a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
   ,0);
   const cashIn=zohoCashIn+manualCashIn;
 
@@ -2636,11 +2640,9 @@ function renderFinance(){
   const numFatture=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.count||0),0);
 
   // Cash out del periodo (calcolato qui per il margine reale)
-  // Usa movimenti_all per non dipendere dal filtro sezione Movimenti manuali
-  const allMov=APP.movimenti_all||APP.movimenti||[];
   const cashOutPerMargine=mesiKeys.reduce((a,k)=>
     a+APP.scadenze.filter(s=>s.data?.substring(0,7)===k&&s.prezzo>0).reduce((s,sc)=>s+(sc.prezzo||0),0)
-    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
+    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
   ,0);
 
   // Margine reale = (cash_in - cash_out) / cash_in
@@ -2706,15 +2708,15 @@ function renderFinance(){
   const oggi=new Date();
   const effMesi=Math.max(mesiKeys.length,1);
 
-  // Cash in = Zoho incassato + movimenti tipo=in (usa movimenti_all)
+  // Cash in = Zoho incassato + movimenti tipo=in
   const cashInPeriodo=mesiKeys.reduce((a,k)=>
     a+(ZOHO.perMese?.[k]?.incassato||0)
-    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
+    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
   ,0);
-  // Cash out = scadenze + movimenti tipo=out (usa movimenti_all)
+  // Cash out = scadenze + movimenti tipo=out
   const cashOutPeriodo=mesiKeys.reduce((a,k)=>
     a+APP.scadenze.filter(s=>s.data?.substring(0,7)===k&&s.prezzo>0).reduce((s,sc)=>s+(sc.prezzo||0),0)
-    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
+    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
   ,0);
   const netPeriodo=cashInPeriodo-cashOutPeriodo;
   const netMese=netPeriodo/effMesi;
@@ -2740,45 +2742,19 @@ function renderFinance(){
   el('fin-runway',runway!==null?runway+' mesi':'—');
   el('fin-mktg-budget','€ '+mktgBudget.toLocaleString('it-IT'));
 
-  // Cashflow mensile — rispetta filtro Finance, genera mesi del periodo anche se assenti in Zoho
+  // Cashflow mensile con periodo filter + movimenti UAE
   const cf=document.getElementById('cf-bars');
-  if(cf){
+  if(cf&&ZOHO.perMese){
     cf.innerHTML='';
     const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-    const cfMov=APP.movimenti_all||APP.movimenti||[];
-    // Genera i mesi del periodo corrente indipendentemente da Zoho
-    // così Gen appare anche se non ha fatture Zoho
-    function getCfMesiKeys(){
-      const oggi=new Date();
-      const p=_finPeriodo||'3m';
-      const meseCorrente=oggi.getFullYear()+'-'+String(oggi.getMonth()+1).padStart(2,'0');
-      const keys=[];
-      if(p==='1m'){
-        keys.push(meseCorrente);
-      }else if(p==='3m'){
-        for(let i=2;i>=0;i--){
-          const d=new Date(oggi.getFullYear(),oggi.getMonth()-i,1);
-          keys.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
-        }
-      }else if(p==='ytd'){
-        for(let m=0;m<=oggi.getMonth();m++){
-          keys.push(oggi.getFullYear()+'-'+String(m+1).padStart(2,'0'));
-        }
-      }else{
-        // all — usa tutte le chiavi Zoho + mesi con movimenti manuali
-        const zohoKeys=Object.keys(ZOHO?.perMese||{});
-        const movKeys=[...new Set(cfMov.map(mv=>mv.data?.substring(0,7)).filter(Boolean))];
-        return [...new Set([...zohoKeys,...movKeys])].sort();
-      }
-      return keys;
-    }
-    const mesiKeys=getCfMesiKeys();
-    const mx=Math.max(...mesiKeys.map(m=>(ZOHO?.perMese?.[m]?.fatturato||0)+cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
+    const allKeys=Object.keys(ZOHO.perMese).sort();
+    const mesiKeys=getFinMesiKeys(allKeys);
+    const mx=Math.max(...mesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
     let saldo=0;
     mesiKeys.forEach(m=>{
-      const d=ZOHO?.perMese?.[m]||{};
-      const movIn=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
-      const movOut=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
+      const d=ZOHO.perMese[m]||{};
+      const movIn=(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
+      const movOut=(APP.movimenti||[]).filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
       const cashOutScad=APP.scadenze.filter(s=>s.data?.substring(0,7)===m&&s.prezzo>0).reduce((a,s)=>a+(s.prezzo||0),0);
       const cashOutM=cashOutScad+movOut;
       const incM=(d.incassato||0)+movIn;
