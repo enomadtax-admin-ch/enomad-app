@@ -2616,16 +2616,18 @@ function renderFinance(){
   // ── ALL KPIs strictly use mesiKeys (period-filtered) — no global totals ──
 
   // FATTURATO = Zoho fatturato per mese (period) + manual revenue
+  // Usa movimenti_all per non dipendere dal filtro sezione Movimenti manuali
+  const _allMov=APP.movimenti_all||APP.movimenti||[];
   const zohoFatt=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.fatturato||0),0);
   const manualRevenue=mesiKeys.reduce((a,k)=>
-    a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in'&&m.categoria==='revenue').reduce((s,m)=>s+m.importo,0)
+    a+_allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in'&&m.categoria==='revenue').reduce((s,m)=>s+m.importo,0)
   ,0);
   const fatturato=zohoFatt+manualRevenue;
 
   // CASH IN = Zoho incassato (period) + ALL manual in
   const zohoCashIn=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.incassato||0),0);
   const manualCashIn=mesiKeys.reduce((a,k)=>
-    a+(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
+    a+_allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
   ,0);
   const cashIn=zohoCashIn+manualCashIn;
 
@@ -2634,9 +2636,11 @@ function renderFinance(){
   const numFatture=mesiKeys.reduce((a,k)=>a+(ZOHO.perMese?.[k]?.count||0),0);
 
   // Cash out del periodo (calcolato qui per il margine reale)
+  // Usa movimenti_all per non dipendere dal filtro sezione Movimenti manuali
+  const allMov=APP.movimenti_all||APP.movimenti||[];
   const cashOutPerMargine=mesiKeys.reduce((a,k)=>
     a+APP.scadenze.filter(s=>s.data?.substring(0,7)===k&&s.prezzo>0).reduce((s,sc)=>s+(sc.prezzo||0),0)
-    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
+    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
   ,0);
 
   // Margine reale = (cash_in - cash_out) / cash_in
@@ -2702,15 +2706,15 @@ function renderFinance(){
   const oggi=new Date();
   const effMesi=Math.max(mesiKeys.length,1);
 
-  // Cash in = Zoho incassato + movimenti tipo=in
+  // Cash in = Zoho incassato + movimenti tipo=in (usa movimenti_all)
   const cashInPeriodo=mesiKeys.reduce((a,k)=>
     a+(ZOHO.perMese?.[k]?.incassato||0)
-    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
+    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='in').reduce((s,m)=>s+m.importo,0)
   ,0);
-  // Cash out = scadenze + movimenti tipo=out
+  // Cash out = scadenze + movimenti tipo=out (usa movimenti_all)
   const cashOutPeriodo=mesiKeys.reduce((a,k)=>
     a+APP.scadenze.filter(s=>s.data?.substring(0,7)===k&&s.prezzo>0).reduce((s,sc)=>s+(sc.prezzo||0),0)
-    +(APP.movimenti||[]).filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
+    +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
   ,0);
   const netPeriodo=cashInPeriodo-cashOutPeriodo;
   const netMese=netPeriodo/effMesi;
@@ -2736,20 +2740,43 @@ function renderFinance(){
   el('fin-runway',runway!==null?runway+' mesi':'—');
   el('fin-mktg-budget','€ '+mktgBudget.toLocaleString('it-IT'));
 
-  // Cashflow mensile — rispetta il filtro Finance ma usa movimenti_all (non dipende dal filtro sezione Movimenti)
+  // Cashflow mensile — rispetta filtro Finance, genera mesi del periodo anche se assenti in Zoho
   const cf=document.getElementById('cf-bars');
-  if(cf&&ZOHO.perMese){
+  if(cf){
     cf.innerHTML='';
     const mesiNomi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-    const allKeys=Object.keys(ZOHO.perMese).sort();
-    // mesiKeys dal filtro Finance (1m / 3m / ytd / all) — corretto
-    const mesiKeys=getFinMesiKeys(allKeys);
-    // movimenti: usa movimenti_all (caricati senza filtro periodo) così non dipende dalla sezione Movimenti
     const cfMov=APP.movimenti_all||APP.movimenti||[];
-    const mx=Math.max(...mesiKeys.map(m=>(ZOHO.perMese[m]?.fatturato||0)+cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
+    // Genera i mesi del periodo corrente indipendentemente da Zoho
+    // così Gen appare anche se non ha fatture Zoho
+    function getCfMesiKeys(){
+      const oggi=new Date();
+      const p=_finPeriodo||'3m';
+      const meseCorrente=oggi.getFullYear()+'-'+String(oggi.getMonth()+1).padStart(2,'0');
+      const keys=[];
+      if(p==='1m'){
+        keys.push(meseCorrente);
+      }else if(p==='3m'){
+        for(let i=2;i>=0;i--){
+          const d=new Date(oggi.getFullYear(),oggi.getMonth()-i,1);
+          keys.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+        }
+      }else if(p==='ytd'){
+        for(let m=0;m<=oggi.getMonth();m++){
+          keys.push(oggi.getFullYear()+'-'+String(m+1).padStart(2,'0'));
+        }
+      }else{
+        // all — usa tutte le chiavi Zoho + mesi con movimenti manuali
+        const zohoKeys=Object.keys(ZOHO?.perMese||{});
+        const movKeys=[...new Set(cfMov.map(mv=>mv.data?.substring(0,7)).filter(Boolean))];
+        return [...new Set([...zohoKeys,...movKeys])].sort();
+      }
+      return keys;
+    }
+    const mesiKeys=getCfMesiKeys();
+    const mx=Math.max(...mesiKeys.map(m=>(ZOHO?.perMese?.[m]?.fatturato||0)+cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0)),1);
     let saldo=0;
     mesiKeys.forEach(m=>{
-      const d=ZOHO.perMese[m]||{};
+      const d=ZOHO?.perMese?.[m]||{};
       const movIn=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='in').reduce((a,mv)=>a+mv.importo,0);
       const movOut=cfMov.filter(mv=>mv.data?.substring(0,7)===m&&mv.tipo==='out').reduce((a,mv)=>a+mv.importo,0);
       const cashOutScad=APP.scadenze.filter(s=>s.data?.substring(0,7)===m&&s.prezzo>0).reduce((a,s)=>a+(s.prezzo||0),0);
@@ -3696,18 +3723,6 @@ function getMovCutoffDate(periodo){
   return null; // all
 }
 
-async function loadAllMovimentiForCashflow(){
-  if(!currentUser)return;
-  try{
-    const{data,error}=await supa.from('movimenti_manuali').select('*').eq('user_id',currentUser.id).order('data',{ascending:false});
-    if(error){console.warn('loadAllMovimenti:',error.message);return;}
-    APP.movimenti_all=(data||[]).map(r=>({
-      id:r.id,data:r.data,tipo:r.tipo,importo:parseFloat(r.importo)||0,
-      valuta:r.valuta||'EUR',categoria:r.categoria||'',note:r.note||'',entita:r.entita||''
-    }));
-  }catch(e){console.error('loadAllMovimenti:',e);}
-}
-
 async function loadMovimentiFromDB(periodo){
   if(!currentUser)return;
   const p=periodo||document.getElementById('mov-periodo-filter')?.value||'3m';
@@ -4076,7 +4091,7 @@ async function showView(v,navEl){
   document.getElementById('topbar-sub').textContent=new Date().toLocaleDateString(LANG==='it'?'it-IT':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   // Ricarica dati freschi da Supabase ad ogni cambio sezione
   if(currentUser){
-    await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB(),loadAllMovimentiForCashflow()]);
+    await Promise.all([loadScadenzeFromDB(),loadEntitaFromDB(),loadMovimentiFromDB()]);
   }
   if(v==='finance'){renderFinance();}
   if(v==='ricorrenti'){
