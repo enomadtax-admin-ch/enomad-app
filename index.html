@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Enomad — Compliance & Finance</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzRmZmZiMCIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI4MDAiIAogICAgICAgIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMwYTBmMGEiPkU8L3RleHQ+Cjwvc3ZnPg==">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -593,7 +594,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
         </div>
         <table class="scad-table"><thead><tr>
-          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th style="color:var(--accent)">Prezzo cliente</th><th data-t="stato">Stato</th><th></th>
+          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th data-t="stato">Stato</th><th></th>
         </tr></thead><tbody id="sb2"></tbody></table>
       </div>
     </div>
@@ -2229,7 +2230,7 @@ function renderTable(filter,tbid){
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
   const showCosto=tbid==='sb2';
-  const cols=showCosto?8:6;
+  const cols=showCosto?7:6;
   if(list.length===0){
     tb.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Nessuna scadenza</td></tr>`;
     return;
@@ -2241,17 +2242,11 @@ function renderTable(filter,tbid){
     const col=done?'var(--accent)':dcColor(d);
     const dLabel=done?'✓':d+'gg';
     const statusTxt=done?t('completata'):d<=7?t('urgente'):d<=30?t('prossima'):t('ok');
-    const servizioCollegato=(APP.servizi_ricorrenti||[]).find(sr=>String(sr.scadenzaId)===String(s.id));
-    const clientPrice=servizioCollegato?.client_price||servizioCollegato?.prezzo||0;
-    const fornitore=s.note?.replace('💸 Uscita fornitore: ','')||servizioCollegato?.supplier_name||'';
     const costoCol=showCosto?`<td>
-      ${s.prezzo>0?`<div class="amt-out" style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'<span style="color:var(--muted)">—</span>'}
-      ${fornitore?`<div style="font-size:9px;color:var(--muted);margin-top:2px">${fornitore}</div>`:''}
-    </td>
-    <td>
-      ${clientPrice>0?`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--accent)">€${clientPrice.toLocaleString('it-IT')}</div>
-      ${s.prezzo>0?`<div style="font-size:9px;color:var(--muted);margin-top:2px">margine: €${(clientPrice-s.prezzo).toLocaleString('it-IT')}</div>`:''}`:'<span style="color:var(--muted)">—</span>'}
+      ${s.prezzo>0?`<div class="amt-out" style="font-size:11px;color:var(--danger)">€${s.prezzo.toLocaleString('it-IT')}</div>`:'—'}
+      ${s.note&&s.note.includes('fornitore')?`<div style="font-size:9px;color:var(--muted)">${s.note.replace('💸 Uscita fornitore: ','')}</div>`:''}
     </td>`:'';
+    const servizioCollegato=(APP.servizi_ricorrenti||[]).find(sr=>String(sr.scadenzaId)===String(s.id));
     const hasNote=servizioCollegato?.note||(s.note&&!s.note.includes('💸 Uscita fornitore'));
     const noteIcon=hasNote?'📝':'';
     const actionBtns=done
