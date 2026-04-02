@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-02T07:54:12.201Z",
+  "lastSync": "2026-04-02T09:41:23.847Z",
   "summary": {
-    "fatturato": 1056593.85,
-    "incassato": 988203.85,
-    "inAttesa": 60170,
-    "numFatture": 693,
+    "fatturato": 1068543.85,
+    "incassato": 988743.85,
+    "inAttesa": 71580,
+    "numFatture": 705,
     "numClienti": 112,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,24 +29,30 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 163716.09,
-      "incassato": 141026.09,
-      "inAttesa": 18730,
-      "count": 71
+      "fatturato": 175666.09,
+      "incassato": 141566.09,
+      "inAttesa": 30140,
+      "count": 83
     }
   },
   "perMese": {
+    "2026-04": {
+      "fatturato": 8750,
+      "incassato": 540,
+      "inAttesa": 8210,
+      "count": 10
+    },
     "2026-03": {
-      "fatturato": 60659.85,
+      "fatturato": 61859.85,
       "incassato": 40419.85,
-      "inAttesa": 16280,
-      "count": 31
+      "inAttesa": 17480,
+      "count": 32
     },
     "2026-02": {
-      "fatturato": 65481.66,
+      "fatturato": 67481.66,
       "incassato": 64881.66,
-      "inAttesa": 600,
-      "count": 20
+      "inAttesa": 2600,
+      "count": 21
     },
     "2026-01": {
       "fatturato": 37574.58,
@@ -255,8 +261,8 @@
     },
     {
       "nome": "ALL STAR PUZZLES LTD",
-      "fatturato": 79090,
-      "count": 27
+      "fatturato": 81590,
+      "count": 28
     },
     {
       "nome": "TOP SERVICE S.R.L.",
@@ -264,19 +270,19 @@
       "count": 1
     },
     {
+      "nome": "IPGEN INNOVATION LTD",
+      "fatturato": 48105,
+      "count": 23
+    },
+    {
       "nome": "WV Consulting LLC",
       "fatturato": 46930,
       "count": 33
     },
     {
-      "nome": "IPGEN INNOVATION LTD",
-      "fatturato": 46885,
-      "count": 22
-    },
-    {
       "nome": "ISLAFFILIATES S.L.",
-      "fatturato": 40740,
-      "count": 15
+      "fatturato": 45140,
+      "count": 18
     },
     {
       "nome": "EUROMEDIATECH LLC",
@@ -315,8 +321,8 @@
     },
     {
       "nome": "HYBRID INTERNATIONAL GROUP LTD",
-      "fatturato": 21420,
-      "count": 39
+      "fatturato": 21820,
+      "count": 40
     },
     {
       "nome": "New Concept MGMT Limited",
@@ -350,6 +356,116 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000884436",
+      "numero": "INV-2026091",
+      "cliente": "Media Scale FZE LLC",
+      "data": "2026-04-01",
+      "totale": 350,
+      "balance": 350,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884366",
+      "numero": "INV-2026089",
+      "cliente": "ZENDI CONSULTING SRL",
+      "data": "2026-04-01",
+      "totale": 540,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884298",
+      "numero": "INV-2026087",
+      "cliente": "ISLAFFILIATES S.L.",
+      "data": "2026-04-01",
+      "totale": 1200,
+      "balance": 1200,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884265",
+      "numero": "INV-2026086",
+      "cliente": "EASTERN STAR SOLUTIONS - FZCO",
+      "data": "2026-04-01",
+      "totale": 1000,
+      "balance": 1000,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884232",
+      "numero": "INV-2026085",
+      "cliente": "IPGEN INNOVATION LTD",
+      "data": "2026-04-01",
+      "totale": 1220,
+      "balance": 1220,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884199",
+      "numero": "INV-2026084",
+      "cliente": "True Fame Creative FZ-LLC",
+      "data": "2026-04-01",
+      "totale": 390,
+      "balance": 390,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884133",
+      "numero": "INV-2026082",
+      "cliente": "ALL STAR PUZZLES LTD",
+      "data": "2026-04-01",
+      "totale": 2500,
+      "balance": 2500,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884100",
+      "numero": "INV-2026081",
+      "cliente": "OZZIBIG INTERNATIONAL FZCO",
+      "data": "2026-04-01",
+      "totale": 600,
+      "balance": 600,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884067",
+      "numero": "INV-2026080",
+      "cliente": "ROAS INTERNATIONAL - FZCO",
+      "data": "2026-04-01",
+      "totale": 550,
+      "balance": 550,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884034",
+      "numero": "INV-2026079",
+      "cliente": "HYBRID INTERNATIONAL GROUP LTD",
+      "data": "2026-04-01",
+      "totale": 400,
+      "balance": 400,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
     {
       "id": "403724000000876329",
       "numero": "INV-2026077",
@@ -604,6 +720,17 @@
       "scadenza": "2026-03-01"
     },
     {
+      "id": "403724000000810289",
+      "numero": "INV-2026053",
+      "cliente": "ISLAFFILIATES S.L.",
+      "data": "2026-03-01",
+      "totale": 1200,
+      "balance": 1200,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-03-01"
+    },
+    {
       "id": "403724000000810257",
       "numero": "INV-2026052",
       "cliente": "EASTERN STAR SOLUTIONS - FZCO",
@@ -723,6 +850,17 @@
       "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-02-24"
+    },
+    {
+      "id": "403724000000800077",
+      "numero": "INV-2026040",
+      "cliente": "ISLAFFILIATES S.L.",
+      "data": "2026-02-18",
+      "totale": 2000,
+      "balance": 2000,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-02-18"
     },
     {
       "id": "403724000000800015",
