@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-03T14:10:02.617Z",
+  "lastSync": "2026-04-03T14:48:39.844Z",
   "summary": {
     "fatturato": 1068543.85,
-    "incassato": 988743.85,
-    "inAttesa": 71580,
+    "incassato": 989093.85,
+    "inAttesa": 71230,
     "numFatture": 705,
     "numClienti": 112,
     "valuta": "EUR",
@@ -30,16 +30,16 @@
     },
     "2026": {
       "fatturato": 175666.09,
-      "incassato": 141566.09,
-      "inAttesa": 30140,
+      "incassato": 141916.09,
+      "inAttesa": 29790,
       "count": 83
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 8750,
-      "incassato": 540,
-      "inAttesa": 8210,
+      "incassato": 890,
+      "inAttesa": 7860,
       "count": 10
     },
     "2026-03": {
@@ -362,8 +362,8 @@
       "cliente": "Media Scale FZE LLC",
       "data": "2026-04-01",
       "totale": 350,
-      "balance": 350,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
