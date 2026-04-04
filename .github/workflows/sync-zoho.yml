@@ -3,15 +3,14 @@ name: Sync Finance Data
 on:
   schedule:
     - cron: '*/30 * * * *'  # Ogni 30 minuti
-  workflow_dispatch:       # Puoi lanciarlo manualmente quando vuoi
+  workflow_dispatch:
   push:
     branches:
-      - main               # Si attiva ad ogni push su main
+      - main
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    # Non girare se il push è stato fatto dal bot stesso
     if: github.actor != 'github-actions[bot]'
 
     steps:
@@ -114,39 +113,27 @@ jobs:
               headers
             );
 
-            console.log('Scarico pagamenti reali...');
-            const allPayments = await fetchAllPages(
-              'www.zohoapis.eu',
-              '/invoice/v3/customerpayments?sort_column=date&sort_order=D',
-              'customerpayments',
-              headers
-            );
-            // Prova anche endpoint alternativo se il primo è vuoto
-            let allPaymentsFinal = allPayments;
-            if(allPayments.length === 0) {
-              console.log('customerpayments vuoto, provo endpoint payments...');
-              const altPayments = await fetchAllPages(
-                'www.zohoapis.eu',
-                '/invoice/v3/payments',
-                'payments',
-                headers
-              );
-              console.log('payments alternativo: ' + altPayments.length + ' elementi');
-              allPaymentsFinal = altPayments;
-            }
-
             // ── Step 3: Filtra — escludi draft e void ──
             const STATI_VALIDI = ['sent', 'paid', 'partial', 'overdue', 'viewed'];
             const fatture = allInvoices.filter(i => STATI_VALIDI.includes(i.status));
-            const escluse = allInvoices.length - fatture.length;
             console.log('Fatture totali: ' + allInvoices.length);
-            console.log('Fatture valide (escluso draft/void): ' + fatture.length);
-            console.log('Pagamenti reali: ' + allPaymentsFinal.length);
-            console.log('Escluse: ' + escluse);
+            console.log('Fatture valide: ' + fatture.length);
 
-            // ── Step 4: Calcola totali — incassato da stato fatture (payments API non disponibile) ──
+            // ── Step 4: Helper — mese di pagamento ──
+            // Zoho espone last_payment_date sulla fattura: lo usiamo per sapere
+            // QUANDO il cash è arrivato, allineandoci alla logica di Zoho dashboard.
+            // Se la fattura è paid/partial ma non ha last_payment_date, usiamo i.date
+            // come fallback (caso raro, es. fatture molto vecchie).
+            function getMesePagamento(inv) {
+              if (inv.last_payment_date && inv.last_payment_date.trim() !== '') {
+                return inv.last_payment_date.substring(0, 7); // YYYY-MM
+              }
+              // fallback: data emissione
+              return inv.date ? inv.date.substring(0, 7) : null;
+            }
+
+            // ── Step 5: Totali summary ──
             const fatturato = fatture.reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
-            // Incassato = fatture paid + quota pagata delle partial
             const incassatoPaid = fatture
               .filter(i => i.status === 'paid')
               .reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
@@ -158,50 +145,77 @@ jobs:
               .filter(i => ['sent','overdue','viewed','partial'].includes(i.status))
               .reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
 
-            // ── Step 5: Statistiche per anno — fatturato da fatture, incassato da stato fatture ──
+            // ── Step 6: Per anno ──
+            // fatturato → mese emissione (competenza)
+            // incassato → mese pagamento (cassa) ← ALLINEATO A ZOHO
             const perAnno = {};
             fatture.forEach(i => {
-              const anno = i.date ? i.date.substring(0, 4) : 'sconosciuto';
-              if (!perAnno[anno]) perAnno[anno] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-              perAnno[anno].fatturato += parseFloat(i.total) || 0;
-              perAnno[anno].count++;
-              if (i.status === 'paid') perAnno[anno].incassato += parseFloat(i.total) || 0;
-              if (i.status === 'partial') perAnno[anno].incassato += (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
+              const annoEmissione = i.date ? i.date.substring(0, 4) : null;
+              if (!annoEmissione) return;
+
+              if (!perAnno[annoEmissione]) perAnno[annoEmissione] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+              perAnno[annoEmissione].fatturato += parseFloat(i.total) || 0;
+              perAnno[annoEmissione].count++;
+
+              // inAttesa → sempre su anno emissione
               if (['sent','overdue','viewed','partial'].includes(i.status)) {
-                perAnno[anno].inAttesa += parseFloat(i.balance) || 0;
+                perAnno[annoEmissione].inAttesa += parseFloat(i.balance) || 0;
+              }
+
+              // incassato → anno di pagamento
+              if (i.status === 'paid' || i.status === 'partial') {
+                const mesePag = getMesePagamento(i);
+                const annoPag = mesePag ? mesePag.substring(0, 4) : annoEmissione;
+                if (!perAnno[annoPag]) perAnno[annoPag] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+                const importoIncassato = i.status === 'paid'
+                  ? (parseFloat(i.total) || 0)
+                  : (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
+                perAnno[annoPag].incassato += importoIncassato;
               }
             });
 
-            // Arrotonda
             Object.keys(perAnno).forEach(a => {
               perAnno[a].fatturato = Math.round(perAnno[a].fatturato * 100) / 100;
               perAnno[a].incassato = Math.round(perAnno[a].incassato * 100) / 100;
-              perAnno[a].inAttesa = Math.round(perAnno[a].inAttesa * 100) / 100;
+              perAnno[a].inAttesa  = Math.round(perAnno[a].inAttesa  * 100) / 100;
             });
 
-            // ── Step 6: Statistiche per mese (tutti gli anni) ──
-            const annoCorrente = new Date().getFullYear().toString();
+            // ── Step 7: Per mese ──
+            // fatturato → mese emissione
+            // incassato → mese pagamento ← ALLINEATO A ZOHO
             const perMese = {};
             fatture.forEach(i => {
-                if (!i.date) return;
-                const mese = i.date.substring(0, 7);
-                if (!perMese[mese]) perMese[mese] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-                perMese[mese].fatturato += parseFloat(i.total) || 0;
-                perMese[mese].count++;
-                if (i.status === 'paid') perMese[mese].incassato += parseFloat(i.total) || 0;
-                if (i.status === 'partial') perMese[mese].incassato += (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
-                if (['sent','overdue','viewed','partial'].includes(i.status)) {
-                  perMese[mese].inAttesa += parseFloat(i.balance) || 0;
-                }
-              });
+              const meseEmissione = i.date ? i.date.substring(0, 7) : null;
+              if (!meseEmissione) return;
+
+              if (!perMese[meseEmissione]) perMese[meseEmissione] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+              perMese[meseEmissione].fatturato += parseFloat(i.total) || 0;
+              perMese[meseEmissione].count++;
+
+              // inAttesa → mese emissione
+              if (['sent','overdue','viewed','partial'].includes(i.status)) {
+                perMese[meseEmissione].inAttesa += parseFloat(i.balance) || 0;
+              }
+
+              // incassato → mese pagamento
+              if (i.status === 'paid' || i.status === 'partial') {
+                const mesePag = getMesePagamento(i);
+                if (!mesePag) return;
+                if (!perMese[mesePag]) perMese[mesePag] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+                const importoIncassato = i.status === 'paid'
+                  ? (parseFloat(i.total) || 0)
+                  : (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
+                perMese[mesePag].incassato += importoIncassato;
+              }
+            });
 
             Object.keys(perMese).forEach(m => {
               perMese[m].fatturato = Math.round(perMese[m].fatturato * 100) / 100;
               perMese[m].incassato = Math.round(perMese[m].incassato * 100) / 100;
-              perMese[m].inAttesa = Math.round(perMese[m].inAttesa * 100) / 100;
+              perMese[m].inAttesa  = Math.round(perMese[m].inAttesa  * 100) / 100;
             });
 
-            // ── Step 7: Top clienti ──
+            // ── Step 8: Top clienti ──
             const clientiMap = {};
             fatture.forEach(i => {
               const nome = i.customer_name || 'Sconosciuto';
@@ -214,13 +228,14 @@ jobs:
               .sort((a, b) => b.fatturato - a.fatturato)
               .slice(0, 20);
 
-            // ── Step 8: Costruisci risultato finale ──
+            // ── Step 9: Risultato finale ──
+            const annoCorrente = new Date().getFullYear().toString();
             const result = {
               lastSync: new Date().toISOString(),
               summary: {
                 fatturato: Math.round(fatturato * 100) / 100,
                 incassato: Math.round(incassato * 100) / 100,
-                inAttesa: Math.round(inAttesa * 100) / 100,
+                inAttesa:  Math.round(inAttesa  * 100) / 100,
                 numFatture: fatture.length,
                 numClienti: allContacts.length,
                 valuta: 'EUR',
@@ -234,6 +249,7 @@ jobs:
                 numero: i.invoice_number,
                 cliente: i.customer_name,
                 data: i.date,
+                dataPagamento: i.last_payment_date || '',
                 totale: parseFloat(i.total) || 0,
                 balance: parseFloat(i.balance) || 0,
                 stato: i.status,
@@ -248,21 +264,20 @@ jobs:
               }))
             };
 
-            // ── Step 9: Salva ──
             fs.writeFileSync('finance-data.json', JSON.stringify(result, null, 2));
 
             console.log('');
             console.log('══════════════════════════════════════');
             console.log('✓ finance-data.json salvato');
-            console.log('  Fatturato reale: EUR ' + result.summary.fatturato.toLocaleString());
-            console.log('  Incassato:       EUR ' + result.summary.incassato.toLocaleString() + ' (paid + partial)');
-            console.log('  In attesa:       EUR ' + result.summary.inAttesa.toLocaleString());
-            console.log('  Fatture valide:  ' + result.summary.numFatture);
-            console.log('  Clienti:         ' + result.summary.numClienti);
+            console.log('  Logica: fatturato = data emissione | incassato = data pagamento');
+            console.log('  Fatturato: EUR ' + result.summary.fatturato.toLocaleString());
+            console.log('  Incassato: EUR ' + result.summary.incassato.toLocaleString());
+            console.log('  In attesa: EUR ' + result.summary.inAttesa.toLocaleString());
+            console.log('  Fatture:   ' + result.summary.numFatture);
             console.log('');
-            console.log('  Breakdown per anno:');
+            console.log('  Per anno:');
             Object.keys(perAnno).sort().forEach(a => {
-              console.log('  ' + a + ': fatt EUR ' + perAnno[a].fatturato.toLocaleString() + ' | inc EUR ' + perAnno[a].incassato.toLocaleString() + ' (' + perAnno[a].count + ' fatture)');
+              console.log('  ' + a + ': fatt EUR ' + perAnno[a].fatturato.toLocaleString() + ' | inc EUR ' + perAnno[a].incassato.toLocaleString());
             });
           }
 
@@ -274,5 +289,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "Finance Sync Bot"
           git add finance-data.json
-          git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — dati puliti"
+          git diff --staged --quiet || git commit -m "💰 Sync Zoho $(date '+%Y-%m-%d %H:%M') — cash basis"
           git push origin HEAD:main --force-with-lease || git push origin HEAD:main --force
