@@ -2,7 +2,7 @@ name: Sync Finance Data
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Ogni 30 minuti
+    - cron: '*/30 * * * *'
   workflow_dispatch:
   push:
     branches:
@@ -67,7 +67,7 @@ jobs:
 
           async function main() {
 
-            // ── Step 1: Ottieni access token ──
+            // ── Step 1: Access token ──
             console.log('Ottengo access token Zoho...');
             const tokenParams = new URLSearchParams({
               client_id: process.env.ZOHO_CLIENT_ID,
@@ -96,8 +96,8 @@ jobs:
               'X-com-zoho-invoice-organizationid': process.env.ZOHO_ORG_ID
             };
 
-            // ── Step 2: Scarica tutto lo storico ──
-            console.log('Scarico fatture (storico completo)...');
+            // ── Step 2: Scarica fatture e clienti ──
+            console.log('Scarico fatture...');
             const allInvoices = await fetchAllPages(
               'www.zohoapis.eu',
               '/invoice/v3/invoices?sort_column=date&sort_order=D',
@@ -113,64 +113,61 @@ jobs:
               headers
             );
 
-            // ── Step 3: Filtra — escludi draft e void ──
+            // ── Step 3: Filtra draft e void ──
             const STATI_VALIDI = ['sent', 'paid', 'partial', 'overdue', 'viewed'];
             const fatture = allInvoices.filter(i => STATI_VALIDI.includes(i.status));
-            console.log('Fatture totali: ' + allInvoices.length);
             console.log('Fatture valide: ' + fatture.length);
 
-            // ── Step 4: Helper — mese di pagamento ──
-            // Zoho espone last_payment_date sulla fattura: lo usiamo per sapere
-            // QUANDO il cash è arrivato, allineandoci alla logica di Zoho dashboard.
-            // Se la fattura è paid/partial ma non ha last_payment_date, usiamo i.date
-            // come fallback (caso raro, es. fatture molto vecchie).
-            function getMesePagamento(inv) {
+            // ── Helper: importo già incassato su una fattura ──
+            // Funziona per QUALSIASI stato: paid, partial, overdue con acconto, sent
+            // = totale - balance rimasto
+            function importoIncassato(inv) {
+              const tot = parseFloat(inv.total) || 0;
+              const bal = parseFloat(inv.balance) || 0;
+              return Math.max(0, tot - bal);
+            }
+
+            // ── Helper: mese del pagamento ──
+            // Usa last_payment_date se disponibile, altrimenti data emissione
+            function mesePagamento(inv) {
               if (inv.last_payment_date && inv.last_payment_date.trim() !== '') {
-                return inv.last_payment_date.substring(0, 7); // YYYY-MM
+                return inv.last_payment_date.substring(0, 7);
               }
-              // fallback: data emissione
               return inv.date ? inv.date.substring(0, 7) : null;
             }
 
-            // ── Step 5: Totali summary ──
+            // ── Step 4: Totali summary ──
             const fatturato = fatture.reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
-            const incassatoPaid = fatture
-              .filter(i => i.status === 'paid')
-              .reduce((a, i) => a + (parseFloat(i.total) || 0), 0);
-            const incassatoParziale = fatture
-              .filter(i => i.status === 'partial')
-              .reduce((a, i) => a + ((parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0)), 0);
-            const incassato = incassatoPaid + incassatoParziale;
-            const inAttesa = fatture
-              .filter(i => ['sent','overdue','viewed','partial'].includes(i.status))
-              .reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
+            const incassato = fatture.reduce((a, i) => a + importoIncassato(i), 0);
+            const inAttesa  = fatture.reduce((a, i) => a + (parseFloat(i.balance) || 0), 0);
 
-            // ── Step 6: Per anno ──
-            // fatturato → mese emissione (competenza)
-            // incassato → mese pagamento (cassa) ← ALLINEATO A ZOHO
+            // ── Step 5: Per anno ──
+            // fatturato → anno emissione
+            // incassato → anno pagamento (last_payment_date)
             const perAnno = {};
+            function initAnno(k) {
+              if (!perAnno[k]) perAnno[k] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+            }
+
             fatture.forEach(i => {
               const annoEmissione = i.date ? i.date.substring(0, 4) : null;
               if (!annoEmissione) return;
+              initAnno(annoEmissione);
 
-              if (!perAnno[annoEmissione]) perAnno[annoEmissione] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+              // fatturato e conteggio → anno emissione
               perAnno[annoEmissione].fatturato += parseFloat(i.total) || 0;
               perAnno[annoEmissione].count++;
 
-              // inAttesa → sempre su anno emissione
-              if (['sent','overdue','viewed','partial'].includes(i.status)) {
-                perAnno[annoEmissione].inAttesa += parseFloat(i.balance) || 0;
-              }
+              // inAttesa → anno emissione
+              perAnno[annoEmissione].inAttesa += parseFloat(i.balance) || 0;
 
-              // incassato → anno di pagamento
-              if (i.status === 'paid' || i.status === 'partial') {
-                const mesePag = getMesePagamento(i);
-                const annoPag = mesePag ? mesePag.substring(0, 4) : annoEmissione;
-                if (!perAnno[annoPag]) perAnno[annoPag] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-                const importoIncassato = i.status === 'paid'
-                  ? (parseFloat(i.total) || 0)
-                  : (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
-                perAnno[annoPag].incassato += importoIncassato;
+              // incassato → anno pagamento
+              const inc = importoIncassato(i);
+              if (inc > 0) {
+                const mp = mesePagamento(i);
+                const annoPag = mp ? mp.substring(0, 4) : annoEmissione;
+                initAnno(annoPag);
+                perAnno[annoPag].incassato += inc;
               }
             });
 
@@ -180,32 +177,33 @@ jobs:
               perAnno[a].inAttesa  = Math.round(perAnno[a].inAttesa  * 100) / 100;
             });
 
-            // ── Step 7: Per mese ──
+            // ── Step 6: Per mese ──
             // fatturato → mese emissione
-            // incassato → mese pagamento ← ALLINEATO A ZOHO
+            // incassato → mese pagamento (last_payment_date)
             const perMese = {};
+            function initMese(k) {
+              if (!perMese[k]) perMese[k] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+            }
+
             fatture.forEach(i => {
               const meseEmissione = i.date ? i.date.substring(0, 7) : null;
               if (!meseEmissione) return;
+              initMese(meseEmissione);
 
-              if (!perMese[meseEmissione]) perMese[meseEmissione] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
+              // fatturato e conteggio → mese emissione
               perMese[meseEmissione].fatturato += parseFloat(i.total) || 0;
               perMese[meseEmissione].count++;
 
               // inAttesa → mese emissione
-              if (['sent','overdue','viewed','partial'].includes(i.status)) {
-                perMese[meseEmissione].inAttesa += parseFloat(i.balance) || 0;
-              }
+              perMese[meseEmissione].inAttesa += parseFloat(i.balance) || 0;
 
               // incassato → mese pagamento
-              if (i.status === 'paid' || i.status === 'partial') {
-                const mesePag = getMesePagamento(i);
-                if (!mesePag) return;
-                if (!perMese[mesePag]) perMese[mesePag] = { fatturato: 0, incassato: 0, inAttesa: 0, count: 0 };
-                const importoIncassato = i.status === 'paid'
-                  ? (parseFloat(i.total) || 0)
-                  : (parseFloat(i.total) || 0) - (parseFloat(i.balance) || 0);
-                perMese[mesePag].incassato += importoIncassato;
+              const inc = importoIncassato(i);
+              if (inc > 0) {
+                const mp = mesePagamento(i);
+                if (!mp) return;
+                initMese(mp);
+                perMese[mp].incassato += inc;
               }
             });
 
@@ -215,7 +213,7 @@ jobs:
               perMese[m].inAttesa  = Math.round(perMese[m].inAttesa  * 100) / 100;
             });
 
-            // ── Step 8: Top clienti ──
+            // ── Step 7: Top clienti ──
             const clientiMap = {};
             fatture.forEach(i => {
               const nome = i.customer_name || 'Sconosciuto';
@@ -228,7 +226,7 @@ jobs:
               .sort((a, b) => b.fatturato - a.fatturato)
               .slice(0, 20);
 
-            // ── Step 9: Risultato finale ──
+            // ── Step 8: Risultato finale ──
             const annoCorrente = new Date().getFullYear().toString();
             const result = {
               lastSync: new Date().toISOString(),
@@ -269,7 +267,8 @@ jobs:
             console.log('');
             console.log('══════════════════════════════════════');
             console.log('✓ finance-data.json salvato');
-            console.log('  Logica: fatturato = data emissione | incassato = data pagamento');
+            console.log('  fatturato  = data emissione');
+            console.log('  incassato  = data pagamento (totale - balance, tutti gli stati)');
             console.log('  Fatturato: EUR ' + result.summary.fatturato.toLocaleString());
             console.log('  Incassato: EUR ' + result.summary.incassato.toLocaleString());
             console.log('  In attesa: EUR ' + result.summary.inAttesa.toLocaleString());
@@ -277,7 +276,7 @@ jobs:
             console.log('');
             console.log('  Per anno:');
             Object.keys(perAnno).sort().forEach(a => {
-              console.log('  ' + a + ': fatt EUR ' + perAnno[a].fatturato.toLocaleString() + ' | inc EUR ' + perAnno[a].incassato.toLocaleString());
+              console.log('  ' + a + ': fatt ' + perAnno[a].fatturato.toLocaleString() + ' | inc ' + perAnno[a].incassato.toLocaleString());
             });
           }
 
