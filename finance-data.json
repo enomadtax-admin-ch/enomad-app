@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-07T09:53:35.365Z",
+  "lastSync": "2026-04-07T12:08:53.340Z",
   "summary": {
-    "fatturato": 1081261.53,
+    "fatturato": 1080261.53,
     "incassato": 999531.53,
-    "inAttesa": 81730,
+    "inAttesa": 80730,
     "numFatture": 707,
     "numClienti": 113,
     "valuta": "EUR",
@@ -29,9 +29,9 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 188383.77,
+      "fatturato": 187383.77,
       "incassato": 151713.77,
-      "inAttesa": 40290,
+      "inAttesa": 39290,
       "count": 85
     }
   },
@@ -43,9 +43,9 @@
       "count": 12
     },
     "2026-03": {
-      "fatturato": 61859.85,
+      "fatturato": 60859.85,
       "incassato": 46519.85,
-      "inAttesa": 17480,
+      "inAttesa": 16480,
       "count": 32
     },
     "2026-02": {
@@ -686,8 +686,8 @@
       "cliente": "Onorato Battello",
       "data": "2026-03-05",
       "dataPagamento": "2026-03-25",
-      "totale": 6900,
-      "balance": 4440,
+      "totale": 5900,
+      "balance": 3440,
       "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-03-05"
