@@ -1,11 +1,11 @@
 {
-  "lastSync": "2026-04-07T05:59:35.360Z",
+  "lastSync": "2026-04-07T09:53:35.365Z",
   "summary": {
-    "fatturato": 1068543.85,
-    "incassato": 997313.85,
-    "inAttesa": 71230,
-    "numFatture": 705,
-    "numClienti": 112,
+    "fatturato": 1081261.53,
+    "incassato": 999531.53,
+    "inAttesa": 81730,
+    "numFatture": 707,
+    "numClienti": 113,
     "valuta": "EUR",
     "annoCorrente": "2026"
   },
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 175666.09,
-      "incassato": 149496.09,
-      "inAttesa": 29790,
-      "count": 83
+      "fatturato": 188383.77,
+      "incassato": 151713.77,
+      "inAttesa": 40290,
+      "count": 85
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 8750,
-      "incassato": 7090,
-      "inAttesa": 7860,
-      "count": 10
+      "fatturato": 21467.68,
+      "incassato": 9307.68,
+      "inAttesa": 18360,
+      "count": 12
     },
     "2026-03": {
       "fatturato": 61859.85,
@@ -285,6 +285,11 @@
       "count": 18
     },
     {
+      "nome": "VYRA STUDIOS LTD",
+      "fatturato": 39520,
+      "count": 7
+    },
+    {
       "nome": "EUROMEDIATECH LLC",
       "fatturato": 30305,
       "count": 8
@@ -293,11 +298,6 @@
       "nome": "Palumbo Service Srls",
       "fatturato": 30000,
       "count": 1
-    },
-    {
-      "nome": "VYRA STUDIOS LTD",
-      "fatturato": 29020,
-      "count": 6
     },
     {
       "nome": "GOLDSEA MEDIA - FZCO",
@@ -357,6 +357,18 @@
   ],
   "invoices": [
     {
+      "id": "403724000000897040",
+      "numero": "INV-2026093",
+      "cliente": "Radom Pay Limited",
+      "data": "2026-04-07",
+      "dataPagamento": "2026-04-07",
+      "totale": 2217.68,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-07"
+    },
+    {
       "id": "403724000000884436",
       "numero": "INV-2026091",
       "cliente": "Media Scale FZE LLC",
@@ -365,6 +377,18 @@
       "totale": 350,
       "balance": 0,
       "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884401",
+      "numero": "INV-2026090",
+      "cliente": "VYRA STUDIOS LTD",
+      "data": "2026-04-01",
+      "dataPagamento": "",
+      "totale": 10500,
+      "balance": 10500,
+      "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
