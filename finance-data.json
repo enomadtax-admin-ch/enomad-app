@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-07T12:08:53.340Z",
+  "lastSync": "2026-04-07T16:18:30.500Z",
   "summary": {
-    "fatturato": 1080261.53,
-    "incassato": 999531.53,
-    "inAttesa": 80730,
-    "numFatture": 707,
+    "fatturato": 1088361.53,
+    "incassato": 1018931.53,
+    "inAttesa": 69430,
+    "numFatture": 708,
     "numClienti": 113,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,24 +29,24 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 187383.77,
-      "incassato": 151713.77,
-      "inAttesa": 39290,
-      "count": 85
+      "fatturato": 195483.77,
+      "incassato": 171113.77,
+      "inAttesa": 27990,
+      "count": 86
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 21467.68,
-      "incassato": 9307.68,
-      "inAttesa": 18360,
+      "incassato": 28707.68,
+      "inAttesa": 15260,
       "count": 12
     },
     "2026-03": {
-      "fatturato": 60859.85,
+      "fatturato": 68959.85,
       "incassato": 46519.85,
-      "inAttesa": 16480,
-      "count": 32
+      "inAttesa": 8280,
+      "count": 33
     },
     "2026-02": {
       "fatturato": 67481.66,
@@ -290,6 +290,11 @@
       "count": 7
     },
     {
+      "nome": "Netmart LLC",
+      "fatturato": 32495,
+      "count": 6
+    },
+    {
       "nome": "EUROMEDIATECH LLC",
       "fatturato": 30305,
       "count": 8
@@ -303,11 +308,6 @@
       "nome": "GOLDSEA MEDIA - FZCO",
       "fatturato": 28100,
       "count": 1
-    },
-    {
-      "nome": "Netmart LLC",
-      "fatturato": 24395,
-      "count": 5
     },
     {
       "nome": "Gaia Bertolin",
@@ -457,10 +457,10 @@
       "numero": "INV-2026082",
       "cliente": "ALL STAR PUZZLES LTD",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-07",
       "totale": 2500,
-      "balance": 2500,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -469,10 +469,10 @@
       "numero": "INV-2026081",
       "cliente": "OZZIBIG INTERNATIONAL FZCO",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-07",
       "totale": 600,
-      "balance": 600,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -513,14 +513,26 @@
       "scadenza": "2026-03-31"
     },
     {
+      "id": "403724000000876317",
+      "numero": "INV-2026076",
+      "cliente": "Netmart LLC",
+      "data": "2026-03-31",
+      "dataPagamento": "2026-04-07",
+      "totale": 8100,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-03-31"
+    },
+    {
       "id": "403724000000874012",
       "numero": "INV-2026075",
       "cliente": "ALL STAR PUZZLES LTD",
       "data": "2026-03-30",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-07",
       "totale": 8200,
-      "balance": 8200,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-30"
     },
