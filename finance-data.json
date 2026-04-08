@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-08T10:18:05.951Z",
+  "lastSync": "2026-04-08T14:57:58.037Z",
   "summary": {
     "fatturato": 1088361.53,
-    "incassato": 1018931.53,
-    "inAttesa": 69430,
+    "incassato": 1019931.53,
+    "inAttesa": 68430,
     "numFatture": 708,
     "numClienti": 113,
     "valuta": "EUR",
@@ -30,22 +30,22 @@
     },
     "2026": {
       "fatturato": 195483.77,
-      "incassato": 171113.77,
-      "inAttesa": 27990,
+      "incassato": 172113.77,
+      "inAttesa": 26990,
       "count": 86
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 21467.68,
-      "incassato": 28707.68,
+      "incassato": 32167.68,
       "inAttesa": 15260,
       "count": 12
     },
     "2026-03": {
       "fatturato": 68959.85,
-      "incassato": 46519.85,
-      "inAttesa": 8280,
+      "incassato": 44059.85,
+      "inAttesa": 7280,
       "count": 33
     },
     "2026-02": {
@@ -697,9 +697,9 @@
       "numero": "INV-2026061",
       "cliente": "Onorato Battello",
       "data": "2026-03-05",
-      "dataPagamento": "2026-03-25",
+      "dataPagamento": "2026-04-08",
       "totale": 5900,
-      "balance": 3440,
+      "balance": 2440,
       "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-03-05"
