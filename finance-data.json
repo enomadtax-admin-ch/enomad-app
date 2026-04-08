@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-08T14:57:58.037Z",
+  "lastSync": "2026-04-08T18:55:54.543Z",
   "summary": {
-    "fatturato": 1088361.53,
+    "fatturato": 1088081.53,
     "incassato": 1019931.53,
-    "inAttesa": 68430,
+    "inAttesa": 68150,
     "numFatture": 708,
     "numClienti": 113,
     "valuta": "EUR",
@@ -29,17 +29,17 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 195483.77,
+      "fatturato": 195203.77,
       "incassato": 172113.77,
-      "inAttesa": 26990,
+      "inAttesa": 26710,
       "count": 86
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 21467.68,
+      "fatturato": 21187.68,
       "incassato": 32167.68,
-      "inAttesa": 15260,
+      "inAttesa": 14980,
       "count": 12
     },
     "2026-03": {
@@ -286,7 +286,7 @@
     },
     {
       "nome": "VYRA STUDIOS LTD",
-      "fatturato": 39520,
+      "fatturato": 39240,
       "count": 7
     },
     {
@@ -386,8 +386,8 @@
       "cliente": "VYRA STUDIOS LTD",
       "data": "2026-04-01",
       "dataPagamento": "",
-      "totale": 10500,
-      "balance": 10500,
+      "totale": 10220,
+      "balance": 10220,
       "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
