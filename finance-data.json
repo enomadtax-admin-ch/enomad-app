@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-14T06:16:12.942Z",
+  "lastSync": "2026-04-14T10:48:06.832Z",
   "summary": {
-    "fatturato": 1088081.53,
-    "incassato": 1019931.53,
-    "inAttesa": 68150,
-    "numFatture": 708,
+    "fatturato": 1088201.53,
+    "incassato": 1020851.53,
+    "inAttesa": 67350,
+    "numFatture": 709,
     "numClienti": 114,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,23 +29,23 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 195203.77,
-      "incassato": 172113.77,
-      "inAttesa": 26710,
-      "count": 86
+      "fatturato": 195323.77,
+      "incassato": 173033.77,
+      "inAttesa": 25910,
+      "count": 87
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 21187.68,
-      "incassato": 32167.68,
-      "inAttesa": 14980,
-      "count": 12
+      "fatturato": 21307.68,
+      "incassato": 33087.68,
+      "inAttesa": 14430,
+      "count": 13
     },
     "2026-03": {
       "fatturato": 68959.85,
       "incassato": 44059.85,
-      "inAttesa": 7280,
+      "inAttesa": 7030,
       "count": 33
     },
     "2026-02": {
@@ -291,8 +291,8 @@
     },
     {
       "nome": "Netmart LLC",
-      "fatturato": 32495,
-      "count": 6
+      "fatturato": 32615,
+      "count": 7
     },
     {
       "nome": "EUROMEDIATECH LLC",
@@ -356,6 +356,18 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000924002",
+      "numero": "INV-2026096",
+      "cliente": "Netmart LLC",
+      "data": "2026-04-14",
+      "dataPagamento": "2026-04-14",
+      "totale": 120,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-14"
+    },
     {
       "id": "403724000000897040",
       "numero": "INV-2026093",
@@ -481,10 +493,10 @@
       "numero": "INV-2026080",
       "cliente": "ROAS INTERNATIONAL - FZCO",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-14",
       "totale": 550,
-      "balance": 550,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -865,10 +877,10 @@
       "numero": "INV-2026046",
       "cliente": "ROAS INTERNATIONAL - FZCO",
       "data": "2026-03-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-14",
       "totale": 250,
-      "balance": 250,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
