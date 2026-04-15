@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-15T06:13:06.879Z",
+  "lastSync": "2026-04-15T10:44:48.383Z",
   "summary": {
     "fatturato": 1088201.53,
-    "incassato": 1020851.53,
-    "inAttesa": 67350,
+    "incassato": 1022251.53,
+    "inAttesa": 65950,
     "numFatture": 709,
     "numClienti": 114,
     "valuta": "EUR",
@@ -30,22 +30,22 @@
     },
     "2026": {
       "fatturato": 195323.77,
-      "incassato": 173033.77,
-      "inAttesa": 25910,
+      "incassato": 174433.77,
+      "inAttesa": 24510,
       "count": 87
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 21307.68,
-      "incassato": 33087.68,
-      "inAttesa": 14430,
+      "incassato": 34487.68,
+      "inAttesa": 13430,
       "count": 13
     },
     "2026-03": {
       "fatturato": 68959.85,
       "incassato": 44059.85,
-      "inAttesa": 7030,
+      "inAttesa": 6630,
       "count": 33
     },
     "2026-02": {
@@ -433,10 +433,10 @@
       "numero": "INV-2026086",
       "cliente": "EASTERN STAR SOLUTIONS - FZCO",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-15",
       "totale": 1000,
-      "balance": 1000,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -817,10 +817,10 @@
       "numero": "INV-2026052",
       "cliente": "EASTERN STAR SOLUTIONS - FZCO",
       "data": "2026-03-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-15",
       "totale": 400,
-      "balance": 400,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
