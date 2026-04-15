@@ -412,7 +412,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:
 /* ══ TABLES ══ */
 .scad-table{width:100%;border-collapse:collapse;}
 .scad-table th{text-align:left;padding:9px 16px;font-family:var(--f-mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;border-bottom:1px solid var(--border);font-weight:600;}
-.scad-table td{padding:0;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle;}
+.scad-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle;}
 .scad-table tr:last-child td{border-bottom:none;}
 .scad-table tbody tr{transition:background .12s;cursor:pointer;}
 .scad-table tbody tr:hover td{background:var(--surface2);}
@@ -872,9 +872,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:
               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
           </div>
         </div>
+        <!-- Multi-select toolbar -->
+        <div id="sb2-toolbar" style="display:none;align-items:center;gap:10px;padding:10px 18px;background:var(--adim);border-bottom:1px solid var(--borderacc);">
+          <span class="sb2-sel-count" style="font-family:var(--f-mono);font-size:11px;color:var(--accent);font-weight:600;"></span>
+          <button onclick="_sb2MarkSelectedDone()" class="btn btn-primary" style="font-size:11px;padding:5px 12px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Segna completate
+          </button>
+          <button onclick="_sb2ExportCSV()" class="btn" style="font-size:11px;padding:5px 12px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Esporta CSV
+          </button>
+          <button onclick="_sb2Selected=new Set();_updateSb2Toolbar();document.querySelectorAll('[id^=cb-sb2-]').forEach(c=>c.checked=false);" class="btn" style="font-size:11px;padding:5px 12px;color:var(--muted);">Deseleziona</button>
+        </div>
         <table class="scad-table"><thead><tr>
-          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th style="color:var(--accent)">Prezzo cliente</th><th data-t="stato">Stato</th><th></th>
+          <th style="width:32px;padding-left:18px;"><input type="checkbox" id="sb2-check-all" onchange="document.querySelectorAll('[id^=cb-sb2-]').forEach(c=>{c.checked=this.checked;_toggleSb2Select(c.dataset.id);})" style="cursor:pointer;accent-color:var(--accent);"></th>
+          <th>Cliente</th><th data-t="tipo">Tipo</th><th data-t="data">Data</th><th data-t="giorni">Giorni</th><th style="color:var(--danger)">Cash out</th><th style="color:var(--accent)">Prezzo cliente</th><th data-t="stato">Stato</th><th style="padding-right:24px;"></th>
         </tr></thead><tbody id="sb2"></tbody></table>
+        <div id="sb2-load-more" style="display:none;padding:12px 18px;border-top:1px solid var(--border);text-align:center;">
+          <button onclick="_sb2Page++;renderTable(_sb2LastFilter,'sb2')" style="display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid var(--border2);color:var(--text2);font-family:var(--f-mono);font-size:11px;cursor:pointer;padding:6px 16px;border-radius:6px;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            Carica altre
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2501,12 +2521,8 @@ async function deleteTipo(i){
 /* ══ SCADENZE ══ */
 const TODAY=new Date();
 function daysTo(d){return Math.ceil((new Date(d)-TODAY)/86400000);}
-function dcc(d){return d<=7?'dc2':d<=30?'dw2':'dok';}
-function dcColor(d){return d<=7?'var(--danger)':d<=30?'var(--warn)':'var(--accent)';}
-function fmtN(s){
-  if(!s)return s;
-  return String(s).replace(/\d{4,}/g,n=>parseInt(n).toLocaleString('it-IT'));
-}
+function dcc(d){return d<=7?'dc2':d<=20?'dw2':'dok';}
+function dcColor(d){return d<=7?'var(--danger)':d<=20?'var(--warn)':'var(--accent)';}
 function ticoIcon(tipo){
   const map={'Licenza':'🪪','Nominee':'👤','Sede legale':'🏢','Dichiarazione fiscale':'📋',
     'Bilancio':'📊','Rinnovo societario':'🔄','Permesso':'✅','Altro':'📌'};
@@ -2518,9 +2534,68 @@ let _sb1Expanded = false;
 function sb1ShowAll(){_sb1Expanded=true;renderTable(_sb1LastFilter,'sb1');}
 
 let _sb1LastFilter = 'all';
+// ── sb2 multi-select state ──
+let _sb2Selected = new Set();
+function _toggleSb2Select(id){
+  if(_sb2Selected.has(id)) _sb2Selected.delete(id); else _sb2Selected.add(id);
+  _updateSb2Toolbar();
+  // update checkbox visual
+  const cb = document.getElementById('cb-sb2-'+id);
+  if(cb) cb.checked = _sb2Selected.has(id);
+}
+function _selectAllSb2(){
+  document.querySelectorAll('[id^="cb-sb2-"]').forEach(cb=>{
+    const id = cb.dataset.id;
+    if(cb.checked) _sb2Selected.add(id); else _sb2Selected.delete(id);
+  });
+  _updateSb2Toolbar();
+}
+function _updateSb2Toolbar(){
+  const bar = document.getElementById('sb2-toolbar');
+  if(!bar) return;
+  const n = _sb2Selected.size;
+  bar.style.display = n>0 ? 'flex' : 'none';
+  const lbl = bar.querySelector('.sb2-sel-count');
+  if(lbl) lbl.textContent = n + ' selezionat' + (n===1?'a':'e');
+}
+function _sb2MarkSelectedDone(){
+  if(!_sb2Selected.size) return;
+  if(!confirm('Segnare '+_sb2Selected.size+' scadenze come completate?')) return;
+  _sb2Selected.forEach(id=>{
+    const s=APP.scadenze.find(x=>String(x.id)===String(id));
+    if(s){s.stato='done';updateScadenzaStatoDB(id,'done');}
+  });
+  saveLocalData();
+  _sb2Selected=new Set();
+  _updateSb2Toolbar();
+  renderTable(_sb2LastFilter,'sb2');
+  renderTable('all','sb1');
+  updateKPIs();
+  showToast('✓ Completate '+_sb2Selected.size+' scadenze');
+}
+function _sb2ExportCSV(){
+  const ids = [..._sb2Selected];
+  const rows = ids.map(id=>{
+    const s=APP.scadenze.find(x=>String(x.id)===String(id));
+    if(!s) return null;
+    const sr=(APP.servizi_ricorrenti||[]).find(r=>String(r.scadenzaId)===String(s.id));
+    const cp=sr?.client_price||sr?.prezzo||0;
+    return [s.entita,s.tipo,s.nome,s.data,s.prezzo||0,cp,s.stato].join(',');
+  }).filter(Boolean);
+  const csv='Cliente,Tipo,Nome,Data,Cash Out,Prezzo Cliente,Stato\n'+rows.join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='scadenze-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('✓ CSV esportato ('+ids.length+' scadenze)');
+}
+let _sb2LastFilter = 'all';
+let _sb2Page = 0;
+const SB2_PAGE_SIZE = 10;
 function renderTable(filter,tbid){
   const tb=document.getElementById(tbid);if(!tb)return;
   if(tbid==='sb1')_sb1LastFilter=filter;
+  if(tbid==='sb2'){_sb2LastFilter=filter;_sb2Page=0;}
   tb.innerHTML='';
   let list=[...APP.scadenze];
   if(filter==='done')list=list.filter(s=>s.stato==='done');
@@ -2535,19 +2610,34 @@ function renderTable(filter,tbid){
     list=list.filter(s=>(s.entita||'').toLowerCase().includes(q)||(s.nome||'').toLowerCase().includes(q)||(s.tipo||'').toLowerCase().includes(q));
   }
   list.sort((a,b)=>new Date(a.data)-new Date(b.data));
-  // Limite 5 righe in sb1 a meno che non sia espanso
+  // ── Paginazione sb1 (5 righe) ──
   const MAX_ROWS_SB1 = 5;
-  const hasMore = tbid==='sb1' && !_sb1Expanded && list.length > MAX_ROWS_SB1;
-  const visibleList = (tbid==='sb1' && !_sb1Expanded) ? list.slice(0, MAX_ROWS_SB1) : list;
-  // Aggiorna bottone carica altri
+  const hasMoreSb1 = tbid==='sb1' && !_sb1Expanded && list.length > MAX_ROWS_SB1;
+  const visibleList = tbid==='sb1'
+    ? (!_sb1Expanded ? list.slice(0, MAX_ROWS_SB1) : list)
+    : tbid==='sb2'
+    ? list.slice(0, (_sb2Page+1)*SB2_PAGE_SIZE)
+    : list;
+  // Aggiorna bottone sb1
   const loadMoreBtn = document.getElementById('sb1-load-more');
   if(loadMoreBtn && tbid==='sb1'){
-    loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+    loadMoreBtn.style.display = hasMoreSb1 ? 'block' : 'none';
     const btnTxt = loadMoreBtn.querySelector('button');
-    if(btnTxt && hasMore) btnTxt.textContent = `Mostra tutte (${list.length}) →`;
+    if(btnTxt && hasMoreSb1) btnTxt.textContent = `Mostra tutte (${list.length}) →`;
   }
+  // Aggiorna bottone sb2
+  const loadMoreSb2 = document.getElementById('sb2-load-more');
+  if(loadMoreSb2 && tbid==='sb2'){
+    const shown = (_sb2Page+1)*SB2_PAGE_SIZE;
+    loadMoreSb2.style.display = list.length > shown ? 'block' : 'none';
+    const btnSb2 = loadMoreSb2.querySelector('button');
+    if(btnSb2) btnSb2.textContent = `Carica altre (${Math.min(SB2_PAGE_SIZE, list.length-shown)} di ${list.length-shown} rimanenti)`;
+  }
+  // Reset multi-select quando si ricarica
+  if(tbid==='sb2') _sb2Selected = new Set();
+  _updateSb2Toolbar();
   const showCosto=tbid==='sb2';
-  const cols=showCosto?8:6;
+  const cols=showCosto?9:6;  // +1 for checkbox col in sb2
   if(list.length===0){
     tb.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Nessuna scadenza</td></tr>`;
     return;
@@ -2588,16 +2678,27 @@ function renderTable(filter,tbid){
     const legacyBadge=s.is_legacy?'<span style="font-size:9px;color:var(--muted);background:var(--surface3);padding:1px 5px;border-radius:4px;margin-left:4px">legacy</span>':'';
     tr.style.cursor='pointer';
     tr.title='Clicca per vedere/aggiungere nota';
-    tr.innerHTML=`<td style="vertical-align:middle;padding:13px 16px;">
-        <div style="font-weight:600;font-size:13px;line-height:1.2;">${s.entita}${legacyBadge}</div>
-        <div style="margin-top:4px;"><span class="etag">${fmtN(s.nome)}${noteIcon?' '+noteIcon:''}</span></div>
+    // urgency badge color: 0-7 red, 8-20 orange, 20+ green
+    const urgBg = done ? 'var(--accent)' : d<=7 ? 'var(--danger)' : d<=20 ? 'var(--warn)' : 'var(--accent)';
+    const urgFg = 'var(--bg)';
+    const checkboxCol = tbid==='sb2'
+      ? `<td style="width:32px;padding-left:18px;" onclick="event.stopPropagation()">
+           <input type="checkbox" id="cb-sb2-${s.id}" data-id="${s.id}"
+             onchange="_toggleSb2Select('${s.id}')"
+             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px;">
+         </td>` : '';
+    const actionBtnsPadded = actionBtns.replace('<td style="white-space:nowrap">', '<td style="white-space:nowrap;padding-right:22px;">');
+    tr.innerHTML=`${checkboxCol}
+      <td>
+        <div style="font-weight:700;font-size:13.5px;color:var(--text);letter-spacing:-0.01em">${s.entita}${legacyBadge}</div>
+        <div class="etag" style="margin-top:2px">${s.nome} ${noteIcon}</div>
       </td>
-      <td style="color:var(--text2);font-size:12px;vertical-align:middle;padding:13px 16px;">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
-      <td style="font-family:var(--f-mono);font-size:11px;color:var(--muted);vertical-align:middle;padding:13px 16px;">${s.data?.split('-').reverse().join('/')||'—'}</td>
-      <td style="vertical-align:middle;padding:13px 16px;"><span class="dbadge ${cls}">${dLabel}</span></td>
+      <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
+      <td style="font-family:var(--f-mono);font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
+      <td><span style="display:inline-block;padding:3px 8px;border-radius:20px;font-family:var(--f-mono);font-size:11px;font-weight:700;background:${urgBg};color:${urgFg};min-width:36px;text-align:center">${dLabel}</span></td>
       ${costoCol}
-      <td style="vertical-align:middle;padding:13px 16px;"><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
-      ${actionBtns}`;
+      <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
+      ${actionBtnsPadded}`;
     // Click row → expand inline note
     tr.addEventListener('click', ()=>toggleScadenzaNote(tr, s, tbid));
     tb.appendChild(tr);
@@ -2789,6 +2890,7 @@ function filterScad(f,el,tbid){
   el.closest('.ftabs').querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   if(tbid==='sb1')_sb1Expanded=false;
+  if(tbid==='sb2'){_sb2Page=0;_sb2Selected=new Set();_updateSb2Toolbar();}
   renderTable(f,tbid);
 }
 
@@ -2830,7 +2932,10 @@ async function markDone(id){
   }else{
     showToast('✓ Completata: '+s.nome);
   }
-  renderAll();
+  // Preserve active filter on sb2
+  renderTable(_sb2LastFilter,'sb2');
+  renderTable('all','sb1');
+  renderTimeline();updateKPIs();renderClienti();
 }
 
 async function markUndone(id){
@@ -2839,7 +2944,9 @@ async function markUndone(id){
     s.stato='pending';
     saveLocalData();
     await updateScadenzaStatoDB(id,'pending');
-    renderAll();
+    renderTable(_sb2LastFilter,'sb2');
+    renderTable('all','sb1');
+    renderTimeline();updateKPIs();renderClienti();
     showToast('↩ Riportata in attivo: '+s.nome);
   }
 }
