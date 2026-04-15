@@ -2595,7 +2595,7 @@ const SB2_PAGE_SIZE = 10;
 function renderTable(filter,tbid){
   const tb=document.getElementById(tbid);if(!tb)return;
   if(tbid==='sb1')_sb1LastFilter=filter;
-  if(tbid==='sb2'){_sb2LastFilter=filter;_sb2Page=0;}
+  if(tbid==='sb2'){_sb2LastFilter=filter;}
   tb.innerHTML='';
   let list=[...APP.scadenze];
   if(filter==='done')list=list.filter(s=>s.stato==='done');
@@ -2633,9 +2633,8 @@ function renderTable(filter,tbid){
     const btnSb2 = loadMoreSb2.querySelector('button');
     if(btnSb2) btnSb2.textContent = `Carica altre (${Math.min(SB2_PAGE_SIZE, list.length-shown)} di ${list.length-shown} rimanenti)`;
   }
-  // Reset multi-select quando si ricarica
-  if(tbid==='sb2') _sb2Selected = new Set();
-  _updateSb2Toolbar();
+  // Toolbar update only (selection preserved across page loads)
+  if(tbid==='sb2') _updateSb2Toolbar();
   const showCosto=tbid==='sb2';
   const cols=showCosto?9:6;  // +1 for checkbox col in sb2
   if(list.length===0){
@@ -2678,27 +2677,39 @@ function renderTable(filter,tbid){
     const legacyBadge=s.is_legacy?'<span style="font-size:9px;color:var(--muted);background:var(--surface3);padding:1px 5px;border-radius:4px;margin-left:4px">legacy</span>':'';
     tr.style.cursor='pointer';
     tr.title='Clicca per vedere/aggiungere nota';
-    // urgency badge color: 0-7 red, 8-20 orange, 20+ green
-    const urgBg = done ? 'var(--accent)' : d<=7 ? 'var(--danger)' : d<=20 ? 'var(--warn)' : 'var(--accent)';
-    const urgFg = 'var(--bg)';
-    const checkboxCol = tbid==='sb2'
-      ? `<td style="width:32px;padding-left:18px;" onclick="event.stopPropagation()">
+
+    // ── sb2-only enhancements (scadenze finanziarie full view) ──
+    if(tbid==='sb2'){
+      // Urgency pill: 0-7 red, 8-20 orange, 20+ green
+      const urgBg = done ? 'var(--accent)' : d<=7 ? 'var(--danger)' : d<=20 ? 'var(--warn)' : 'var(--accent)';
+      const dBadge = `<span style="display:inline-block;padding:3px 8px;border-radius:20px;font-family:var(--f-mono);font-size:11px;font-weight:700;background:${urgBg};color:var(--bg);min-width:36px;text-align:center">${dLabel}</span>`;
+      const cbCol = `<td style="width:32px;padding-left:18px;" onclick="event.stopPropagation()">
            <input type="checkbox" id="cb-sb2-${s.id}" data-id="${s.id}"
              onchange="_toggleSb2Select('${s.id}')"
              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px;">
-         </td>` : '';
-    const actionBtnsPadded = actionBtns.replace('<td style="white-space:nowrap">', '<td style="white-space:nowrap;padding-right:22px;">');
-    tr.innerHTML=`${checkboxCol}
-      <td>
-        <div style="font-weight:700;font-size:13.5px;color:var(--text);letter-spacing:-0.01em">${s.entita}${legacyBadge}</div>
-        <div class="etag" style="margin-top:2px">${s.nome} ${noteIcon}</div>
-      </td>
-      <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
-      <td style="font-family:var(--f-mono);font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
-      <td><span style="display:inline-block;padding:3px 8px;border-radius:20px;font-family:var(--f-mono);font-size:11px;font-weight:700;background:${urgBg};color:${urgFg};min-width:36px;text-align:center">${dLabel}</span></td>
-      ${costoCol}
-      <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
-      ${actionBtnsPadded}`;
+         </td>`;
+      const actionPadded = actionBtns.replace('<td style="white-space:nowrap">', '<td style="white-space:nowrap;padding-right:22px;">');
+      tr.innerHTML=`${cbCol}
+        <td>
+          <div style="font-weight:700;font-size:13.5px;color:var(--text);letter-spacing:-0.01em">${s.entita}${legacyBadge}</div>
+          <div class="etag" style="margin-top:2px">${s.nome} ${noteIcon}</div>
+        </td>
+        <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
+        <td style="font-family:var(--f-mono);font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
+        <td>${dBadge}</td>
+        ${costoCol}
+        <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
+        ${actionPadded}`;
+    } else {
+      // sb1 (dashboard) — layout originale invariato
+      tr.innerHTML=`<td><div style="font-weight:500;font-size:13px">${s.entita}${legacyBadge}</div><div class="etag">${s.nome} ${noteIcon}</div></td>
+        <td style="color:var(--text2);font-size:12px">${ticoIcon(s.tipo)} ${s.tipo}${annualBadge}</td>
+        <td style="font-family:var(--f-mono);font-size:11px;color:var(--muted)">${s.data?.split('-').reverse().join('/')||'—'}</td>
+        <td><span class="dbadge ${cls}">${dLabel}</span></td>
+        ${costoCol}
+        <td><span class="sdot2" style="background:${col}"></span><span style="font-size:12px">${statusTxt}</span></td>
+        ${actionBtns}`;
+    }
     // Click row → expand inline note
     tr.addEventListener('click', ()=>toggleScadenzaNote(tr, s, tbid));
     tb.appendChild(tr);
