@@ -2627,7 +2627,7 @@ function _sb2ExportCSV(){
 function renderTable(filter,tbid){
   const tb=document.getElementById(tbid);if(!tb)return;
   if(tbid==='sb1'){ _sb1LastFilter=filter; }
-  if(tbid==='sb2'){ _sb2LastFilter=filter; _sb2Page=0; }
+  if(tbid==='sb2'){ _sb2LastFilter=filter; }
   tb.innerHTML='';
   let list=[...APP.scadenze];
   if(filter==='done')list=list.filter(s=>s.stato==='done');
