@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-15T10:44:48.383Z",
+  "lastSync": "2026-04-15T14:11:01.781Z",
   "summary": {
-    "fatturato": 1088201.53,
-    "incassato": 1022251.53,
+    "fatturato": 1090201.53,
+    "incassato": 1024251.53,
     "inAttesa": 65950,
-    "numFatture": 709,
+    "numFatture": 710,
     "numClienti": 114,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 195323.77,
-      "incassato": 174433.77,
+      "fatturato": 197323.77,
+      "incassato": 176433.77,
       "inAttesa": 24510,
-      "count": 87
+      "count": 88
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 21307.68,
-      "incassato": 34487.68,
+      "fatturato": 23307.68,
+      "incassato": 36487.68,
       "inAttesa": 13430,
-      "count": 13
+      "count": 14
     },
     "2026-03": {
       "fatturato": 68959.85,
@@ -411,6 +411,18 @@
       "data": "2026-04-01",
       "dataPagamento": "2026-04-02",
       "totale": 540,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-01"
+    },
+    {
+      "id": "403724000000884333",
+      "numero": "INV-2026088",
+      "cliente": "AFFLUMINA LLC",
+      "data": "2026-04-01",
+      "dataPagamento": "2026-04-15",
+      "totale": 2000,
       "balance": 0,
       "stato": "paid",
       "valuta": "EUR",
