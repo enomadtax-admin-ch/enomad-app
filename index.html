@@ -1021,7 +1021,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:
         <div class="kpi-card" style="border-left:2px solid var(--purple)">
           <div class="kpi-card-top"><span class="kpi-card-lbl">Budget marketing</span><span class="kpi-card-ico">📢</span></div>
           <div class="kpi-card-val" style="color:var(--purple)" id="fin-mktg-budget">—</div>
-          <div class="kpi-card-sub">30% net mensile</div>
+          <div class="kpi-card-sub">30% net periodo</div>
         </div>
       </div>
       <div class="grid-2eq">
@@ -3216,8 +3216,8 @@ function renderFinance(){
     +allMov.filter(m=>m.data?.substring(0,7)===k&&m.tipo==='out').reduce((s,m)=>s+m.importo,0)
   ,0);
   const netPeriodo=cashInPeriodo-cashOutPeriodo;
-  const netMese=netPeriodo/effMesi;
-  const mktgBudget=Math.max(0,Math.round(netMese*0.3));
+  // Budget marketing = 30% del netto del PERIODO (non diviso per mesi)
+  const mktgBudget=Math.max(0,Math.round(netPeriodo*0.3));
 
   // Burn rate = media cash out ultimi 3 mesi (fisso come riferimento)
   const ultimi3=[0,1,2].map(i=>{
