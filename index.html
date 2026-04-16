@@ -2909,10 +2909,9 @@ function updateKPIs(){
     },0);
     // Net periodo = incassato - uscite TOTALI (scadenze + movimenti out)
     const netPeriodo=incPeriodo-uscitePeriodo;
-    // Net mensile = net periodo / numero mesi → per budget marketing
-    const effMesi=Math.max(mesiRange.length,1);
-    const netMensile=netPeriodo/effMesi;
-    const budgetMktg=Math.max(0,Math.round(netMensile*0.3));
+    // Budget marketing = 30% del netto del PERIODO selezionato
+    // 1m → netto ultimo mese | 3m → netto 3 mesi | ytd → netto YTD | all → netto totale
+    const budgetMktg=Math.max(0,Math.round(netPeriodo*0.3));
     const netColor=netPeriodo>=0?'var(--accent)':'var(--danger)';
     const inAttesa=ZOHO.summary?.inAttesa||0;
     const periodoLabel={'1m':'ultimo mese','3m':'ultimi 3 mesi','ytd':'anno corrente','all':'tutti'}[periodo]||'periodo';
