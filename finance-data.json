@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-17T10:38:26.609Z",
+  "lastSync": "2026-04-17T14:43:32.447Z",
   "summary": {
-    "fatturato": 1090201.53,
-    "incassato": 1024251.53,
+    "fatturato": 1090576.11,
+    "incassato": 1024626.11,
     "inAttesa": 65950,
-    "numFatture": 710,
+    "numFatture": 711,
     "numClienti": 114,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 197323.77,
-      "incassato": 176433.77,
+      "fatturato": 197698.35,
+      "incassato": 176808.35,
       "inAttesa": 24510,
-      "count": 88
+      "count": 89
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 23307.68,
-      "incassato": 36487.68,
+      "fatturato": 23682.26,
+      "incassato": 36862.26,
       "inAttesa": 13430,
-      "count": 14
+      "count": 15
     },
     "2026-03": {
       "fatturato": 68959.85,
@@ -375,6 +375,18 @@
       "data": "2026-04-07",
       "dataPagamento": "2026-04-07",
       "totale": 2217.68,
+      "balance": 0,
+      "stato": "paid",
+      "valuta": "EUR",
+      "scadenza": "2026-04-07"
+    },
+    {
+      "id": "403724000000897014",
+      "numero": "INV-2026092",
+      "cliente": "PAYABL",
+      "data": "2026-04-07",
+      "dataPagamento": "2026-04-17",
+      "totale": 374.58,
       "balance": 0,
       "stato": "paid",
       "valuta": "EUR",
