@@ -3,69 +3,61 @@ name: Daily Deadlines Reminder
 on:
   schedule:
     - cron: '0 6 * * *'  # 08:00 Swiss time (UTC+2 summer)
-  workflow_dispatch:      # Manual trigger for testing
+  workflow_dispatch:
 
 jobs:
   remind:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Deadlines Digest to Telegram
+      - name: Fetch deadlines from Supabase
+        id: fetch
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          RESPONSE=$(curl -s \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            "$SUPABASE_URL/rest/v1/scadenze?stato=neq.done&order=data.asc&select=*")
+          echo "data<<EOF_DATA" >> $GITHUB_OUTPUT
+          echo "$RESPONSE" >> $GITHUB_OUTPUT
+          echo "EOF_DATA" >> $GITHUB_OUTPUT
+
+      - name: Build and send Telegram message
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_SCADENZE_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SCADENZE_JSON: ${{ steps.fetch.outputs.data }}
         run: |
-          node -e "
+          node << 'NODEJS'
           const https = require('https');
 
-          function request(options, postData) {
+          function sendTelegram(text) {
             return new Promise((resolve, reject) => {
-              const req = https.request(options, res => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                  try { resolve(JSON.parse(data)); }
-                  catch(e) { resolve({ _raw: data }); }
-                });
+              const body = JSON.stringify({
+                chat_id: process.env.TELEGRAM_CHAT_ID,
+                text: text,
+                parse_mode: 'HTML'
+              });
+              const req = https.request({
+                hostname: 'api.telegram.org',
+                path: '/bot' + process.env.TELEGRAM_TOKEN + '/sendMessage',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Content-Length': Buffer.byteLength(body)
+                }
+              }, res => {
+                let d = '';
+                res.on('data', c => d += c);
+                res.on('end', () => resolve(JSON.parse(d)));
               });
               req.on('error', reject);
-              if (postData) req.write(postData);
+              req.write(body);
               req.end();
             });
-          }
-
-          async function fetchSupabase(path) {
-            const url = new URL(process.env.SUPABASE_URL);
-            const res = await request({
-              hostname: url.hostname,
-              path: '/rest/v1/' + path,
-              method: 'GET',
-              headers: {
-                'apikey': process.env.SUPABASE_KEY,
-                'Authorization': 'Bearer ' + process.env.SUPABASE_KEY,
-                'Content-Type': 'application/json'
-              }
-            });
-            return res;
-          }
-
-          async function sendTelegram(text) {
-            const body = JSON.stringify({
-              chat_id: process.env.TELEGRAM_CHAT_ID,
-              text: text,
-              parse_mode: 'HTML'
-            });
-            await request({
-              hostname: 'api.telegram.org',
-              path: '/bot' + process.env.TELEGRAM_TOKEN + '/sendMessage',
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(body)
-              }
-            }, body);
           }
 
           function daysTo(dateStr) {
@@ -76,15 +68,15 @@ jobs:
             return Math.ceil((target - today) / 86400000);
           }
 
-          function formatDate(dateStr) {
-            if (!dateStr) return '—';
-            const [y,m,d] = dateStr.split('-');
-            return d + '/' + m + '/' + y;
+          function formatDate(s) {
+            if (!s) return '—';
+            const [y,m,d] = s.split('-');
+            return d+'/'+m;
           }
 
-          function formatAmount(n) {
+          function formatAmt(n) {
             if (!n || n === 0) return '';
-            return ' · €' + Math.round(n).toLocaleString('it-IT');
+            return ' · €' + Math.round(n).toLocaleString('de-CH');
           }
 
           function dayLabel(d) {
@@ -93,82 +85,81 @@ jobs:
             return d + 'd';
           }
 
-          const DAYS_OF_WEEK = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
           const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
           async function main() {
-            // Fetch all pending deadlines from Supabase
-            const scadenze = await fetchSupabase(
-              \"scadenze?stato=neq.done&order=data.asc&select=*\"
-            );
+            let scadenze;
+            try {
+              scadenze = JSON.parse(process.env.SCADENZE_JSON);
+            } catch(e) {
+              console.error('JSON parse error:', e.message);
+              console.error('Raw:', (process.env.SCADENZE_JSON||'').substring(0,300));
+              process.exit(1);
+            }
 
             if (!Array.isArray(scadenze)) {
-              console.error('Supabase error:', JSON.stringify(scadenze));
+              console.error('Not an array:', JSON.stringify(scadenze).substring(0,200));
               process.exit(1);
             }
 
             const today = new Date();
-            const dow = DAYS_OF_WEEK[today.getDay()];
-            const dateLabel = dow + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()] + ' ' + today.getFullYear();
+            const dateLabel = DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()] + ' ' + today.getFullYear();
 
-            // Split into groups
-            const overdue   = scadenze.filter(s => daysTo(s.data) < 0);
-            const dueToday  = scadenze.filter(s => daysTo(s.data) === 0);
-            const critical  = scadenze.filter(s => daysTo(s.data) > 0 && daysTo(s.data) <= 7);
-            const upcoming  = scadenze.filter(s => daysTo(s.data) > 7  && daysTo(s.data) <= 30);
-
-            // Only send if there is something to report
-            const total = overdue.length + dueToday.length + critical.length + upcoming.length;
+            const overdue  = scadenze.filter(s => daysTo(s.data) < 0);
+            const dueToday = scadenze.filter(s => daysTo(s.data) === 0);
+            const critical = scadenze.filter(s => daysTo(s.data) > 0 && daysTo(s.data) <= 7);
+            const upcoming = scadenze.filter(s => daysTo(s.data) > 7  && daysTo(s.data) <= 30);
+            const total    = overdue.length + dueToday.length + critical.length + upcoming.length;
 
             let msg = '<b>📋 ENOMAD — Deadlines · ' + dateLabel + '</b>\n';
             msg += '<i>' + scadenze.length + ' active deadlines</i>\n';
 
-            // OVERDUE
             if (overdue.length > 0) {
               msg += '\n<b>⛔ OVERDUE (' + overdue.length + ')</b>\n';
-              overdue.forEach(s => {
-                const d = daysTo(s.data);
-                msg += '  • <b>' + (s.entita || '—') + '</b> · ' + (s.tipo || s.nome || '—') + ' · ' + formatDate(s.data) + ' · ' + Math.abs(d) + 'd ago' + formatAmount(s.prezzo) + '\n';
+              overdue.slice(0,10).forEach(s => {
+                const d = Math.abs(daysTo(s.data));
+                msg += '  • <b>' + (s.entita||'—') + '</b> · ' + (s.tipo||s.nome||'—') + ' · ' + formatDate(s.data) + ' · ' + d + 'd ago' + formatAmt(s.prezzo) + '\n';
               });
             }
 
-            // DUE TODAY
             if (dueToday.length > 0) {
               msg += '\n<b>🔔 DUE TODAY (' + dueToday.length + ')</b>\n';
               dueToday.forEach(s => {
-                msg += '  • <b>' + (s.entita || '—') + '</b> · ' + (s.tipo || s.nome || '—') + formatAmount(s.prezzo) + '\n';
+                msg += '  • <b>' + (s.entita||'—') + '</b> · ' + (s.tipo||s.nome||'—') + formatAmt(s.prezzo) + '\n';
               });
             }
 
-            // CRITICAL ≤7 days
             if (critical.length > 0) {
-              msg += '\n<b>🔴 CRITICAL — due in ≤7 days (' + critical.length + ')</b>\n';
+              msg += '\n<b>🔴 CRITICAL ≤7d (' + critical.length + ')</b>\n';
               critical.forEach(s => {
                 const d = daysTo(s.data);
-                msg += '  • <b>' + (s.entita || '—') + '</b> · ' + (s.tipo || s.nome || '—') + ' · ' + formatDate(s.data) + ' · ' + dayLabel(d) + formatAmount(s.prezzo) + '\n';
+                msg += '  • <b>' + (s.entita||'—') + '</b> · ' + (s.tipo||s.nome||'—') + ' · ' + formatDate(s.data) + ' · ' + dayLabel(d) + formatAmt(s.prezzo) + '\n';
               });
             }
 
-            // UPCOMING 8–30 days
             if (upcoming.length > 0) {
-              msg += '\n<b>🟡 UPCOMING — next 30 days (' + upcoming.length + ')</b>\n';
+              msg += '\n<b>🟡 UPCOMING 8–30d (' + upcoming.length + ')</b>\n';
               upcoming.forEach(s => {
                 const d = daysTo(s.data);
-                msg += '  • <b>' + (s.entita || '—') + '</b> · ' + (s.tipo || s.nome || '—') + ' · ' + formatDate(s.data) + ' · ' + dayLabel(d) + formatAmount(s.prezzo) + '\n';
+                msg += '  • <b>' + (s.entita||'—') + '</b> · ' + (s.tipo||s.nome||'—') + ' · ' + formatDate(s.data) + ' · ' + dayLabel(d) + formatAmt(s.prezzo) + '\n';
               });
             }
 
-            // All clear
             if (total === 0) {
               msg += '\n✅ <b>All clear — no deadlines in the next 30 days.</b>\n';
             }
 
-            // Footer
             msg += '\n<i>E-NOMAD Compliance System</i>';
 
-            await sendTelegram(msg);
-            console.log('✓ Digest sent — ' + total + ' deadlines reported');
+            const result = await sendTelegram(msg);
+            if (result.ok) {
+              console.log('✓ Message sent — ' + total + ' deadlines reported');
+            } else {
+              console.error('Telegram error:', JSON.stringify(result));
+              process.exit(1);
+            }
           }
 
           main().catch(e => { console.error('ERROR:', e); process.exit(1); });
-          "
+          NODEJS
