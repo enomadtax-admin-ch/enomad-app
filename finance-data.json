@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-20T08:56:19.569Z",
+  "lastSync": "2026-04-20T10:14:52.314Z",
   "summary": {
     "fatturato": 1090576.11,
-    "incassato": 1038046.11,
-    "inAttesa": 52530,
+    "incassato": 1038946.11,
+    "inAttesa": 51630,
     "numFatture": 711,
     "numClienti": 114,
     "valuta": "EUR",
@@ -30,22 +30,22 @@
     },
     "2026": {
       "fatturato": 197698.35,
-      "incassato": 190228.35,
-      "inAttesa": 11090,
+      "incassato": 191128.35,
+      "inAttesa": 10190,
       "count": 89
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 23682.26,
-      "incassato": 50282.26,
-      "inAttesa": 3210,
+      "incassato": 51682.26,
+      "inAttesa": 2810,
       "count": 15
     },
     "2026-03": {
       "fatturato": 68959.85,
-      "incassato": 44059.85,
-      "inAttesa": 5430,
+      "incassato": 43559.85,
+      "inAttesa": 4930,
       "count": 33
     },
     "2026-02": {
@@ -529,10 +529,10 @@
       "numero": "INV-2026079",
       "cliente": "HYBRID INTERNATIONAL GROUP LTD",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-20",
       "totale": 400,
-      "balance": 400,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -721,9 +721,9 @@
       "numero": "INV-2026062",
       "cliente": "HYBRID INTERNATIONAL GROUP LTD",
       "data": "2026-03-06",
-      "dataPagamento": "2026-03-19",
+      "dataPagamento": "2026-04-20",
       "totale": 1500,
-      "balance": 1000,
+      "balance": 500,
       "stato": "overdue",
       "valuta": "EUR",
       "scadenza": "2026-03-06"
