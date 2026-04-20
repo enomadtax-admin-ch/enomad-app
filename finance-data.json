@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-04-20T05:40:47.801Z",
+  "lastSync": "2026-04-20T08:05:55.912Z",
   "summary": {
     "fatturato": 1090576.11,
-    "incassato": 1024626.11,
-    "inAttesa": 65950,
+    "incassato": 1038046.11,
+    "inAttesa": 52530,
     "numFatture": 711,
     "numClienti": 114,
     "valuta": "EUR",
@@ -30,28 +30,28 @@
     },
     "2026": {
       "fatturato": 197698.35,
-      "incassato": 176808.35,
-      "inAttesa": 24510,
+      "incassato": 190228.35,
+      "inAttesa": 11090,
       "count": 89
     }
   },
   "perMese": {
     "2026-04": {
       "fatturato": 23682.26,
-      "incassato": 36862.26,
-      "inAttesa": 13430,
+      "incassato": 50282.26,
+      "inAttesa": 3210,
       "count": 15
     },
     "2026-03": {
       "fatturato": 68959.85,
       "incassato": 44059.85,
-      "inAttesa": 6630,
+      "inAttesa": 5430,
       "count": 33
     },
     "2026-02": {
       "fatturato": 67481.66,
       "incassato": 66286.66,
-      "inAttesa": 2600,
+      "inAttesa": 600,
       "count": 21
     },
     "2026-01": {
@@ -409,10 +409,10 @@
       "numero": "INV-2026090",
       "cliente": "VYRA STUDIOS LTD",
       "data": "2026-04-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-20",
       "totale": 10220,
-      "balance": 10220,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-04-01"
     },
@@ -829,10 +829,10 @@
       "numero": "INV-2026053",
       "cliente": "ISLAFFILIATES S.L.",
       "data": "2026-03-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-20",
       "totale": 1200,
-      "balance": 1200,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-03-01"
     },
@@ -973,10 +973,10 @@
       "numero": "INV-2026040",
       "cliente": "ISLAFFILIATES S.L.",
       "data": "2026-02-18",
-      "dataPagamento": "",
+      "dataPagamento": "2026-04-20",
       "totale": 2000,
-      "balance": 2000,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-02-18"
     },
