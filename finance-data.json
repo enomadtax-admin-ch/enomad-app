@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-04-27T14:34:03.723Z",
+  "lastSync": "2026-04-27T16:25:58.237Z",
   "summary": {
-    "fatturato": 1090576.11,
+    "fatturato": 1092076.11,
     "incassato": 1039946.11,
-    "inAttesa": 50630,
-    "numFatture": 711,
+    "inAttesa": 52130,
+    "numFatture": 712,
     "numClienti": 114,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,18 +29,18 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 197698.35,
+      "fatturato": 199198.35,
       "incassato": 192128.35,
-      "inAttesa": 9190,
-      "count": 89
+      "inAttesa": 10690,
+      "count": 90
     }
   },
   "perMese": {
     "2026-04": {
-      "fatturato": 23682.26,
+      "fatturato": 25182.26,
       "incassato": 52682.26,
-      "inAttesa": 2810,
-      "count": 15
+      "inAttesa": 4310,
+      "count": 16
     },
     "2026-03": {
       "fatturato": 68959.85,
@@ -315,14 +315,14 @@
       "count": 1
     },
     {
+      "nome": "HYBRID INTERNATIONAL GROUP LTD",
+      "fatturato": 23320,
+      "count": 41
+    },
+    {
       "nome": "LUAUR GROUP LTD",
       "fatturato": 23000,
       "count": 23
-    },
-    {
-      "nome": "HYBRID INTERNATIONAL GROUP LTD",
-      "fatturato": 21820,
-      "count": 40
     },
     {
       "nome": "New Concept MGMT Limited",
@@ -356,6 +356,18 @@
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000955033",
+      "numero": "INV-2026098",
+      "cliente": "HYBRID INTERNATIONAL GROUP LTD",
+      "data": "2026-04-24",
+      "dataPagamento": "",
+      "totale": 1500,
+      "balance": 1500,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-04-24"
+    },
     {
       "id": "403724000000924002",
       "numero": "INV-2026096",
