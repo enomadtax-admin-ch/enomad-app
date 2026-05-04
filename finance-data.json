@@ -1,9 +1,9 @@
 {
-  "lastSync": "2026-05-04T11:21:24.153Z",
+  "lastSync": "2026-05-04T13:06:53.100Z",
   "summary": {
     "fatturato": 1115806.11,
-    "incassato": 1041446.11,
-    "inAttesa": 74360,
+    "incassato": 1042336.11,
+    "inAttesa": 73470,
     "numFatture": 725,
     "numClienti": 114,
     "valuta": "EUR",
@@ -30,16 +30,16 @@
     },
     "2026": {
       "fatturato": 222928.35,
-      "incassato": 193628.35,
-      "inAttesa": 32920,
+      "incassato": 194518.35,
+      "inAttesa": 32030,
       "count": 103
     }
   },
   "perMese": {
     "2026-05": {
       "fatturato": 17730,
-      "incassato": 0,
-      "inAttesa": 17730,
+      "incassato": 890,
+      "inAttesa": 16840,
       "count": 12
     },
     "2026-04": {
@@ -367,10 +367,10 @@
       "numero": "INV-2026113",
       "cliente": "Media Scale FZE LLC",
       "data": "2026-05-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-05-04",
       "totale": 350,
-      "balance": 350,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-05-01"
     },
@@ -403,10 +403,10 @@
       "numero": "INV-2026110",
       "cliente": "ZENDI CONSULTING SRL",
       "data": "2026-05-01",
-      "dataPagamento": "",
+      "dataPagamento": "2026-05-04",
       "totale": 540,
-      "balance": 540,
-      "stato": "overdue",
+      "balance": 0,
+      "stato": "paid",
       "valuta": "EUR",
       "scadenza": "2026-05-01"
     },
