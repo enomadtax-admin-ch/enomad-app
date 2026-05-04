@@ -1,10 +1,10 @@
 {
-  "lastSync": "2026-05-04T02:46:50.112Z",
+  "lastSync": "2026-05-04T06:12:26.939Z",
   "summary": {
-    "fatturato": 1098076.11,
+    "fatturato": 1115806.11,
     "incassato": 1041446.11,
-    "inAttesa": 56630,
-    "numFatture": 713,
+    "inAttesa": 74360,
+    "numFatture": 725,
     "numClienti": 114,
     "valuta": "EUR",
     "annoCorrente": "2026"
@@ -29,13 +29,19 @@
       "count": 263
     },
     "2026": {
-      "fatturato": 205198.35,
+      "fatturato": 222928.35,
       "incassato": 193628.35,
-      "inAttesa": 15190,
-      "count": 91
+      "inAttesa": 32920,
+      "count": 103
     }
   },
   "perMese": {
+    "2026-05": {
+      "fatturato": 17730,
+      "incassato": 0,
+      "inAttesa": 17730,
+      "count": 12
+    },
     "2026-04": {
       "fatturato": 31182.26,
       "incassato": 54182.26,
@@ -261,18 +267,23 @@
     },
     {
       "nome": "ALL STAR PUZZLES LTD",
-      "fatturato": 81590,
-      "count": 28
+      "fatturato": 84090,
+      "count": 29
     },
     {
       "nome": "IPGEN INNOVATION LTD",
-      "fatturato": 54105,
-      "count": 24
+      "fatturato": 55325,
+      "count": 25
     },
     {
       "nome": "TOP SERVICE S.R.L.",
       "fatturato": 53550,
       "count": 1
+    },
+    {
+      "nome": "VYRA STUDIOS LTD",
+      "fatturato": 49460,
+      "count": 8
     },
     {
       "nome": "WV Consulting LLC",
@@ -283,11 +294,6 @@
       "nome": "ISLAFFILIATES S.L.",
       "fatturato": 45140,
       "count": 18
-    },
-    {
-      "nome": "VYRA STUDIOS LTD",
-      "fatturato": 39240,
-      "count": 7
     },
     {
       "nome": "Netmart LLC",
@@ -310,14 +316,14 @@
       "count": 1
     },
     {
+      "nome": "HYBRID INTERNATIONAL GROUP LTD",
+      "fatturato": 23720,
+      "count": 42
+    },
+    {
       "nome": "Gaia Bertolin",
       "fatturato": 23600,
       "count": 1
-    },
-    {
-      "nome": "HYBRID INTERNATIONAL GROUP LTD",
-      "fatturato": 23320,
-      "count": 41
     },
     {
       "nome": "LUAUR GROUP LTD",
@@ -335,6 +341,11 @@
       "count": 11
     },
     {
+      "nome": "Lead Busters LLC",
+      "fatturato": 17850,
+      "count": 8
+    },
+    {
       "nome": "GEAV INTERNATIONAL LTD",
       "fatturato": 17730,
       "count": 30
@@ -345,17 +356,156 @@
       "count": 30
     },
     {
-      "nome": "Lead Busters LLC",
-      "fatturato": 17050,
-      "count": 7
-    },
-    {
       "nome": "COD KINGDOM LLC",
       "fatturato": 16100,
       "count": 2
     }
   ],
   "invoices": [
+    {
+      "id": "403724000000979214",
+      "numero": "INV-2026113",
+      "cliente": "Media Scale FZE LLC",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 350,
+      "balance": 350,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979198",
+      "numero": "INV-2026112",
+      "cliente": "VYRA STUDIOS LTD",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 10220,
+      "balance": 10220,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979183",
+      "numero": "INV-2026111",
+      "cliente": "Lead Busters LLC",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 800,
+      "balance": 800,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979167",
+      "numero": "INV-2026110",
+      "cliente": "ZENDI CONSULTING SRL",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 540,
+      "balance": 540,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979152",
+      "numero": "INV-2026109",
+      "cliente": "AFFLUMINA LLC",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 500,
+      "balance": 500,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979121",
+      "numero": "INV-2026107",
+      "cliente": "EASTERN STAR SOLUTIONS - FZCO",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 400,
+      "balance": 400,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979106",
+      "numero": "INV-2026106",
+      "cliente": "IPGEN INNOVATION LTD",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 1220,
+      "balance": 1220,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979091",
+      "numero": "INV-2026105",
+      "cliente": "True Fame Creative FZ-LLC",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 250,
+      "balance": 250,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979061",
+      "numero": "INV-2026103",
+      "cliente": "ALL STAR PUZZLES LTD",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 2500,
+      "balance": 2500,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979046",
+      "numero": "INV-2026102",
+      "cliente": "OZZIBIG INTERNATIONAL FZCO",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 300,
+      "balance": 300,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979031",
+      "numero": "INV-2026101",
+      "cliente": "ROAS INTERNATIONAL - FZCO",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 250,
+      "balance": 250,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
+    {
+      "id": "403724000000979016",
+      "numero": "INV-2026100",
+      "cliente": "HYBRID INTERNATIONAL GROUP LTD",
+      "data": "2026-05-01",
+      "dataPagamento": "",
+      "totale": 400,
+      "balance": 400,
+      "stato": "overdue",
+      "valuta": "EUR",
+      "scadenza": "2026-05-01"
+    },
     {
       "id": "403724000000955033",
       "numero": "INV-2026098",
